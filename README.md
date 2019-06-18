@@ -3,7 +3,12 @@ Unit testing for cocotb
 
 **!Prof of concept!**
 
-#Usage:
+# Usage:
+Install:
+```bash
+pip install -e .
+```
+
 
 In the `test_*` file with cocotb tests defined:
 ```python
