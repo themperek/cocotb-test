@@ -143,7 +143,7 @@ def build_libs():
 
 def _run_ius(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir):
 
-    cmd = ["irun", "-64", "+access+rwc", "-loadvpi", os.path.join(libs_dir,"libvpi.so")+":vlog_startup_routines_bootstrap", "-top", toplevel] + sources_abs
+    cmd = ["irun", "-64", "+access+rwc", "-loadvpi", os.path.join(libs_dir,"libvpi.so")+"", "-top", toplevel] + sources_abs
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
     
