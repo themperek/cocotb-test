@@ -1,7 +1,7 @@
 # cocotb-test
 Unit testing for cocotb
 
-**!Prof of concept!**
+**!Proof of Concept!**
 
 # Usage:
 Install via [pip](https://pip.pypa.io/en/stable/user_guide/):
