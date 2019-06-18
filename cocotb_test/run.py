@@ -141,6 +141,24 @@ def build_libs():
 
     return lib_path, ext_name
 
+
+def _run_vcs(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir):
+    
+    pli_cmd = "acc+=rw,wn:*" 
+    
+    do_file_path = os.path.join(sim_build_dir, 'pli.tab')
+    with open(do_file_path, 'w') as pli_file:
+        pli_file.write(pli_cmd)
+
+    comp_cmd = ["vcs", "-full64", "-debug", "+vpi" ,"-P", "pli.tab", "-sverilog", "+define+COCOTB_SIM=1", "-load", "libvpi.so"] + sources_abs
+    print(" ".join(comp_cmd))
+    process = subprocess.check_call(comp_cmd, cwd=sim_build_dir)
+    
+    cmd = [os.path.join(sim_build_dir, "simv") , "+define+COCOTB_SIM=1"]
+    print (" ".join(cmd))
+    process = subprocess.check_call(cmd, cwd=sim_build_dir)
+
+
 def _run_ius(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir):
 
     cmd = ["irun", "-64", "+access+rwc", "-loadvpi", os.path.join(libs_dir,"libvpi.so")+"", "-top", toplevel] + sources_abs
@@ -219,6 +237,8 @@ def Run(sources, toplevel, module=None):
         _run_questa(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir, ext_name)
     elif my_env['SIM'] == 'ius':
         _run_ius(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir)
+    elif my_env['SIM'] == 'vcs':
+        _run_vcs(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir)
     else:
-        raise NotImplementedError("Set SIM variable. Supported: icarus, questa, ius")
+        raise NotImplementedError("Set SIM variable. Supported: icarus, questa, ius, vcs")
 
