@@ -118,6 +118,7 @@ def build_libs():
     libvpi = Extension(
         "libvpi",
         # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
+        #define_macros=[("IUS",),("VPI_CHECKING",)],
         include_dirs=[share_dir + "/include"],
         libraries=["gpi", "gpilog"],
         library_dirs=[lib_path],
@@ -140,8 +141,13 @@ def build_libs():
 
     return lib_path, ext_name
 
+def _run_ius(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir):
 
-def _run_icarus(toplevel, libs_dir, sim_compile_file, sources_abs):
+    cmd = ["irun", "-64", "+access+rwc", "-loadvpi", os.path.join(libs_dir,"libvpi.so")+":vlog_startup_routines_bootstrap", "-top", toplevel] + sources_abs
+    print (" ".join(cmd))
+    process = subprocess.check_call(cmd, cwd=sim_build_dir)
+    
+def _run_icarus(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir):
     
     comp_cmd = ["iverilog", "-o", sim_compile_file, "-D", "COCOTB_SIM=1", "-s", toplevel, "-g2012"] + sources_abs
     print(" ".join(comp_cmd))
@@ -149,7 +155,7 @@ def _run_icarus(toplevel, libs_dir, sim_compile_file, sources_abs):
     
     cmd = ["vvp", "-M", libs_dir, "-m", "gpivpi", sim_compile_file]
     print (" ".join(cmd))
-    process = subprocess.check_call(cmd)
+    process = subprocess.check_call(cmd, cwd=sim_build_dir)
 
 def _run_questa(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir, ext_name):
 
@@ -208,9 +214,11 @@ def Run(sources, toplevel, module=None):
         sources_abs.append(os.path.abspath(os.path.join(run_dir_name, src)))
 
     if my_env['SIM'] == 'icarus':
-        _run_icarus(toplevel, libs_dir, sim_compile_file, sources_abs)
+        _run_icarus(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir)
     elif my_env['SIM'] == 'questa':
         _run_questa(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir, ext_name)
+    elif my_env['SIM'] == 'ius':
+        _run_ius(toplevel, libs_dir, sim_compile_file, sources_abs, sim_build_dir)
     else:
-        raise NotImplementedError("Set SIM variable. Supported: icarus,questa")
+        raise NotImplementedError("Set SIM variable. Supported: icarus, questa, ius")
 
