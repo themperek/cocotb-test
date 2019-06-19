@@ -1,5 +1,5 @@
 # cocotb-test
-Unit testing for cocotb
+Unit testing for cocotb. Remove need for Makefiles. The goal is also to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel run.
 
 **!Proof of Concept!**
 
