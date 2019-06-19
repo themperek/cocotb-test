@@ -4,7 +4,7 @@ Unit testing for cocotb. Remove need for Makefiles. The goal is also to use [pyt
 **!Proof of Concept!**
 
 # Usage:
-For this to work [cocotb](https://github.com/potentialventures/cocotb)  neend this patch: https://github.com/potentialventures/cocotb/pull/956
+For this to work [cocotb](https://github.com/potentialventures/cocotb)  need this patch: https://github.com/potentialventures/cocotb/pull/956
 
 Install via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
