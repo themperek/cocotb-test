@@ -20,7 +20,7 @@ setup(
     author='Tomasz Hemperek',
     author_email='hemperek@uni-bonn.de',
     packages=find_packages(),
-    install_requires= ['cocotb'],
+    install_requires= ['cocotb','pytest'],
     platforms='any',
     classifiers=[
         "Programming Language :: Python :: 2.7",

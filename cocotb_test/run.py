@@ -13,6 +13,10 @@ from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.dist import Distribution
 
+from xml.etree import cElementTree as ET
+import pytest 
+from distutils.spawn import find_executable
+        
 cfg_vars = distutils.sysconfig.get_config_vars()
 for key, value in cfg_vars.items():
     if type(value) == str:
@@ -95,6 +99,7 @@ def build_libs():
     libgpi = Extension(
         "libgpi",
         # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
+        define_macros=[("LIB_EXT",ext_name)],
         include_dirs=[share_dir + "/include"],
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
         library_dirs=[lib_path],
@@ -120,7 +125,6 @@ def build_libs():
     libvpi = Extension(
         "libvpi",
         # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
-        #define_macros=[("IUS",),("VPI_CHECKING",)],
         include_dirs=[share_dir + "/include"],
         libraries=["gpi", "gpilog"],
         library_dirs=[lib_path],
@@ -131,6 +135,45 @@ def build_libs():
     )
 
     _build_lib(libvpi, dist)
+ 
+    libvhpi = Extension(
+            "libvhpi",
+            include_dirs=[
+                share_dir + "/include"
+            ],
+            
+            define_macros=[("VHPI_CHECKING",)],
+            libraries=["gpilog", "gpi", "stdc++"],
+            library_dirs=[lib_path],
+            sources=[
+                share_dir + "/lib/vhpi/VhpiImpl.cpp",
+                share_dir + "/lib/vhpi/VhpiCbHdl.cpp",
+            ],
+        )
+    
+    _build_lib(libvhpi, dist)
+        
+    if os.environ['SIM'] == 'questa':
+        vsim_path = find_executable('vsim')
+        questa_path = os.path.dirname(os.path.dirname(vsim_path))
+    
+        libfli = Extension(
+            "libfli",
+            # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
+            include_dirs=[
+                share_dir + "/include",
+                os.path.join(questa_path, "include",)
+            ],
+            libraries=["gpilog", "gpi", "stdc++"],
+            library_dirs=[lib_path],
+            sources=[
+                share_dir + "/lib/fli/FliImpl.cpp",
+                share_dir + "/lib/fli/FliCbHdl.cpp",
+                share_dir + "/lib/fli/FliObjHdl.cpp",
+            ],
+        )
+    
+        _build_lib(libfli, dist)
 
     _symlink_force(
         os.path.join(lib_path, "libvpi." + ext_name),
@@ -144,7 +187,7 @@ def build_libs():
     return lib_path, ext_name
 
 
-def _run_vcs(toplevel, libs_dir, sources_abs, sim_build_dir):
+def _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir):
     
     pli_cmd = "acc+=rw,wn:*" 
     
@@ -152,7 +195,7 @@ def _run_vcs(toplevel, libs_dir, sources_abs, sim_build_dir):
     with open(do_file_path, 'w') as pli_file:
         pli_file.write(pli_cmd)
 
-    comp_cmd = ["vcs", "-full64", "-debug", "+vpi" ,"-P", "pli.tab", "-sverilog", "+define+COCOTB_SIM=1", "-load", "libvpi.so"] + sources_abs
+    comp_cmd = ["vcs", "-full64", "-debug", "+vpi" , "-P", "pli.tab", "-sverilog", "+define+COCOTB_SIM=1", "-load", "libvpi.so"] + verilog_sources_abs
     print(" ".join(comp_cmd))
     process = subprocess.check_call(comp_cmd, cwd=sim_build_dir)
     
@@ -161,17 +204,25 @@ def _run_vcs(toplevel, libs_dir, sources_abs, sim_build_dir):
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
 
 
-def _run_ius(toplevel, libs_dir, sources_abs, sim_build_dir):
+def _run_ius(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_build_dir):
 
-    cmd = ["irun", "-64", "+access+rwc", "-loadvpi", os.path.join(libs_dir,"libvpi.so")+"", "-top", toplevel] + sources_abs
+    #cmd = ["irun", "-64", "-v93", "+access+rwc", "-loadvpi", os.path.join(libs_dir, "libvpi.so") + "", "-top", toplevel] + verilog_sources_abs + vhdl_sources_abs
+    #cmd = ["irun", "-64", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + verilog_sources_abs + vhdl_sources_abs
+
+    os.environ["GPI_EXTRA"] = 'vhpi'
+    
+    cmd = ["irun", "-64", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + verilog_sources_abs + vhdl_sources_abs
+    
+    
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
+
     
-def _run_icarus(toplevel, libs_dir, sources_abs, sim_build_dir):
+def _run_icarus(toplevel, libs_dir, verilog_sources_abs, sim_build_dir):
     
     sim_compile_file = os.path.join(sim_build_dir, "sim.vvp")
 
-    comp_cmd = ["iverilog", "-o", sim_compile_file, "-D", "COCOTB_SIM=1", "-s", toplevel, "-g2012"] + sources_abs
+    comp_cmd = ["iverilog", "-o", sim_compile_file, "-D", "COCOTB_SIM=1", "-s", toplevel, "-g2012"] + verilog_sources_abs
     print(" ".join(comp_cmd))
     process = subprocess.check_call(comp_cmd)
     
@@ -179,19 +230,30 @@ def _run_icarus(toplevel, libs_dir, sources_abs, sim_build_dir):
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
 
-def _run_questa(toplevel, libs_dir, sources_abs, sim_build_dir, ext_name):
+
+def _run_questa(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_build_dir, ext_name, toplevel_lang):
 
     do_script = '''# Autogenerated file
-    onerror {{
+    onerror {
         quit -f -code 1
-    }}
-    vlog +define+COCOTB_SIM -sv {VERILOG_SOURCES}
-    vsim -onfinish exit -pli libvpi.{EXT_NAME} {TOPLEVEL}
-    log -recursive /*
+    }
+    '''
+    if verilog_sources_abs:
+        do_script += 'vlog +define+COCOTB_SIM -sv {VERILOG_SOURCES}\n'.format(VERILOG_SOURCES=" ".join(verilog_sources_abs))
+        
+    if vhdl_sources_abs:
+        do_script += 'vcom +define+COCOTB_SIM {VHDL_SOURCES}\n'.format(VHDL_SOURCES=" ".join(vhdl_sources_abs))
+    
+    if toplevel_lang=='vhdl':
+        do_script += 'vsim -onfinish exit -foreign "cocotb_init libfli.{EXT_NAME}" {TOPLEVEL}\n'.format(TOPLEVEL=toplevel, EXT_NAME=ext_name)
+    else:
+        do_script += 'vsim -onfinish exit -pli libvpi.{EXT_NAME} {TOPLEVEL}\n'.format(TOPLEVEL=toplevel, EXT_NAME=ext_name)
+    
+    do_script += '''log -recursive /*
     onbreak resume
     run -all
     quit
-    '''.format(VERILOG_SOURCES=" ".join(sources_abs), TOPLEVEL=toplevel, EXT_NAME=ext_name)
+    '''
     
     do_file_path = os.path.join(sim_build_dir, 'runsim.do')
     with open(do_file_path, 'w') as do_file:
@@ -200,8 +262,13 @@ def _run_questa(toplevel, libs_dir, sources_abs, sim_build_dir, ext_name):
     cmd = ["vsim", "-c", "-do", 'runsim.do']
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
+
     
-def Run(sources, toplevel, module=None):
+def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_search=[], toplevel_lang='verilog'):
+
+    if vhdl_sources:
+        if os.environ['SIM'] == 'icarus' or os.environ['SIM'] == 'vcs':
+            pytest.skip("This simulator does not support VHDL")
 
     libs_dir, ext_name = build_libs()
 
@@ -219,27 +286,47 @@ def Run(sources, toplevel, module=None):
 
     python_path = ":".join(sys.path)
     my_env["PYTHONPATH"] = python_path + ":" + libs_dir
+    
+    for path in python_search:
+        my_env["PYTHONPATH"] += ':' + path
+        
     my_env["TOPLEVEL"] = toplevel
-    my_env["TOPLEVEL_LANG"] = "verilog"
+    # my_env["TOPLEVEL_LANG"] = "verilog"
     my_env["COCOTB_SIM"] = "1"
     my_env["MODULE"] = module
 
+    
     sim_build_dir = os.path.abspath(os.path.join(run_dir_name, "sim_build"))
     if not os.path.exists(sim_build_dir):
         os.makedirs(sim_build_dir)
 
-    sources_abs = []
-    for src in sources:
-        sources_abs.append(os.path.abspath(os.path.join(run_dir_name, src)))
+    verilog_sources_abs = []
+    for src in verilog_sources:
+        verilog_sources_abs.append(os.path.abspath(os.path.join(run_dir_name, src)))
 
+    vhdl_sources_abs = []
+    for src in vhdl_sources:
+        vhdl_sources_abs.append(os.path.abspath(os.path.join(run_dir_name, src)))
+
+    results_xml_file = os.path.join(sim_build_dir, 'results.xml')
+
+    if os.path.isfile(results_xml_file):
+        os.remove(results_xml_file)
+    
     if my_env['SIM'] == 'icarus':
-        _run_icarus(toplevel, libs_dir, sources_abs, sim_build_dir)
+        _run_icarus(toplevel, libs_dir, verilog_sources_abs, sim_build_dir)
     elif my_env['SIM'] == 'questa':
-        _run_questa(toplevel, libs_dir, sources_abs, sim_build_dir, ext_name)
+        _run_questa(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_build_dir, ext_name, toplevel_lang)
     elif my_env['SIM'] == 'ius':
-        _run_ius(toplevel, libs_dir, sources_abs, sim_build_dir)
+        _run_ius(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_build_dir)
     elif my_env['SIM'] == 'vcs':
-        _run_vcs(toplevel, libs_dir, sources_abs, sim_build_dir)
+        _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir)
     else:
         raise NotImplementedError("Set SIM variable. Supported: icarus, questa, ius, vcs")
 
+    tree = ET.parse(results_xml_file)
+    for ts in tree.iter("testsuite"):
+        for tc in ts.iter('testcase'):
+            for failure in tc.iter('failure'):
+                raise ValueError('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
+            
