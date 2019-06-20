@@ -13,7 +13,7 @@ if os.path.isdir(example_dir) == False:
 
 
 def test_ping_tun_tap():
-    if not ( os.name == 'posix' and os.geteuid() == 0):
+    if not (os.name == 'posix' and os.geteuid() == 0):
         pytest.skip("This test works only on POSIX os with admin rights")
         
     Run(
@@ -23,6 +23,7 @@ def test_ping_tun_tap():
         module='test_icmp_reply'
         )
 
+
 def test_dff_verilog():
     Run(
         verilog_sources=[os.path.join(example_dir, 'dff', 'hdl', 'dff.v')],
@@ -31,14 +32,16 @@ def test_dff_verilog():
         module='dff_cocotb'
     )
 
+
 def test_dff_vhdl():
     Run(
         vhdl_sources=[os.path.join(example_dir, 'dff', 'hdl', 'dff.vhdl')],
         toplevel='dff',
         python_search=[os.path.join(example_dir, 'dff', 'tests')],
         module='dff_cocotb',
-        toplevel_lang = 'vhdl'
+        toplevel_lang='vhdl'
     )
+
 
 def test_adder_verilog():
     Run(
@@ -51,6 +54,7 @@ def test_adder_verilog():
         ],
         module='test_adder'
     )
+
     
 def test_adder_vhdl():
     Run(
@@ -62,5 +66,89 @@ def test_adder_vhdl():
             os.path.join(example_dir, 'adder', 'model'),
         ],
         module='test_adder',
-        toplevel_lang = 'vhdl'
+        toplevel_lang='vhdl'
     )
+
+
+def test_mean():
+    Run(
+        vhdl_sources=
+        [
+            os.path.join(example_dir, 'mean', 'hdl', 'mean_pkg.vhd'),
+            os.path.join(example_dir, 'mean', 'hdl', 'mean.vhd'),
+        ],
+        verilog_sources=
+        [
+            os.path.join(example_dir, 'mean', 'hdl', 'mean_sv.sv')
+        ],
+        toplevel='mean_sv',
+        python_search=
+        [
+            os.path.join(example_dir, 'mean', 'tests'),
+        ],
+        module='test_mean',
+    )
+
+    
+def test_mixed_top_verilog():
+    Run(
+        vhdl_sources=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'hdl', 'endian_swapper.vhdl'),
+        ],
+        verilog_sources=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'hdl', 'endian_swapper.sv'),
+            os.path.join(example_dir, 'mixed_language', 'hdl', 'toplevel.sv')
+        ],
+        toplevel='endian_swapper_mixed',
+        python_search=
+        [
+            os.path.join(example_dir, 'mixed_language', 'tests'),
+        ],
+        module='test_mixed_language',
+    )
+
+    
+def test_mixed_top_vhdl():
+    Run(
+        vhdl_sources=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'hdl', 'endian_swapper.vhdl'),
+            os.path.join(example_dir, 'mixed_language', 'hdl', 'toplevel.vhdl')
+        ],
+        verilog_sources=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'hdl', 'endian_swapper.sv'),
+        ],
+        toplevel='endian_swapper_mixed',
+        python_search=
+        [
+            os.path.join(example_dir, 'mixed_language', 'tests'),
+        ],
+        module='test_mixed_language',
+        toplevel_lang='vhdl'
+    )
+
+    
+def test_axi_lite_slave():
+    Run(
+        verilog_sources=
+        [
+            os.path.join(example_dir, 'axi_lite_slave', 'hdl', 'axi_lite_slave.v'),
+            os.path.join(example_dir, 'axi_lite_slave', 'hdl', 'axi_lite_demo.v'),
+            os.path.join(example_dir, 'axi_lite_slave', 'hdl', 'tb_axi_lite_slave.v'),
+        ],
+        toplevel='tb_axi_lite_slave',
+        include_dir=
+        [
+            os.path.join(example_dir, 'axi_lite_slave', 'hdl'),
+        ],
+        python_search=
+        [
+            os.path.join(example_dir, 'axi_lite_slave', 'tests'),
+        ],
+        module='test_axi_lite_slave',
+    )
+
+
