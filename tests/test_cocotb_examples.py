@@ -55,7 +55,7 @@ def test_adder_verilog():
         module='test_adder'
     )
 
-    
+
 def test_adder_vhdl():
     Run(
         vhdl_sources=[os.path.join(example_dir, 'adder', 'hdl', 'adder.vhdl')],
@@ -151,4 +151,34 @@ def test_axi_lite_slave():
         module='test_axi_lite_slave',
     )
 
+
+def test_endian_swapper_verilog():
+    Run(
+        verilog_sources=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'hdl', 'endian_swapper.sv'),
+        ],
+        toplevel='endian_swapper_sv',
+        python_search=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'tests'),
+        ],
+        module='test_endian_swapper',
+    )
+
+
+def test_endian_swapper_vhdl():
+    Run(
+        vhdl_sources=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'hdl', 'endian_swapper.vhdl'),
+        ],
+        toplevel='endian_swapper_vhdl',
+        python_search=
+        [
+            os.path.join(example_dir, 'endian_swapper', 'tests'),
+        ],
+        module='test_endian_swapper',
+        toplevel_lang='vhdl'
+    )
 
