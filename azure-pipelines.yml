@@ -25,21 +25,26 @@ jobs:
       cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
     displayName: 'Install Icarus Verilog'
 
-  #- script: |
-  #    pip install tox
-  #    tox
-  #  displayName: 'Install and run Tox'
+  - script: |
+      pip install tox
+      SIM=icarus tox
+    displayName: 'Install and run Tox'
   
   - script: |
       pip install -e .
     displayName: 'Install cocotb-test'
     
   - script: |
-      pytest -s --junitxml=junit/test-results.xml
+      git clone https://github.com/potentialventures/cocotb
+      pip install -e cocotb
+    displayName: 'Install cocotb from source'
+    
+  - script: |
+      SIM=icarus pytest -s --junitxml=test-results.xml
     displayName: 'Test with pytest'
 
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:
-      testResultsFiles: '**/test-*.xml'
+      testResultsFiles: 'test-*.xml'
       testRunTitle: 'Publish test results for Python $(python.version)'
