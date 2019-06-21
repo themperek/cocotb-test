@@ -22,7 +22,7 @@ jobs:
     displayName: Update conda
 
   - bash: |
-        conda create -n myenv python=$(python.version)
+        conda create -n myenv -y python=$(python.version)
         conda activate myenv
     displayName: Create Anaconda environment
     
