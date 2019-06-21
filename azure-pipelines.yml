@@ -19,17 +19,15 @@ jobs:
     inputs:
       versionSpec: '$(python.version)'
 
+  #- script: |
+  #    pip install tox
+  #    tox
+  #  displayName: 'Install and run Tox'
+  
   - script: |
-      ls -al
-      pip -e .
+      pip install -e .
     displayName: 'Install cocotb-test'
     
-  - script: pip install tox
-    displayName: 'Install Tox'
-
-  - script: tox
-    displayName: 'Run Tox'
-
   - script: |
       pytest -s --junitxml=junit/test-results.xml
     displayName: 'Test with pytest'
