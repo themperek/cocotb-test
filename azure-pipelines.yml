@@ -23,6 +23,7 @@ jobs:
 
   - bash: |
         conda create -n myenv -y python=$(python.version)
+        conda init bash
         conda activate myenv
     displayName: Create Anaconda environment
     
