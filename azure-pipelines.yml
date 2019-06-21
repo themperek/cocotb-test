@@ -1,0 +1,56 @@
+jobs:
+- job:
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Python27:
+        python.version: '2.7'
+      Python37:
+        python.version: '3.7'
+  
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  - bash: conda update -q -y conda
+    displayName: Update conda
+
+  - bash: |
+        conda create -n myenv -y python=$(python.version)
+    displayName: Create Anaconda environment
+    
+  - bash: |
+        source activate myenv
+    displayName: Activate Anaconda environment
+    
+  - script: |
+      sudo apt-get install -y gperf flex bison
+      git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
+      cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
+    displayName: 'Install Icarus Verilog'
+
+  - script: |
+      pip install tox
+      SIM=icarus tox
+    displayName: 'Test with Tox'
+  
+  - script: |
+      pip install -e .
+    displayName: 'Install cocotb-test'
+    
+  - script: |
+      git clone https://github.com/potentialventures/cocotb
+      pip install -e cocotb
+    displayName: 'Install cocotb from source'
+    
+  - script: |
+      SIM=icarus pytest -s --junitxml=test-results.xml tests
+    displayName: 'Test with pytest'
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
+

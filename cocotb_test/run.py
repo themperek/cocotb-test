@@ -313,7 +313,7 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
     my_env["COCOTB_SIM"] = "1"
     my_env["MODULE"] = module
     my_env["VERSION"] = pkg_resources.get_distribution("cocotb").version
-     
+    
     sim_build_dir = os.path.abspath(os.path.join(run_dir_name, "sim_build"))
     if not os.path.exists(sim_build_dir):
         os.makedirs(sim_build_dir)
@@ -350,6 +350,6 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
     for ts in tree.iter("testsuite"):
         for tc in ts.iter('testcase'):
             for failure in tc.iter('failure'):
-                #raise ValueError('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
+                # raise ValueError('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
                 pytest.fail('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
 
