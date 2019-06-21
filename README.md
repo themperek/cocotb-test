@@ -4,27 +4,25 @@ Unit testing for cocotb. Remove need for Makefiles. The goal is also to use [pyt
 **!Proof of Concept!**
 
 # Usage:
-For this to work [cocotb](https://github.com/potentialventures/cocotb)  need this patch: https://github.com/potentialventures/cocotb/pull/956
 
 Install via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
 pip install -e .
 ```
 
-
-In the `test_*` file with [cocotb](https://github.com/potentialventures/cocotb) tests defined:
+Create `test_*` file:
 ```python
 from cocotb_test.run import Run
-def test_run():
-    Run(sources=['dff.v'], toplevel='dff')
-
-if __name__ == "__main__":
-    test_run()
+def test_dff():
+    Run(
+        verilog_sources=['dff.v'], # sources
+        toplevel='dff',            # top level HDL
+        python_search=['.'],       # serch path for cocotb test module
+        module='dff_cocotb'        # name of cocotb test module
+    )
 ```
 
 Run [pytest](https://docs.pytest.org/en/latest/contents.html): 
 ```bash
 pytest -s
 ```
-
-
