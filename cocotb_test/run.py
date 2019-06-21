@@ -98,7 +98,6 @@ def build_libs():
 
     libgpi = Extension(
         "libgpi",
-        # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
         define_macros=[("LIB_EXT", ext_name)],
         include_dirs=[share_dir + "/include"],
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
@@ -124,7 +123,7 @@ def build_libs():
 
     libvpi = Extension(
         "libvpi",
-        # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
+        #define_macros=[("MODELSIM",),("VPI_CHECKING",),("SINGLETON_HANDLES",)],
         include_dirs=[share_dir + "/include"],
         libraries=["gpi", "gpilog"],
         library_dirs=[lib_path],
@@ -219,7 +218,7 @@ def _run_ius(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_buil
     for dir in include_dir_abs: 
         inculde_dir_cmd.append('+incdir+' + dir)
         
-    cmd = ["irun", "-64", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + inculde_dir_cmd + vhdl_sources_abs + verilog_sources_abs
+    cmd = ["irun", "-64", "-sv", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + inculde_dir_cmd + vhdl_sources_abs + verilog_sources_abs
     
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
@@ -257,7 +256,8 @@ def _run_questa(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_b
     
     if vhdl_sources_abs:
         do_script += 'vcom -mixedsvvh +define+COCOTB_SIM {INCDIR} {VHDL_SOURCES}\n'.format(VHDL_SOURCES=" ".join(vhdl_sources_abs), INCDIR=" ".join(inculde_dir_cmd))
-        
+        os.environ["GPI_EXTRA"] = 'fli'
+         
     if verilog_sources_abs:
         do_script += 'vlog -mixedsvvh +define+COCOTB_SIM -sv {INCDIR} {VERILOG_SOURCES}\n'.format(VERILOG_SOURCES=" ".join(verilog_sources_abs), INCDIR=" ".join(inculde_dir_cmd))
     
@@ -306,7 +306,7 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
     
     for path in python_search:
         my_env["PYTHONPATH"] += ':' + path
-        
+
     my_env["TOPLEVEL"] = toplevel
     # my_env["TOPLEVEL_LANG"] = "verilog"
     my_env["COCOTB_SIM"] = "1"
