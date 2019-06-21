@@ -16,7 +16,8 @@ from setuptools.dist import Distribution
 from xml.etree import cElementTree as ET
 import pytest 
 from distutils.spawn import find_executable
-        
+import pkg_resources
+
 cfg_vars = distutils.sysconfig.get_config_vars()
 for key, value in cfg_vars.items():
     if type(value) == str:
@@ -311,7 +312,8 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
     # my_env["TOPLEVEL_LANG"] = "verilog"
     my_env["COCOTB_SIM"] = "1"
     my_env["MODULE"] = module
-    
+    my_env["VERSION"] = pkg_resources.get_distribution("cocotb").version
+     
     sim_build_dir = os.path.abspath(os.path.join(run_dir_name, "sim_build"))
     if not os.path.exists(sim_build_dir):
         os.makedirs(sim_build_dir)
@@ -348,5 +350,6 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
     for ts in tree.iter("testsuite"):
         for tc in ts.iter('testcase'):
             for failure in tc.iter('failure'):
-                raise ValueError('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
-            
+                #raise ValueError('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
+                pytest.fail('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
+
