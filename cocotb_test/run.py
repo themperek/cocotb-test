@@ -188,13 +188,13 @@ def build_libs():
 
 
 def _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir_abs):
-    
+
     pli_cmd = "acc+=rw,wn:*" 
-    
+
     inculde_dir_cmd = []
     for dir in include_dir_abs: 
         inculde_dir_cmd.append('+incdir+' + dir)
-        
+
     do_file_path = os.path.join(sim_build_dir, 'pli.tab')
     with open(do_file_path, 'w') as pli_file:
         pli_file.write(pli_cmd)
@@ -202,7 +202,7 @@ def _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir
     comp_cmd = ["vcs", "-full64", "-debug", "+vpi" , "-P", "pli.tab", "-sverilog", "+define+COCOTB_SIM=1", "-load", "libvpi.so"] + inculde_dir_cmd + verilog_sources_abs
     print(" ".join(comp_cmd))
     process = subprocess.check_call(comp_cmd, cwd=sim_build_dir)
-    
+
     cmd = [os.path.join(sim_build_dir, "simv") , "+define+COCOTB_SIM=1"]
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
@@ -210,17 +210,14 @@ def _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir
 
 def _run_ius(toplevel, libs_dir, verilog_sources_abs, vhdl_sources_abs, sim_build_dir, include_dir_abs):
 
-    # cmd = ["irun", "-64", "-v93", "+access+rwc", "-loadvpi", os.path.join(libs_dir, "libvpi.so") + "", "-top", toplevel] + verilog_sources_abs + vhdl_sources_abs
-    # cmd = ["irun", "-64", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + verilog_sources_abs + vhdl_sources_abs
-
     os.environ["GPI_EXTRA"] = 'vhpi'
     
-    inculde_dir_cmd = []
+    include_dir_cmd = []
     for dir in include_dir_abs: 
-        inculde_dir_cmd.append('+incdir+' + dir)
-        
-    cmd = ["irun", "-64", "-sv", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + inculde_dir_cmd + vhdl_sources_abs + verilog_sources_abs
-    
+        include_dir_cmd.append('+incdir+' + dir)
+
+    cmd = ["irun", "-64", "-define", "COCOTB_SIM=1", "-v93", '-plinowarn', "+access+rwc", "-top", toplevel] + include_dir_cmd + vhdl_sources_abs + verilog_sources_abs
+
     print (" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
 
