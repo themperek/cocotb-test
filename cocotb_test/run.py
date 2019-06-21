@@ -98,7 +98,7 @@ def build_libs():
 
     libgpi = Extension(
         "libgpi",
-        define_macros=[("LIB_EXT", ext_name),("SINGLETON_HANDLES","")],
+        define_macros=[("LIB_EXT", ext_name), ("SINGLETON_HANDLES", "")],
         include_dirs=[share_dir + "/include"],
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
         library_dirs=[lib_path],
@@ -123,7 +123,7 @@ def build_libs():
 
     libvpi = Extension(
         "libvpi",
-        define_macros=[("VPI_CHECKING","1"),],
+        define_macros=[("VPI_CHECKING", "1"), ],
         include_dirs=[share_dir + "/include"],
         libraries=["gpi", "gpilog"],
         library_dirs=[lib_path],
@@ -141,7 +141,7 @@ def build_libs():
                 share_dir + "/include"
             ],
             
-            define_macros=[("VHPI_CHECKING",1),],
+            define_macros=[("VHPI_CHECKING", 1), ],
             libraries=["gpilog", "gpi", "stdc++"],
             library_dirs=[lib_path],
             sources=[
@@ -288,8 +288,6 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
             pytest.skip("This simulator does not support VHDL")
 
     libs_dir, ext_name = build_libs()
-    libs_dir = '/faust/user/themperek/git/cocotb-test/tests/build/lib.linux-x86_64-2.7'
-    ext_name = 'so'
     
     previous_frame = inspect.currentframe().f_back
     (run_module_filename, _, _, _, _) = inspect.getframeinfo(previous_frame)

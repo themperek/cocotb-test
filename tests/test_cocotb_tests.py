@@ -44,16 +44,10 @@ def test_cocotb_35():
 def test_verilog_access():
     Run(
         verilog_sources=
-        [
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', 'baud_gen.v'),
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', 'uart_parser.v'),
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', 'uart_rx.v'),
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', 'uart_tx.v'),
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', 'uart_top.v'),
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', 'uart2bus_top.v'),
-            
-            os.path.join(tests_dir, 'designs', 'uart2bus', 'top', 'verilog_toplevel.v'),
-        ],
+        [ os.path.join(tests_dir, 'designs', 'uart2bus', 'verilog', file) for file in [
+            'baud_gen.v', 'uart_parser.v', 'uart_rx.v', 'uart_tx.v', 'uart_top.v', 'uart2bus_top.v'
+            ]
+        ] + [os.path.join(tests_dir, 'designs', 'uart2bus', 'top', 'verilog_toplevel.v')],
         vhdl_sources=
         [
             os.path.join(tests_dir, 'designs', 'uart2bus', 'vhdl', 'uart2BusTop_pkg.vhd'),
@@ -71,4 +65,6 @@ def test_verilog_access():
         toplevel='verilog_toplevel',
         module='test_verilog_access'
     )
+
+
 
