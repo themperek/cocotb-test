@@ -26,6 +26,12 @@ jobs:
     displayName: 'Install Icarus Verilog'
 
   - script: |
+      apt-get install python-dev
+    displayName: 'Install Pacakges'
+    
+
+
+  - script: |
       pip install tox
       SIM=icarus tox
     displayName: 'Test with Tox'
