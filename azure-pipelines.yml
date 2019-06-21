@@ -4,8 +4,8 @@ jobs:
     vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
-      Python27:
-        python.version: '2.7'
+      #Python27:
+      #  python.version: '2.7'
       #Python35:
       #  python.version: '3.5'
       #Python36:
@@ -18,6 +18,12 @@ jobs:
     displayName: 'Use Python $(python.version)'
     inputs:
       versionSpec: '$(python.version)'
+ 
+  - script: |
+      sudo apt-get install gperf
+      git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
+      cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
+    displayName: 'Install Icarus Verilog'
 
   #- script: |
   #    pip install tox
