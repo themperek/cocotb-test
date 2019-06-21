@@ -313,7 +313,9 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
     my_env["COCOTB_SIM"] = "1"
     my_env["MODULE"] = module
     my_env["VERSION"] = pkg_resources.get_distribution("cocotb").version
-     
+    
+    print(my_env)
+    
     sim_build_dir = os.path.abspath(os.path.join(run_dir_name, "sim_build"))
     if not os.path.exists(sim_build_dir):
         os.makedirs(sim_build_dir)
