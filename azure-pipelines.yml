@@ -13,7 +13,7 @@ jobs:
   #    #Python37:
   #    #  python.version: '3.7'
   #
-  #steps:
+  steps:
   #- task: UsePythonVersion@0
   #  displayName: 'Use Python $(python.version)'
   #  inputs:
