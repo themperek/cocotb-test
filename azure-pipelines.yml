@@ -34,10 +34,10 @@ jobs:
       which python
     displayName: 'Install Pacakges'
     
-  - script: |
-      pip install tox
-      SIM=icarus tox
-    displayName: 'Test with Tox'
+  #- script: |
+  #    pip install tox
+  #    SIM=icarus tox
+  #  displayName: 'Test with Tox'
   
   - script: |
       pip install -e .

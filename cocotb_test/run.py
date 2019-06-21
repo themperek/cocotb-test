@@ -64,10 +64,7 @@ def build_libs():
 
     python_lib = sysconfig.get_config_var("LDLIBRARY")
     python_lib_link = os.path.splitext(python_lib)[0][3:]
-    python_lib_dir = sysconfig.get_config_var("LIBDIR") 
-    
-    print('X'*20, sysconfig.get_config_vars()) 
-    
+
     dist = Distribution()
     dist.parse_config_files()
 
@@ -84,7 +81,7 @@ def build_libs():
         # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
         include_dirs=[share_dir + "/include"],
         libraries=[python_lib_link, "pthread", "dl", "util", "rt", "m", "cocotbutils"],
-        library_dirs=[python_lib_dir, lib_path],
+        library_dirs=[lib_path],
         sources=[share_dir + "/lib/gpi_log/gpi_logging.c"],
     )
 
