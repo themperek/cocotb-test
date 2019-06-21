@@ -26,6 +26,7 @@ jobs:
     displayName: 'Install Icarus Verilog'
 
   - script: |
+      ls -al /mnt/a/1/a/Python/lib
       sudo apt-get install python-dev
     displayName: 'Install Pacakges'
     
