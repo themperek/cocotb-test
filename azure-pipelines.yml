@@ -2,23 +2,26 @@ jobs:
 - job:
   pool:
     vmImage: 'ubuntu-16.04'
-  strategy:
-    matrix:
-      Python27:
-        python.version: '2.7'
-      #Python35:
-      #  python.version: '3.5'
-      #Python36:
-      #  python.version: '3.6'
-      #Python37:
-      #  python.version: '3.7'
-
-  steps:
-  - task: UsePythonVersion@0
-    displayName: 'Use Python $(python.version)'
-    inputs:
-      versionSpec: '$(python.version)'
+  #strategy:
+  #  matrix:
+  #    Python27:
+  #      python.version: '2.7'
+  #    #Python35:
+  #    #  python.version: '3.5'
+  #    #Python36:
+  #    #  python.version: '3.6'
+  #    #Python37:
+  #    #  python.version: '3.7'
+  #
+  #steps:
+  #- task: UsePythonVersion@0
+  #  displayName: 'Use Python $(python.version)'
+  #  inputs:
+  #    versionSpec: '$(python.version)'
  
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  
   - script: |
       sudo apt-get install -y gperf flex bison
       git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
@@ -26,13 +29,11 @@ jobs:
     displayName: 'Install Icarus Verilog'
 
   - script: |
-      sudo apt-get install -y python-dev
-      sudo apt-get install -y python3-dev
+      #sudo apt-get install -y python-dev
+      #sudo apt-get install -y python3-dev
       which python
     displayName: 'Install Pacakges'
     
-
-
   - script: |
       pip install tox
       SIM=icarus tox
