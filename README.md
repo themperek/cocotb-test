@@ -9,10 +9,11 @@ Unit testing for [cocotb](https://github.com/potentialventures/cocotb). Remove n
 
 Install via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
-pip install -e .
+git clone https://github.com/themperek/cocotb-test.git
+pip install -e cocotb-test
 ```
 
-Create `test_*` file:
+Create `test_dff.py` file:
 ```python
 from cocotb_test.run import Run
 def test_dff():
@@ -26,5 +27,12 @@ def test_dff():
 
 Run [pytest](https://docs.pytest.org/en/latest/contents.html): 
 ```bash
-pytest -s
+pytest -s test_dff.py
 ```
+
+# For cocotb test/examples install cocotb in editable mode  
+```bash
+git clone https://github.com/potentialventures/cocotb.git
+pip install -e cocotb-test
+SIM=icarus pytest -s --junitxml=test-results.xml tests
+```bash
