@@ -20,6 +20,7 @@ jobs:
       versionSpec: '$(python.version)'
 
   - script: |
+      ls -al
       pip -e .
     displayName: 'Install cocotb-test'
     
