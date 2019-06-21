@@ -35,4 +35,4 @@ pytest -s test_dff.py
 git clone https://github.com/potentialventures/cocotb.git
 pip install -e cocotb-test
 SIM=icarus pytest -s --junitxml=test-results.xml tests
-```bash
+```
