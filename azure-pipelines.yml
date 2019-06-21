@@ -49,7 +49,7 @@ jobs:
     displayName: 'Install cocotb from source'
     
   - script: |
-      SIM=icarus pytest -s --junitxml=test-results.xml
+      SIM=icarus pytest -s --junitxml=test-results.xml tests
     displayName: 'Test with pytest'
 
   - task: PublishTestResults@2
