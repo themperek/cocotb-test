@@ -6,15 +6,10 @@ jobs:
     matrix:
       Python27:
         python.version: '2.7'
-  #    #Python35:
-  #    #  python.version: '3.5'
-  #    #Python36:
-  #    #  python.version: '3.6'
       Python37:
         python.version: '3.7'
   
   steps:
- 
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
 
@@ -23,9 +18,11 @@ jobs:
 
   - bash: |
         conda create -n myenv -y python=$(python.version)
-        conda init bash
-        conda activate myenv
     displayName: Create Anaconda environment
+    
+    - bash: |
+        source activat
+    displayName: Activate Anaconda environment
     
   - script: |
       sudo apt-get install -y gperf flex bison
@@ -33,12 +30,6 @@ jobs:
       cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
     displayName: 'Install Icarus Verilog'
 
-  - script: |
-      #sudo apt-get install -y python-dev
-      #sudo apt-get install -y python3-dev
-      which python
-    displayName: 'Install Pacakges'
-    
   - script: |
       pip install tox
       SIM=icarus tox
