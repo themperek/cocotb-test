@@ -143,7 +143,7 @@ factory = TestFactory(run_test)
 factory.generate_tests()
 
 def test_run():
-    Run(sources=['dff.v'], toplevel='dff')
+    Run(verilog_sources=['dff.v'], toplevel='dff')
 
 if __name__ == "__main__":
     test_run()
