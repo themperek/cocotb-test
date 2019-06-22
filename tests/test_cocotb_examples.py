@@ -1,5 +1,3 @@
-
-
 import os
 import cocotb
 import pytest
@@ -9,12 +7,12 @@ from cocotb_test.run import Run
 example_dir = os.path.join(os.path.dirname(os.path.dirname(cocotb.__file__)), "examples")
 
 if os.path.isdir(example_dir) == False:
-    raise IOError('Cocotb example directory not found. Plese download from git and install with `pip -e `')
+    raise IOError('Cocotb example directory not found. Please clone with git and install with `pip -e`')
 
 
 def test_ping_tun_tap():
     if not (os.name == 'posix' and os.geteuid() == 0):
-        pytest.skip("This test works only on POSIX os with admin rights")
+        pytest.skip("This test works only on a POSIX OS with admin rights")
         
     Run(
         verilog_sources=[os.path.join(example_dir, 'ping_tun_tap', 'hdl', 'icmp_reply.sv')],
