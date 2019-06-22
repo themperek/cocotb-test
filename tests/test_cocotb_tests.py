@@ -1,5 +1,3 @@
-
-
 import os
 import cocotb
 import pytest
@@ -10,7 +8,7 @@ from cocotb_test.run import Run
 tests_dir = os.path.join(os.path.dirname(os.path.dirname(cocotb.__file__)), "tests")
 
 if os.path.isdir(tests_dir) == False:
-    raise IOError('Cocotb test directory not found. Plese download from git and install with `pip -e `')
+    raise IOError('Cocotb test directory not found. Please clone with git and install with `pip -e`')
 
 def test_cocotb():
     Run(
