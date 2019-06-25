@@ -14,9 +14,9 @@ if sys.version_info.major >= 3:
 else:
     from Tkinter import _stringify as as_tcl_value
 
-#import distutils.log
-#distutils.log.set_verbosity(-1) # Disable logging in disutils
-#distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
+import distutils.log
+distutils.log.set_verbosity(-1) # Disable logging in disutils
+distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
@@ -106,7 +106,7 @@ def build_libs():
     libgpilog = Extension(
         "libgpilog",
         include_dirs=[include_dir],
-        libraries=[python_lib_link, "pthread", "m", "cocotbutils"], # + ["dl", "util", "rt",]
+        libraries=[python_lib_link, "pthread", "m", "cocotbutils"] + ["dl", "util", "rt"]
         library_dirs=[lib_path],
         sources=[share_dir + "/lib/gpi_log/gpi_logging.c"],
     )
