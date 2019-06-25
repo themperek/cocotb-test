@@ -106,7 +106,7 @@ def build_libs():
     libgpilog = Extension(
         "libgpilog",
         include_dirs=[include_dir],
-        libraries=[python_lib_link, "pthread", "m", "cocotbutils"] + ["dl", "util", "rt"],
+        libraries=[python_lib_link, "pthread", "m", "cocotbutils"], # + ["dl", "util", "rt"],
         library_dirs=[lib_path],
         sources=[share_dir + "/lib/gpi_log/gpi_logging.c"],
     )
@@ -150,7 +150,7 @@ def build_libs():
 
     extra_lib = []
     extra_lib_path = []
-    if 'SIM' in os.environ and os.environ['SIM'] == 'icarus':
+    if 'SIM' in os.environ and os.environ['SIM'] == 'icarus' and os.name == 'nt':
         iverilog_path = find_executable('iverilog')
         icarus_path = os.path.dirname(os.path.dirname(iverilog_path))
         extra_lib = ['vpi']
