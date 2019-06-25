@@ -106,7 +106,7 @@ def build_libs():
     libgpilog = Extension(
         "libgpilog",
         include_dirs=[include_dir],
-        libraries=[python_lib_link, "pthread", "m", "cocotbutils"] + ["dl", "util", "rt"]
+        libraries=[python_lib_link, "pthread", "m", "cocotbutils"] + ["dl", "util", "rt"],
         library_dirs=[lib_path],
         sources=[share_dir + "/lib/gpi_log/gpi_logging.c"],
     )
