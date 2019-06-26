@@ -83,6 +83,7 @@ def _build_lib(lib, dist):
 
 def build_libs():
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
+    share_lib_dir = os.path.join(share_dir, "lib")
 
     if os.name == "nt":
         python_version = distutils.sysconfig.get_python_version()
@@ -101,7 +102,7 @@ def build_libs():
     libcocotbutils = Extension(
         "libcocotbutils",
         include_dirs=[include_dir],
-        sources=[os.path.join(share_dir, "lib", "utils", "cocotb_utils.c")],
+        sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.c")],
     )
 
     lib_path, ext_name = _build_lib(libcocotbutils, dist)
@@ -116,7 +117,7 @@ def build_libs():
             "cocotbutils",
         ],  # + ["dl", "util", "rt"],
         library_dirs=[lib_path],
-        sources=[share_dir + "/lib/gpi_log/gpi_logging.c"],
+        sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.c")],
     )
 
     _build_lib(libgpilog, dist)
@@ -127,7 +128,7 @@ def build_libs():
         include_dirs=[include_dir],
         library_dirs=[lib_path],
         libraries=["gpilog", "cocotbutils"],
-        sources=[share_dir + "/lib/embed/gpi_embed.c"],
+        sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.c")],
     )
 
     _build_lib(libcocotb, dist)
@@ -139,8 +140,8 @@ def build_libs():
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
         library_dirs=[lib_path],
         sources=[
-            share_dir + "/lib/gpi/GpiCbHdl.cpp",
-            share_dir + "/lib/gpi/GpiCommon.cpp",
+            os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
+            os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
         ],
     )
 
@@ -151,7 +152,7 @@ def build_libs():
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "gpi"],
         library_dirs=[lib_path],
-        sources=[share_dir + "/lib/simulator/simulatormodule.c"],
+        sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.c")],
     )
 
     _build_lib(libsim, dist)
@@ -171,8 +172,8 @@ def build_libs():
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=[lib_path] + extra_lib_path,
         sources=[
-            share_dir + "/lib/vpi/VpiImpl.cpp",
-            share_dir + "/lib/vpi/VpiCbHdl.cpp",
+            os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
+            os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
         ],
     )
 
@@ -186,8 +187,8 @@ def build_libs():
             libraries=["gpilog", "gpi", "stdc++"],
             library_dirs=[lib_path],
             sources=[
-                share_dir + "/lib/vhpi/VhpiImpl.cpp",
-                share_dir + "/lib/vhpi/VhpiCbHdl.cpp",
+                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
+                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
             ],
         )
 
@@ -203,9 +204,9 @@ def build_libs():
             libraries=["gpilog", "gpi", "stdc++"],
             library_dirs=[lib_path],
             sources=[
-                share_dir + "/lib/fli/FliImpl.cpp",
-                share_dir + "/lib/fli/FliCbHdl.cpp",
-                share_dir + "/lib/fli/FliObjHdl.cpp",
+                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+                os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
+                os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
             ],
         )
 
