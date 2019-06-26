@@ -159,8 +159,10 @@ def build_libs():
 
     extra_lib = []
     extra_lib_path = []
-    if "SIM" in os.environ and os.environ["SIM"] == "icarus" and os.name == "nt":
-        iverilog_path = find_executable("iverilog")
+    if os.environ["SIM"] == "icarus" and os.name == "nt":
+        iverilog_path = find_executable("iverilog__")
+        if iverilog_path is None:
+            raise ValueError("Icarus Verilog executable not found.")
         icarus_path = os.path.dirname(os.path.dirname(iverilog_path))
         extra_lib = ["vpi"]
         extra_lib_path = [os.path.join(icarus_path, "lib")]
@@ -194,7 +196,7 @@ def build_libs():
 
         _build_lib(libvhpi, dist)
 
-    if "SIM" in os.environ and os.environ["SIM"] == "questa":
+    if os.environ["SIM"] == "questa":
         vsim_path = find_executable("vsim")
         questa_path = os.path.dirname(os.path.dirname(vsim_path))
 
