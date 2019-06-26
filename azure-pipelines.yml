@@ -20,12 +20,11 @@ jobs:
         Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
         Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
         Write-Host "##vso[task.prependpath]C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin"
-        
-    displayName: Install Anaconda Windows
+    displayName: Download and Install Anaconda Windows
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
     
   - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH Linux
+    displayName: Add conda to PATH on Linux
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: conda update -q -y conda
@@ -46,13 +45,23 @@ jobs:
       sudo apt-get install -y gperf flex bison
       git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
       cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
-    displayName: 'Compile and Icarus Verilog'
+    displayName: 'Compile and Install Icarus Verilog'
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
+  - powershell: |
+      Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190327-x64_setup.exe -OutFile iverilog-x64_setup.exe
+      Start-Process .\iverilog-x64_setup.exe -ArgumentList '/VERYSILENT' -Wait
+      Write-Host "##vso[task.prependpath]C:\iverilog\bin"
+    displayName: 'Download and Install Icarus Verilog'
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+
+  - script: echo "##vso[task.setvariable variable=SIM;]icarus"
+    displayName: Set simulator
     
   - script: |
       pip install tox
       SIM=icarus tox
-    displayName: 'Test with Tox'
+    displayName: 'Package Test with Tox'
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
