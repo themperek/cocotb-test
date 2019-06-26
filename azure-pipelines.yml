@@ -23,7 +23,8 @@ jobs:
   - powershell: |
         Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
         Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
-        [System.Environment]::SetEnvironmentVariable('Path', $env:Path + ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin', 'Machine')
+        Write-Host "##vso[task.prependpath]C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin"
+        #[System.Environment]::SetEnvironmentVariable('Path', $env:Path + ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin', 'Machine')
         #conda install --yes m2w64-gcc libpython
     displayName: Install Anaconda
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
