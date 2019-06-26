@@ -35,6 +35,7 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
+        conda init
         conda create -n myenv -y python=$(python.version)
     displayName: Create Anaconda environment
     
