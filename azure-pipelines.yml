@@ -57,8 +57,15 @@ jobs:
     displayName: 'Download and Install Icarus Verilog'
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
-  - script: echo "##vso[task.setvariable variable=SIM;]icarus"
+  - script: echo "##vso[task.setvariable variable=SIM]icarus"
     displayName: Set simulator
+    
+  - script: set
+    displayName: set
+    
+  - script: iverilog
+    displayName: iverilog
+    
     
   - script: |
       pip install tox
