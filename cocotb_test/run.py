@@ -8,10 +8,15 @@ import cocotb
 import errno
 import distutils
 import inspect
+import shutil
 if sys.version_info.major >= 3:
     from tkinter import _stringify as as_tcl_value
 else:
     from Tkinter import _stringify as as_tcl_value
+
+#import distutils.log
+#distutils.log.set_verbosity(-1) # Disable logging in disutils
+#distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
@@ -22,6 +27,12 @@ import pytest
 from distutils.spawn import find_executable
 import pkg_resources
 
+#A HACK to solve the problem on Windows: https://stackoverflow.com/questions/34689210/error-exporting-symbol-when-building-python-c-extension-in-windows
+from distutils.command.build_ext import build_ext as _du_build_ext
+from unittest.mock import Mock
+mockobj = _du_build_ext
+mockobj.get_export_symbols = Mock(return_value=None)
+
 cfg_vars = distutils.sysconfig.get_config_vars()
 for key, value in cfg_vars.items():
     if type(value) == str:
@@ -29,6 +40,11 @@ for key, value in cfg_vars.items():
 
 
 def _symlink_force(target, link_name):
+    
+    if os.name == 'nt': #On windows we there is an issue with simplink !Workaround'
+        shutil.copy2(target, link_name) 
+        return
+
     try:
         os.symlink(target, link_name)
     except OSError as e:
@@ -51,8 +67,8 @@ def _build_lib(lib, dist):
     lib_path = os.path.abspath(out_lib[0])
     dir_name = os.path.dirname(lib_path)
     ext_name = os.path.splitext(lib_path)[1][1:]
-
-    # print("Building:", out_lib[0])
+    if os.name == 'nt':
+        ext_name = 'dll'
 
     target = os.path.join(os.path.abspath(dir_name), lib_name + "." + ext_name)
     if target != lib_path:
@@ -62,29 +78,35 @@ def _build_lib(lib, dist):
 
     return dir_name, ext_name
 
-
 def build_libs():
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
 
-    python_lib = sysconfig.get_config_var("LDLIBRARY")
-    python_lib_link = os.path.splitext(python_lib)[0][3:]
+    if os.name == 'nt':
+        python_version =  distutils.sysconfig.get_python_version()
+        python_version.replace('.', '')
+        python_lib = 'python' + python_version + '.dll'
+        python_lib_link = python_lib.split(".")[0]
+    else:
+        python_lib = sysconfig.get_config_var("LDLIBRARY")
+        python_lib_link = os.path.splitext(python_lib)[0][3:]
+
+    include_dir = os.path.join(share_dir, "include")
 
     dist = Distribution()
     dist.parse_config_files()
 
     libcocotbutils = Extension(
         "libcocotbutils",
-        include_dirs=[share_dir + "/include"],
-        sources=[share_dir + "/lib/utils/cocotb_utils.c"],
+        include_dirs=[include_dir],
+        sources=[os.path.join(share_dir, "lib", "utils", "cocotb_utils.c")],
     )
 
     lib_path, ext_name = _build_lib(libcocotbutils, dist)
 
     libgpilog = Extension(
         "libgpilog",
-        # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
-        include_dirs=[share_dir + "/include"],
-        libraries=[python_lib_link, "pthread", "dl", "util", "rt", "m", "cocotbutils"],
+        include_dirs=[include_dir],
+        libraries=[python_lib_link, "pthread", "m", "cocotbutils"], # + ["dl", "util", "rt"],
         library_dirs=[lib_path],
         sources=[share_dir + "/lib/gpi_log/gpi_logging.c"],
     )
@@ -93,9 +115,10 @@ def build_libs():
 
     libcocotb = Extension(
         "libcocotb",
-        # define_macros=[("MODELSIM",),("VPI_CHECKING",),("PYTHON_SO_LIB", python_lib)],
         define_macros=[("PYTHON_SO_LIB", python_lib)],
-        include_dirs=[share_dir + "/include"],
+        include_dirs=[include_dir],
+        library_dirs=[lib_path],
+        libraries=["gpilog","cocotbutils"],
         sources=[share_dir + "/lib/embed/gpi_embed.c"],
     )
 
@@ -104,7 +127,7 @@ def build_libs():
     libgpi = Extension(
         "libgpi",
         define_macros=[("LIB_EXT", ext_name), ("SINGLETON_HANDLES", "")],
-        include_dirs=[share_dir + "/include"],
+        include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
         library_dirs=[lib_path],
         sources=[
@@ -117,8 +140,7 @@ def build_libs():
 
     libsim = Extension(
         "simulator",
-        # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
-        include_dirs=[share_dir + "/include"],
+        include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "gpi"],
         library_dirs=[lib_path],
         sources=[share_dir + "/lib/simulator/simulatormodule.c"],
@@ -126,12 +148,20 @@ def build_libs():
 
     _build_lib(libsim, dist)
 
+    extra_lib = []
+    extra_lib_path = []
+    if 'SIM' in os.environ and os.environ['SIM'] == 'icarus' and os.name == 'nt':
+        iverilog_path = find_executable('iverilog')
+        icarus_path = os.path.dirname(os.path.dirname(iverilog_path))
+        extra_lib = ['vpi']
+        extra_lib_path =  [os.path.join(icarus_path, 'lib')]
+
     libvpi = Extension(
         "libvpi",
         define_macros=[("VPI_CHECKING", "1"), ],
-        include_dirs=[share_dir + "/include"],
-        libraries=["gpi", "gpilog"],
-        library_dirs=[lib_path],
+        include_dirs=[include_dir], 
+        libraries=["gpi", "gpilog",] + extra_lib ,
+        library_dirs=[lib_path] + extra_lib_path,
         sources=[
             share_dir + "/lib/vpi/VpiImpl.cpp",
             share_dir + "/lib/vpi/VpiCbHdl.cpp",
@@ -139,33 +169,30 @@ def build_libs():
     )
 
     _build_lib(libvpi, dist)
-
-    libvhpi = Extension(
-            "libvhpi",
-            include_dirs=[
-                share_dir + "/include"
-            ],
-
-            define_macros=[("VHPI_CHECKING", 1), ],
-            libraries=["gpilog", "gpi", "stdc++"],
-            library_dirs=[lib_path],
-            sources=[
-                share_dir + "/lib/vhpi/VhpiImpl.cpp",
-                share_dir + "/lib/vhpi/VhpiCbHdl.cpp",
-            ],
-        )
-
-    _build_lib(libvhpi, dist)
-
-    if os.environ['SIM'] == 'questa':
+    
+    if os.name == 'posix':
+        libvhpi = Extension(
+                "libvhpi",
+                include_dirs=[include_dir],
+                define_macros=[("VHPI_CHECKING", 1), ],
+                libraries=["gpilog", "gpi", "stdc++"],
+                library_dirs=[lib_path],
+                sources=[
+                    share_dir + "/lib/vhpi/VhpiImpl.cpp",
+                    share_dir + "/lib/vhpi/VhpiCbHdl.cpp",
+                ],
+            )
+        
+        _build_lib(libvhpi, dist)
+        
+    if 'SIM' in os.environ and os.environ['SIM'] == 'questa':
         vsim_path = find_executable('vsim')
         questa_path = os.path.dirname(os.path.dirname(vsim_path))
 
         libfli = Extension(
             "libfli",
-            # define_macros=[("MODELSIM",),("VPI_CHECKING",)],
             include_dirs=[
-                share_dir + "/include",
+                include_dir,
                 os.path.join(questa_path, "include",)
             ],
             libraries=["gpilog", "gpi", "stdc++"],
@@ -313,13 +340,17 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
         module = run_module_name
 
     my_env = os.environ
-    my_env["LD_LIBRARY_PATH"] = libs_dir + ":" + sysconfig.get_config_var("LIBDIR")
+    my_env["LD_LIBRARY_PATH"] = libs_dir 
+    if os.name == 'posix':
+        my_env["LD_LIBRARY_PATH"] +=  os.pathsep + sysconfig.get_config_var("LIBDIR")
 
-    python_path = ":".join(sys.path)
-    my_env["PYTHONPATH"] = python_path + ":" + libs_dir
+    my_env["PATH"] += os.pathsep + libs_dir
+
+    python_path = os.pathsep.join(sys.path)
+    my_env["PYTHONPATH"] = os.pathsep + python_path + os.pathsep + libs_dir
 
     for path in python_search:
-        my_env["PYTHONPATH"] += ':' + path
+        my_env["PYTHONPATH"] += os.pathsep + path
 
     my_env["TOPLEVEL"] = toplevel
     # my_env["TOPLEVEL_LANG"] = "verilog"
@@ -358,6 +389,7 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
         _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir_abs)
     else:
         raise NotImplementedError("Set SIM variable. Supported: icarus, questa, ius, vcs")
+
 
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
