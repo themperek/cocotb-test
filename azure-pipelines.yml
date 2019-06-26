@@ -1,26 +1,41 @@
 jobs:
 - job:
-  pool:
-    vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
-      Python27:
+      Linux-py27:
         python.version: '2.7'
-      Python37:
+        vmImage: 'ubuntu-16.04'
+      Linux-py37:
         python.version: '3.7'
+        vmImage: 'ubuntu-16.04'
+      Windows-py37:
+        python.version: '3.7'
+        imageName: 'win1803'
+  
+  pool:
+    vmImage: $(imageName)
   
   steps:
-  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
-
-  - bash: conda update -q -y conda
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
+  - powershell: |
+        Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
+        Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
+        #[System.Environment]::SetEnvironmentVariable('Path', $env:Path + ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin', 'Machine')
+        conda install --yes m2w64-gcc libpython
+    displayName: Install Anaconda
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    
+  - script: conda update -q -y conda
     displayName: Update conda
 
-  - bash: |
+  - script: |
         conda create -n myenv -y python=$(python.version)
     displayName: Create Anaconda environment
     
-  - bash: |
+  - script: |
         source activate myenv
     displayName: Activate Anaconda environment
     
@@ -29,12 +44,14 @@ jobs:
       git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
       cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
     displayName: 'Install Icarus Verilog'
-
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
   - script: |
       pip install tox
       SIM=icarus tox
     displayName: 'Test with Tox'
-  
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
   - script: |
       pip install -e .
     displayName: 'Install cocotb-test'
