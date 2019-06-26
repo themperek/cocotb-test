@@ -399,6 +399,14 @@ def Run(
     include_dir=[],
 ):
 
+    supported_sim = ["icarus", "questa", "ius", "vcs"]
+    if "SIM" in os.environ and os.environ["SIM"] in supported_sim:
+        pass
+    else:
+        raise NotImplementedError(
+            "Set SIM variable. Supported: " + ", ".join(supported_sim)
+        )
+
     if vhdl_sources:
         if os.environ["SIM"] == "icarus" or os.environ["SIM"] == "vcs":
             pytest.skip("This simulator does not support VHDL")
@@ -481,10 +489,6 @@ def Run(
     elif my_env["SIM"] == "vcs":
         _run_vcs(
             toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir_abs
-        )
-    else:
-        raise NotImplementedError(
-            "Set SIM variable. Supported: icarus, questa, ius, vcs"
         )
 
     tree = ET.parse(results_xml_file)
