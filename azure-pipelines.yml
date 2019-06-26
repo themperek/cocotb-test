@@ -1,40 +1,79 @@
 jobs:
 - job:
-  pool:
-    vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
-      Python27:
+      Linux-py27:
         python.version: '2.7'
-      Python37:
+        imageName: 'ubuntu-16.04'
+      Linux-py37:
         python.version: '3.7'
+        imageName: 'ubuntu-16.04'
+      Windows-py37:
+        python.version: '3.7'
+        imageName: 'win1803'
   
-  steps:
-  - bash: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
-
-  - bash: conda update -q -y conda
+  pool:
+    vmImage: $(imageName)
+  
+  steps:    
+  - powershell: |
+        Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
+        Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
+        Write-Host "##vso[task.prependpath]C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin"
+    displayName: Download and Install Anaconda on Windows
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH on Linux
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
+  - script: |
+      conda update -q -y conda
+      conda init
     displayName: Update conda
 
-  - bash: |
-        conda create -n myenv -y python=$(python.version)
+  - script: conda install --yes m2w64-gcc libpython
+    displayName: Install Windows conda development
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    
+  - script: |
+       conda create -n myenv -y python=$(python.version)
     displayName: Create Anaconda environment
     
-  - bash: |
-        source activate myenv
+  - script: |
+      conda activate myenv
+    displayName: Activate Anaconda environment on Windows
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    
+  - script: |
+      source activate myenv
     displayName: Activate Anaconda environment
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
       sudo apt-get install -y gperf flex bison
       git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
       cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
-    displayName: 'Install Icarus Verilog'
+    displayName: 'Compile and Install Icarus Verilog'
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
+  - powershell: |
+      Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190327-x64_setup.exe -OutFile iverilog-x64_setup.exe
+      Start-Process .\iverilog-x64_setup.exe -ArgumentList '/VERYSILENT' -Wait
+      Write-Host "##vso[task.prependpath]C:\iverilog\bin"
+    displayName: 'Download and Install Icarus Verilog on Windows'
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
   - script: |
+      echo "##vso[task.setvariable variable=SIM]icarus"
+    displayName: Set simulator
+    
+  - script: |
       pip install tox
-      SIM=icarus tox
-    displayName: 'Test with Tox'
-  
+      tox
+    displayName: 'Package Test with Tox'
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
   - script: |
       pip install -e .
     displayName: 'Install cocotb-test'
@@ -45,7 +84,8 @@ jobs:
     displayName: 'Install cocotb from source'
     
   - script: |
-      SIM=icarus pytest -s --junitxml=test-results.xml tests
+      set SIM=icarus
+      pytest -s --junitxml=test-results.xml tests
     displayName: 'Test with pytest'
 
   - task: PublishTestResults@2
@@ -53,4 +93,3 @@ jobs:
     inputs:
       testResultsFiles: 'test-*.xml'
       testRunTitle: 'Publish test results for Python $(python.version)'
-
