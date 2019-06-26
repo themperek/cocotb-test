@@ -160,7 +160,7 @@ def build_libs():
     extra_lib = []
     extra_lib_path = []
     if os.environ["SIM"] == "icarus" and os.name == "nt":
-        iverilog_path = find_executable("iverilog__")
+        iverilog_path = find_executable("iverilog")
         if iverilog_path is None:
             raise ValueError("Icarus Verilog executable not found.")
         icarus_path = os.path.dirname(os.path.dirname(iverilog_path))
