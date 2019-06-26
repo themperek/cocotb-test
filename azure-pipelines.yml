@@ -86,7 +86,7 @@ jobs:
     displayName: 'Install cocotb from source'
     
   - script: |
-      echo "##vso[task.setvariable variable=SIM]icarus"
+      set SIM=icarus
       pytest -s --junitxml=test-results.xml tests
     displayName: 'Test with pytest'
 
