@@ -159,7 +159,7 @@ def build_libs():
 
     extra_lib = []
     extra_lib_path = []
-    if "SIM" in os.environ and os.environ["SIM"] == "icarus" and os.name == "nt":
+    if 1: #"SIM" in os.environ and os.environ["SIM"] == "icarus" and os.name == "nt":
         iverilog_path = find_executable("iverilog")
         icarus_path = os.path.dirname(os.path.dirname(iverilog_path))
         extra_lib = ["vpi"]
