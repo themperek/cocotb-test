@@ -64,10 +64,9 @@ jobs:
     displayName: 'Download and Install Icarus Verilog on Windows'
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
-  - script: echo "##vso[task.setvariable variable=SIM]icarus"
-    displayName: Set simulator
-    
-  - script: set
+  - script: |
+      echo "##vso[task.setvariable variable=SIM]icarus"
+      set SIM=icarus
     displayName: Set simulator
     
   - script: |
@@ -86,7 +85,6 @@ jobs:
     displayName: 'Install cocotb from source'
     
   - script: |
-      set SIM=icarus
       pytest -s --junitxml=test-results.xml tests
     displayName: 'Test with pytest'
 
@@ -95,4 +93,3 @@ jobs:
     inputs:
       testResultsFiles: 'test-*.xml'
       testRunTitle: 'Publish test results for Python $(python.version)'
-
