@@ -7,6 +7,13 @@
 
 # Usage:
 
+Install and use [conda](https://conda.io/miniconda.html) for python
+
+(Widnows) Install development tools for conda:
+```bash
+conda install --yes m2w64-gcc libpython
+```
+
 Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/) in editable mode:
 ```bash
 git clone https://github.com/themperek/cocotb-test.git
