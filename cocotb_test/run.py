@@ -14,9 +14,9 @@ if sys.version_info.major >= 3:
 else:
     from Tkinter import _stringify as as_tcl_value
 
-import distutils.log
-distutils.log.set_verbosity(-1) # Disable logging in disutils
-distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
+#import distutils.log
+#distutils.log.set_verbosity(-1) # Disable logging in disutils
+#distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
@@ -389,6 +389,7 @@ def Run(toplevel, verilog_sources=[], vhdl_sources=[], module=None, python_searc
         _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir_abs)
     else:
         raise NotImplementedError("Set SIM variable. Supported: icarus, questa, ius, vcs")
+
 
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
