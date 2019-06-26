@@ -27,7 +27,9 @@ jobs:
     displayName: Add conda to PATH on Linux
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
-  - script: conda update -q -y conda
+  - script: |
+      conda update -q -y conda
+      conda init
     displayName: Update conda
 
   - script: conda install --yes m2w64-gcc libpython
@@ -35,7 +37,6 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
-        conda init
         conda create -n myenv -y python=$(python.version)
     displayName: Create Anaconda environment
     
