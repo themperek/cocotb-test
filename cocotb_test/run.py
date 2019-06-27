@@ -44,7 +44,6 @@ for key, value in cfg_vars.items():
 
 if sys.platform == 'darwin':
     cfg_vars['LDSHARED'] = cfg_vars['LDSHARED'].replace('-bundle', '-dynamiclib -flat_namespace')
-    -flat_namespace 
     
 def _symlink_force(target, link_name):
 
