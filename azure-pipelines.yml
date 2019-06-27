@@ -67,7 +67,7 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Linux' )
     
   - script: brew install icarus-verilog
-    displayName: Compile and Install Icarus Verilog on Mac
+    displayName: Install Icarus Verilog on Mac
     condition: eq( variables['Agent.OS'], 'Darwin' )  
     
   - powershell: |
