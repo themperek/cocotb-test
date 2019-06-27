@@ -11,7 +11,10 @@ jobs:
       Windows-py37:
         python.version: '3.7'
         imageName: 'win1803'
-  
+      Mac-py37:
+        imageName: 'macos-10.13'
+        python.version: '3.7'
+
   pool:
     vmImage: $(imageName)
   
@@ -24,8 +27,14 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
     
   - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH on Linux
+    displayName: Add conda to PATH
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    
+  - script: |
+      sudo chown -R $USER $CONDA
+      gcc --version
+    displayName: Take ownership of conda installation
+    condition: eq( variables['Agent.OS'], 'Darwin' )
     
   - script: |
       conda update -q -y conda
@@ -54,8 +63,12 @@ jobs:
       sudo apt-get install -y gperf flex bison
       git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
       cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
-    displayName: 'Compile and Install Icarus Verilog'
-    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    displayName: Compile and Install Icarus Verilog on Linux
+    condition: eq( variables['Agent.OS'], 'Linux' )
+    
+  - script: brew install icarus-verilog
+    displayName: Compile and Install Icarus Verilog on Mac
+    condition: eq( variables['Agent.OS'], 'Darwin' )  
     
   - powershell: |
       Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190327-x64_setup.exe -OutFile iverilog-x64_setup.exe
