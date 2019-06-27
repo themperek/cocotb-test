@@ -29,11 +29,12 @@ from distutils.spawn import find_executable
 import pkg_resources
 
 # A HACK to solve the problem on Windows: https://stackoverflow.com/questions/34689210/error-exporting-symbol-when-building-python-c-extension-in-windows
-from distutils.command.build_ext import build_ext as _du_build_ext
-from unittest.mock import Mock
+if os.name == "nt":
+    from distutils.command.build_ext import build_ext as _du_build_ext
+    from unittest.mock import Mock
 
-mockobj = _du_build_ext
-mockobj.get_export_symbols = Mock(return_value=None)
+    mockobj = _du_build_ext
+    mockobj.get_export_symbols = Mock(return_value=None)
 
 cfg_vars = distutils.sysconfig.get_config_vars()
 for key, value in cfg_vars.items():
@@ -177,6 +178,7 @@ def build_libs():
             os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
             os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
         ],
+        extra_link_args=["-Wl,-rpath," + lib_path],
     )
 
     _build_lib(libvpi, dist)
@@ -186,12 +188,13 @@ def build_libs():
             "libvhpi",
             include_dirs=[include_dir],
             define_macros=[("VHPI_CHECKING", 1)],
-            libraries=["gpilog", "gpi", "stdc++"],
+            libraries=["gpi", "gpilog", "stdc++"],
             library_dirs=[lib_path],
             sources=[
                 os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
                 os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
             ],
+            extra_link_args=["-Wl,-rpath," + lib_path],
         )
 
         _build_lib(libvhpi, dist)
@@ -203,13 +206,14 @@ def build_libs():
         libfli = Extension(
             "libfli",
             include_dirs=[include_dir, os.path.join(questa_path, "include")],
-            libraries=["gpilog", "gpi", "stdc++"],
+            libraries=["gpi", "gpilog", "stdc++"],
             library_dirs=[lib_path],
             sources=[
                 os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
             ],
+            extra_link_args=["-Wl,-rpath," + lib_path],
         )
 
         _build_lib(libfli, dist)
@@ -226,7 +230,9 @@ def build_libs():
     return lib_path, ext_name
 
 
-def _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir_abs):
+def _run_vcs(
+    toplevel, libs_dir, verilog_sources_abs, sim_build_dir, ext_name, include_dir_abs
+):
 
     pli_cmd = "acc+=rw,wn:*"
 
@@ -249,7 +255,7 @@ def _run_vcs(toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir
             "-sverilog",
             "+define+COCOTB_SIM=1",
             "-load",
-            "libvpi.so",
+            os.path.join(libs_dir, "libvpi." + ext_name),
         ]
         + inculde_dir_cmd
         + verilog_sources_abs
@@ -268,6 +274,7 @@ def _run_ius(
     verilog_sources_abs,
     vhdl_sources_abs,
     sim_build_dir,
+    ext_name,
     include_dir_abs,
 ):
 
@@ -284,6 +291,9 @@ def _run_ius(
             "-define",
             "COCOTB_SIM=1",
             "-v93",
+            "-loadpli1",
+            os.path.join(libs_dir, "libvpi." + ext_name)
+            + ":vlog_startup_routines_bootstrap",
             "-plinowarn",
             "+access+rwc",
             "-top",
@@ -354,26 +364,28 @@ def _run_questa(
 
     if vhdl_sources_abs:
         do_script += "vcom -mixedsvvh +define+COCOTB_SIM {INCDIR} {VHDL_SOURCES}\n".format(
-            VHDL_SOURCES=as_tcl_value(vhdl_sources_abs),
-            INCDIR=as_tcl_value(inculde_dir_cmd),
+            VHDL_SOURCES=" ".join(as_tcl_value(v) for v in vhdl_sources_abs),
+            INCDIR=" ".join(as_tcl_value(v) for v in inculde_dir_cmd),
         )
         os.environ["GPI_EXTRA"] = "fli"
 
     if verilog_sources_abs:
         do_script += "vlog -mixedsvvh +define+COCOTB_SIM -sv {INCDIR} {VERILOG_SOURCES}\n".format(
-            VERILOG_SOURCES=as_tcl_value(verilog_sources_abs),
-            INCDIR=as_tcl_value(inculde_dir_cmd),
+            VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in verilog_sources_abs),
+            INCDIR=" ".join(as_tcl_value(v) for v in inculde_dir_cmd),
         )
 
     if toplevel_lang == "vhdl":
         do_script += "vsim -onfinish exit -foreign {EXT_NAME} {TOPLEVEL}\n".format(
             TOPLEVEL=as_tcl_value(toplevel),
-            EXT_NAME=as_tcl_value("cocotb_init libfli.{}".format(ext_name)),
+            EXT_NAME=as_tcl_value(
+                '"cocotb_init {}"'.format(os.path.join(libs_dir, "libfli." + ext_name))
+            ),
         )
     else:
         do_script += "vsim -onfinish exit -pli {EXT_NAME} {TOPLEVEL}\n".format(
             TOPLEVEL=as_tcl_value(toplevel),
-            EXT_NAME=as_tcl_value("libvli.{}".format(ext_name)),
+            EXT_NAME=as_tcl_value(os.path.join(libs_dir, "libvpi." + ext_name)),
         )
 
     do_script += """log -recursive /*
@@ -425,9 +437,6 @@ def Run(
         module = run_module_name
 
     my_env = os.environ
-    my_env["LD_LIBRARY_PATH"] = libs_dir
-    if os.name == "posix":
-        my_env["LD_LIBRARY_PATH"] += os.pathsep + sysconfig.get_config_var("LIBDIR")
 
     my_env["PATH"] += os.pathsep + libs_dir
 
@@ -486,11 +495,17 @@ def Run(
             verilog_sources_abs,
             vhdl_sources_abs,
             sim_build_dir,
+            ext_name,
             include_dir_abs,
         )
     elif my_env["SIM"] == "vcs":
         _run_vcs(
-            toplevel, libs_dir, verilog_sources_abs, sim_build_dir, include_dir_abs
+            toplevel,
+            libs_dir,
+            verilog_sources_abs,
+            sim_build_dir,
+            ext_name,
+            include_dir_abs,
         )
 
     tree = ET.parse(results_xml_file)
