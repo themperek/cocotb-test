@@ -37,13 +37,15 @@ if os.name == "nt":
     mockobj.get_export_symbols = Mock(return_value=None)
 
 cfg_vars = distutils.sysconfig.get_config_vars()
+print("DEBUG:"*10, cfg_vars)
 for key, value in cfg_vars.items():
     if type(value) == str:
         cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
 
 if sys.platform == 'darwin':
-    cfg_vars['LDSHARED'] = cfg_vars['LDSHARED'].replace('-bundle', '-dynamiclib')
-
+    cfg_vars['LDSHARED'] = cfg_vars['LDSHARED'].replace('-bundle', '-dynamiclib -flat_namespace')
+    -flat_namespace 
+    
 def _symlink_force(target, link_name):
 
     if os.name == "nt":  # On windows we there is an issue with simplink !Workaround'
