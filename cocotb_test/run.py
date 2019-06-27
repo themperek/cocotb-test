@@ -125,6 +125,7 @@ def build_libs():
         libraries=[python_lib_link, "pthread", "m", "cocotbutils"],
         library_dirs=[build_dir],
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.c")],
+        extra_link_args=["-Wl,-rpath," + sysconfig.get_config_var('LIBDIR')],
     )
 
     _build_lib(libgpilog, dist, build_dir)
