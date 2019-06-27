@@ -117,13 +117,17 @@ def build_libs():
 
     _build_lib(libcocotbutils, dist, build_dir)
 
+    gpilog_ex_link_args = []
+    if sys.platform == 'darwin':
+        gpilog_ex_link_args = ["-Wl,-rpath," + sysconfig.get_config_var('LIBDIR')]
+        
     libgpilog = Extension(
         "libgpilog",
         include_dirs=[include_dir],
         libraries=[python_lib_link, "pthread", "m", "cocotbutils"],
         library_dirs=[build_dir],
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.c")],
-        extra_link_args=["-Wl,-rpath," + sysconfig.get_config_var('LIBDIR')],
+        extra_link_args=gpilog_ex_link_args,
     )
 
     _build_lib(libgpilog, dist, build_dir)
