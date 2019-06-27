@@ -15,9 +15,9 @@ if sys.version_info.major >= 3:
 else:
     from Tkinter import _stringify as as_tcl_value
 
-# import distutils.log
-# distutils.log.set_verbosity(-1) # Disable logging in disutils
-# distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
+import distutils.log
+distutils.log.set_verbosity(-1) # Disable logging in disutils
+distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
