@@ -37,7 +37,7 @@ if os.name == "nt":
     mockobj.get_export_symbols = Mock(return_value=None)
 
 cfg_vars = distutils.sysconfig.get_config_vars()
-print("DEBUG:"*10, cfg_vars)
+print("DEBUG:", cfg_vars)
 for key, value in cfg_vars.items():
     if type(value) == str:
         cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
