@@ -15,9 +15,9 @@ if sys.version_info.major >= 3:
 else:
     from Tkinter import _stringify as as_tcl_value
 
-import distutils.log
-distutils.log.set_verbosity(-1) # Disable logging in disutils
-distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
+# import distutils.log
+# distutils.log.set_verbosity(-1) # Disable logging in disutils
+# distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
@@ -37,13 +37,12 @@ if os.name == "nt":
     mockobj.get_export_symbols = Mock(return_value=None)
 
 cfg_vars = distutils.sysconfig.get_config_vars()
-print("DEBUG:", cfg_vars)
 for key, value in cfg_vars.items():
     if type(value) == str:
         cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
 
 if sys.platform == 'darwin':
-    cfg_vars['LDSHARED'] = cfg_vars['LDSHARED'].replace('-bundle', '-dynamiclib -flat_namespace')
+    cfg_vars['LDSHARED'] = cfg_vars['LDSHARED'].replace('-bundle', '-dynamiclib')
     
 def _symlink_force(target, link_name):
 
@@ -87,7 +86,6 @@ def _build_lib(lib, dist, build_dir):
         )
 
     return dir_name, ext_name
-
 
 def build_libs():
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
