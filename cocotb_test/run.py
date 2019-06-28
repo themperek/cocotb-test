@@ -20,7 +20,6 @@ else:
 # distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
-from setuptools.command.build_ext import build_ext
 from setuptools.dist import Distribution
 
 from xml.etree import cElementTree as ET
@@ -28,26 +27,17 @@ import pytest
 from distutils.spawn import find_executable
 import pkg_resources
 
-# A HACK to solve the problem on Windows: https://stackoverflow.com/questions/34689210/error-exporting-symbol-when-building-python-c-extension-in-windows
-if os.name == "nt":
-    from distutils.command.build_ext import build_ext as _du_build_ext
-    from unittest.mock import Mock
+from setuptools.command.build_ext import build_ext as _build_ext
 
-    mockobj = _du_build_ext
-    mockobj.get_export_symbols = Mock(return_value=None)
-
-cfg_vars = distutils.sysconfig.get_config_vars()
-for key, value in cfg_vars.items():
-    if type(value) == str:
-        cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
-
-if sys.platform == "darwin":
-    cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+# Needed Windows to not assume python module (generate interface in def file)
+class build_ext(_build_ext):
+    def get_export_symbols(self, ext):
+        return None
 
 
 def _symlink_force(target, link_name):
 
-    if os.name == "nt":  # On windows we there is an issue with simplink !Workaround'
+    if os.name == "nt":  # On windows we there is an issue with symlink !Workaround'
         shutil.copy2(target, link_name)
         return
 
@@ -62,6 +52,7 @@ def _symlink_force(target, link_name):
 
 
 def _build_lib(lib, dist, build_dir):
+
     dist.ext_modules = [lib]
 
     _build_ext = build_ext(dist)
@@ -90,6 +81,15 @@ def _build_lib(lib, dist, build_dir):
 
 
 def build_libs():
+
+    cfg_vars = distutils.sysconfig.get_config_vars()
+    for key, value in cfg_vars.items():
+        if type(value) == str:
+            cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
+
+    if sys.platform == "darwin":
+        cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
     share_lib_dir = os.path.join(share_dir, "lib")
     build_dir = os.path.join(os.getcwd(), "build")
