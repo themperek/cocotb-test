@@ -7,14 +7,14 @@
 
 # Usage:
 
-Install and use [conda](https://conda.io/miniconda.html) for python (can be installed in user/local folder).
+- Install and use [conda](https://conda.io/miniconda.html) for python (can be installed in user/local folder).
 
-(Widnows) Install development tools for conda :
+- (Widnows) Install development tools for conda :
 ```bash
 conda install --yes m2w64-gcc libpython
 ```
 
-Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
+- Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
 pip install https://github.com/themperek/cocotb-test/archive/master.zip
 ```
@@ -24,7 +24,7 @@ git clone https://github.com/themperek/cocotb-test.git
 pip install -e cocotb-test
 ```
 
-Create a `test_dff.py` file (check [test folder](https://github.com/themperek/cocotb-test/tree/master/tests) for more):
+- Create a `test_dff.py` file (check [test folder](https://github.com/themperek/cocotb-test/tree/master/tests) for more):
 ```python
 from cocotb_test.run import Run
 def test_dff():
@@ -36,7 +36,7 @@ def test_dff():
     )
 ```
 
-Run [pytest](https://docs.pytest.org/en/latest/contents.html): 
+- Run [pytest](https://docs.pytest.org/en/latest/contents.html): 
 ```bash
 pytest -s
 ```
