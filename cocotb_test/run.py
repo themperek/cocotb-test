@@ -29,10 +29,11 @@ import pkg_resources
 
 from setuptools.command.build_ext import build_ext as _build_ext
 
-#Needed Windows to not assume python module (generate interface in def file)  
+# Needed Windows to not assume python module (generate interface in def file)
 class build_ext(_build_ext):
     def get_export_symbols(self, ext):
         return None
+
 
 def _symlink_force(target, link_name):
 
@@ -49,8 +50,9 @@ def _symlink_force(target, link_name):
         else:
             raise e
 
+
 def _build_lib(lib, dist, build_dir):
-       
+
     dist.ext_modules = [lib]
 
     _build_ext = build_ext(dist)
@@ -79,15 +81,15 @@ def _build_lib(lib, dist, build_dir):
 
 
 def build_libs():
-    
+
     cfg_vars = distutils.sysconfig.get_config_vars()
     for key, value in cfg_vars.items():
         if type(value) == str:
             cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
-    
+
     if sys.platform == "darwin":
         cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
-    
+
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
     share_lib_dir = os.path.join(share_dir, "lib")
     build_dir = os.path.join(os.getcwd(), "build")
