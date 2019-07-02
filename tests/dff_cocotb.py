@@ -38,8 +38,6 @@ from cocotb.regression import TestFactory
 from cocotb.scoreboard import Scoreboard
 from cocotb.result import TestFailure, TestSuccess
 
-from cocotb_test.run import Run
-
 # ==============================================================================
 class BitMonitor(Monitor):
     """Observes a single-bit input or output of DUT."""
