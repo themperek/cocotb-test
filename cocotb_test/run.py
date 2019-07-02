@@ -1,5 +1,3 @@
-
-
 import os
 import sys
 import inspect
@@ -10,6 +8,7 @@ from cocotb_test.build_libs import build_libs
 import pytest
 import pkg_resources
 from xml.etree import cElementTree as ET
+
 
 def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 

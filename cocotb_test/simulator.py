@@ -119,7 +119,6 @@ class Icarus(Simulator):
         return [cmd_compile, cmd_run]
 
 
-
 '''
 def _run_vcs(
     toplevel, libs_dir, verilog_sources_abs, sim_build_dir, ext_name, include_dir_abs
@@ -321,5 +320,3 @@ def _run_questa(
     print(" ".join(cmd))
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
 '''
-
-
