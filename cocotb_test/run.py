@@ -29,7 +29,7 @@ import pkg_resources
 
 from setuptools.command.build_ext import build_ext as _build_ext
 
-# Needed Windows to not assume python module (generate interface in def file)
+# Needed for Windows to not assume python module (generate interface in def file)
 class build_ext(_build_ext):
     def get_export_symbols(self, ext):
         return None
@@ -348,6 +348,34 @@ def _run_icarus(
     process = subprocess.check_call(cmd, cwd=sim_build_dir)
 
 
+def _run_ghdl(
+    toplevel, libs_dir, vhdl_sources_abs, sim_build_dir, include_dir_abs, ext_name
+):
+
+    inculde_dir_cmd = []
+    for dir in include_dir_abs:
+        inculde_dir_cmd.append("-I")
+        inculde_dir_cmd.append(dir)
+
+    for source_file in vhdl_sources_abs:
+        comp_cmd = ["ghdl", "-a", source_file]
+        print(" ".join(comp_cmd))
+        process = subprocess.check_call(comp_cmd, cwd=sim_build_dir)
+
+    comp_cmd = ["ghdl", "-e", toplevel]
+    print(" ".join(comp_cmd))
+    process = subprocess.check_call(comp_cmd, cwd=sim_build_dir)
+
+    cmd = [
+        "ghdl",
+        "-r",
+        toplevel,
+        "--vpi=" + os.path.join(libs_dir, "libvpi." + ext_name),
+    ]
+    print(" ".join(cmd))
+    process = subprocess.check_call(cmd, cwd=sim_build_dir)
+
+
 def _run_questa(
     toplevel,
     libs_dir,
@@ -386,7 +414,7 @@ def _run_questa(
         do_script += "vsim -onfinish exit -foreign {EXT_NAME} {TOPLEVEL}\n".format(
             TOPLEVEL=as_tcl_value(toplevel),
             EXT_NAME=as_tcl_value(
-                '"cocotb_init {}"'.format(os.path.join(libs_dir, "libfli." + ext_name))
+                "cocotb_init {}".format(os.path.join(libs_dir, "libfli." + ext_name))
             ),
         )
     else:
@@ -420,7 +448,7 @@ def Run(
     include_dir=[],
 ):
 
-    supported_sim = ["icarus", "questa", "ius", "vcs"]
+    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl"]
     if "SIM" in os.environ and os.environ["SIM"] in supported_sim:
         pass
     else:
@@ -431,6 +459,10 @@ def Run(
     if vhdl_sources:
         if os.environ["SIM"] == "icarus" or os.environ["SIM"] == "vcs":
             pytest.skip("This simulator does not support VHDL")
+
+    if verilog_sources:
+        if os.environ["SIM"] == "ghdl":
+            pytest.skip("This simulator does not support Verilog")
 
     libs_dir, ext_name = build_libs()
 
@@ -513,6 +545,15 @@ def Run(
             sim_build_dir,
             ext_name,
             include_dir_abs,
+        )
+    elif my_env["SIM"] == "ghdl":
+        _run_ghdl(
+            toplevel,
+            libs_dir,
+            vhdl_sources_abs,
+            sim_build_dir,
+            include_dir_abs,
+            ext_name,
         )
 
     tree = ET.parse(results_xml_file)
