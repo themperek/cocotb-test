@@ -1,7 +1,8 @@
 # cocotb-test
 [![Build Status](https://dev.azure.com/themperek/themperek/_apis/build/status/themperek.cocotb-test?branchName=master)](https://dev.azure.com/themperek/themperek/_build/latest?definitionId=2&branchName=master)
 
-``cocotb-test`` provides unit testing with ``pytest`` for [cocotb](https://github.com/potentialventures/cocotb), removing the need for Makefiles. The goal is to also be able to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs.
+``cocotb-test`` provides unit testing with ``pytest`` for [cocotb](https://github.com/potentialventures/cocotb), removing the need for Makefiles. 
+The goal is to also be able to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs.
 
 **!Proof of Concept!**
 
@@ -9,7 +10,7 @@
 
 Install and use [conda](https://conda.io/miniconda.html) for python
 
-(Widnows) Install development tools for conda:
+(Windows) Install development tools for conda:
 ```bash
 conda install --yes m2w64-gcc libpython
 ```

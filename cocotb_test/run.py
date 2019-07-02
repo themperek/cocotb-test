@@ -37,7 +37,7 @@ class build_ext(_build_ext):
 
 def _symlink_force(target, link_name):
 
-    if os.name == "nt":  # On windows we there is an issue with symlink !Workaround'
+    if os.name == "nt":  # On Windows there is an issue with symlink !Workaround'
         shutil.copy2(target, link_name)
         return
 
