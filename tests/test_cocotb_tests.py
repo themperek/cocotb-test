@@ -24,7 +24,7 @@ def test_cocotb():
     )
 
 
-@pytest.mark.skip(sys.version_info >= (3, 5), reason="python3.5 api")
+@pytest.mark.skipif(sys.version_info < (3, 5), reason="python3.5 api")
 def test_cocotb_35():
     run(
         verilog_sources=[
@@ -36,7 +36,7 @@ def test_cocotb_35():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
 def test_verilog_access():
     run(
         verilog_sources=[

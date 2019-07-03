@@ -37,7 +37,7 @@ def test_dff_verilog():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == 'icarus', reason="VHDL not suported")
 def test_dff_vhdl():
     run(
         vhdl_sources=[os.path.join(example_dir, "dff", "hdl", "dff.vhdl")],
@@ -60,7 +60,7 @@ def test_adder_verilog():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
 def test_adder_vhdl():
     run(
         vhdl_sources=[os.path.join(example_dir, "adder", "hdl", "adder.vhdl")],
@@ -74,7 +74,7 @@ def test_adder_vhdl():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
 def test_mean():
     run(
         vhdl_sources=[
@@ -88,7 +88,7 @@ def test_mean():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
 def test_mixed_top_verilog():
     run(
         vhdl_sources=[
@@ -104,7 +104,7 @@ def test_mixed_top_verilog():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
 def test_mixed_top_vhdl():
     run(
         vhdl_sources=[
@@ -146,7 +146,7 @@ def test_endian_swapper_verilog():
     )
 
 
-@pytest.mark.skip(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
 def test_endian_swapper_vhdl():
     run(
         vhdl_sources=[

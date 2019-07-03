@@ -63,7 +63,6 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     if simulator:
         sim = simulator(**kwargs)
-        sim = simulator(**kwargs)
     elif env["SIM"] == "icarus":
         sim = cocotb_test.simulator.Icarus(**kwargs)
     elif env["SIM"] == "questa":
