@@ -44,6 +44,8 @@ class Simulator(object):
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
 
+        self.sim_file = os.path.join(self.sim_dir, "sim.vvp")
+
     def build_command(self):
         pass
 
@@ -96,15 +98,13 @@ class Icarus(Simulator):
 
         return defines_cmd
 
-    def build_command(self):
-
-        sim_compile_file = os.path.join(self.sim_dir, "sim.vvp")
+    def compile_command(self):
 
         cmd_compile = (
             [
                 "iverilog",
                 "-o",
-                sim_compile_file,
+                self.sim_file,
                 "-D",
                 "COCOTB_SIM=1",
                 "-s",
@@ -116,9 +116,13 @@ class Icarus(Simulator):
             + self.verilog_sources
         )
 
-        cmd_run = ["vvp", "-M", self.lib_dir, "-m", "gpivpi", sim_compile_file]
+        return cmd_compile
 
-        return [cmd_compile, cmd_run]
+    def run_commnd(self):
+        return ["vvp", "-M", self.lib_dir, "-m", "gpivpi", self.sim_file]
+
+    def build_command(self):
+        return [self.compile_command(), self.run_commnd()]
 
 
 class Questa(Simulator):
