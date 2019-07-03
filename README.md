@@ -28,9 +28,9 @@ pip install -e cocotb-test
 
 - Create a `test_dff.py` file (check [test folder](https://github.com/themperek/cocotb-test/tree/master/tests) for more):
 ```python
-from cocotb_test.run import Run
+from cocotb_test.run import run
 def test_dff():
-    Run(
+    run(
         verilog_sources=['dff.v'], # sources
         toplevel='dff',            # top level HDL
         python_search=['.'],       # search path for cocotb test module
