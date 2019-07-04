@@ -5,7 +5,7 @@ import os
 
 
 class IcarusCustom(Icarus):
-    def run_commnd(self):
+    def run_command(self):
         return [
             "vvp",
             "-v",
