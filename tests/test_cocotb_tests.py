@@ -23,7 +23,7 @@ def test_cocotb():
         module="test_cocotb",
     )
 
-@pytest.mark.skipif(os.name == "nt", reason="Something wrong on Windows")
+
 @pytest.mark.skipif(sys.version_info.major == 2, reason="python3.5 api")
 def test_cocotb_35():
     run(

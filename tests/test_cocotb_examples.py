@@ -47,7 +47,7 @@ def test_dff_vhdl():
         toplevel_lang="vhdl",
     )
 
-@pytest.mark.skipif(os.name == "nt", reason="Something wrong on Windows")
+
 def test_adder_verilog():
     run(
         verilog_sources=[os.path.join(example_dir, "adder", "hdl", "adder.v")],
