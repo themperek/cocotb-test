@@ -13,8 +13,7 @@
 
 - Install and use [conda](https://conda.io/miniconda.html) for python (can be installed in user/local folder).
 
-(Windows) Install development tools for conda:
-=======
+- Install development tools for conda (Windows only):
 ```bash
 conda install --yes m2w64-gcc libpython
 ```
