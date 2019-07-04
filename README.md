@@ -1,8 +1,11 @@
 # cocotb-test
 [![Build Status](https://dev.azure.com/themperek/themperek/_apis/build/status/themperek.cocotb-test?branchName=master)](https://dev.azure.com/themperek/themperek/_build/latest?definitionId=2&branchName=master)
 
-``cocotb-test`` provides unit testing with ``pytest`` for [cocotb](https://github.com/potentialventures/cocotb), removing the need for Makefiles. 
-The goal is to also be able to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs.
+``cocotb-test`` provides unit testing with ``pytest`` for [cocotb](https://github.com/potentialventures/cocotb)
+- allow the look and feal of python unit testing
+- remove the need for Makefiles
+- allow easy customization of simulation flow
+- in future allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs
 
 **!Proof of Concept!**
 
