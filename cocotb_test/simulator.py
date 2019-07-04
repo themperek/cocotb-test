@@ -215,7 +215,8 @@ class Ius(Simulator):
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
-            include_cmd.append("+incdir+" + dir)
+            include_cmd.append("-incdir")
+            include_cmd.append(dir)
 
         return include_cmd
 
@@ -228,21 +229,18 @@ class Ius(Simulator):
         return defines_cmd
 
     def build_command(self):
-
         cmd = (
             [
                 "irun",
                 "-64",
                 "-define",
                 "COCOTB_SIM=1",
-                "-v93",
-                "-loadpli1",
+                "-loadvpi",
                 os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
                 + ":vlog_startup_routines_bootstrap",
                 "-plinowarn",
-                "+access+rwc",
-                "-top",
-                self.toplevel,
+                "-access", "+rwc",
+                "-top", self.toplevel,
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
