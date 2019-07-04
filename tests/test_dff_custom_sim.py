@@ -19,6 +19,15 @@ class IcarusCustom(Icarus):
         ]
 
 
+@pytest.fixture(scope="module", autouse=True)
+def module_run_at_beginning(request):
+    print('\n\nIn module_run_at_beginning()\n\n')
+
+    def module_run_at_end():
+            print('\n\nIn module_run_at_end()\n\n')
+    request.addfinalizer(module_run_at_end)
+
+
 @pytest.mark.skipif(os.environ["SIM"] != "icarus", reason="Custom for Icarus")
 def test_dff_custom():
     run(
