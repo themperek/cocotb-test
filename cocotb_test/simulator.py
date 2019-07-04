@@ -118,11 +118,11 @@ class Icarus(Simulator):
 
         return cmd_compile
 
-    def run_commnd(self):
+    def run_command(self):
         return ["vvp", "-M", self.lib_dir, "-m", "gpivpi", self.sim_file]
 
     def build_command(self):
-        return [self.compile_command(), self.run_commnd()]
+        return [self.compile_command(), self.run_command()]
 
 
 class Questa(Simulator):
