@@ -76,6 +76,8 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     sim.run()
 
+    assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
+    
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
         for tc in ts.iter("testcase"):
