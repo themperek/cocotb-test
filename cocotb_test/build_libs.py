@@ -1,3 +1,6 @@
+#!/bin/env python3
+
+import argparse
 import os
 import sys
 import sysconfig
@@ -26,8 +29,9 @@ class build_ext(_build_ext):
 
 
 def _symlink_force(target, link_name):
+    """Force creating a symlink, or copy on Windows."""
 
-    if os.name == "nt":  # On Windows there is an issue with symlink !Workaround'
+    if os.name == "nt":  # On Windows there is an issue with symlink !Workaround!
         shutil.copy2(target, link_name)
         return
 
@@ -42,6 +46,7 @@ def _symlink_force(target, link_name):
 
 
 def _build_lib(lib, dist, build_dir):
+    """Use setuptools to build `lib` into `build_dir`."""
 
     dist.ext_modules = [lib]
 
@@ -70,7 +75,10 @@ def _build_lib(lib, dist, build_dir):
     return dir_name, ext_name
 
 
-def build_libs():
+def build_libs(build_dir="cocotb_build"):
+    """Call `_build_lib()` for all necessary libraries.
+
+    Some libraries are built only depending on the SIM environment variable."""
 
     cfg_vars = distutils.sysconfig.get_config_vars()
     for key, value in cfg_vars.items():
@@ -82,7 +90,7 @@ def build_libs():
 
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
     share_lib_dir = os.path.join(share_dir, "lib")
-    build_dir = os.path.join(os.getcwd(), "build")
+
     ext_modules = []
 
     if os.name == "nt":
@@ -161,7 +169,8 @@ def build_libs():
 
     extra_lib = []
     extra_lib_path = []
-    if os.environ["SIM"] == "icarus" and os.name == "nt":
+
+    if os.getenv("SIM") == "icarus" and os.name == "nt":
         iverilog_path = find_executable("iverilog")
         if iverilog_path is None:
             raise ValueError("Icarus Verilog executable not found.")
@@ -200,7 +209,7 @@ def build_libs():
 
         _build_lib(libvhpi, dist, build_dir)
 
-    if os.environ["SIM"] == "questa":
+    if os.getenv("SIM") == "questa":
         vsim_path = find_executable("vsim")
         questa_path = os.path.dirname(os.path.dirname(vsim_path))
 
@@ -225,3 +234,14 @@ def build_libs():
     )
 
     return build_dir, ext_name
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="""Compile cocotb libraries.""")
+    parser.add_argument('--build-dir',
+                        # default = os.path.join(os.getcwd(), "cocotb_build"),
+                        default = "cocotb_build",
+                        help="The directory to build the libraries into.")
+    args = parser.parse_args()
+    build_libs(build_dir=args.build_dir)
