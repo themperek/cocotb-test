@@ -1,5 +1,5 @@
 from cocotb_test.run import run
-from cocotb_test.simulator import Icarus
+from cocotb_test.simulator import Icarus, Ius
 import pytest
 import os
 
@@ -28,6 +28,34 @@ def test_dff_custom():
         python_search=["."],
         module="dff_cocotb",
         logfile="custom_log.log",  # extra custom argument
+    )
+
+
+class IusCustom(Ius):
+    def build_command(self):
+        cmd = (
+            [
+                "xrun",
+                "-loadvpi",
+                os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
+                + ":vlog_startup_routines_bootstrap",
+                "-plinowarn",
+                "-access", "+rwc",
+                "-f", self.defsfile,
+            ]
+        )
+
+        return [cmd]
+
+
+@pytest.mark.skipif(os.environ["SIM"] != "ius", reason="Custom for IUS")
+def test_dff_custom():
+    run(
+        simulator=IusCustom,
+        toplevel="dff",
+        python_search=["."],
+        module="dff_cocotb",
+        defsfile="ius_defines.f",  # extra custom argument
     )
 
 
