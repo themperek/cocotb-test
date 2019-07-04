@@ -106,4 +106,4 @@ venv.bak/
 .vscode
 
 sim_build
-
+cocotb_build
