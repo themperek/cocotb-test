@@ -22,7 +22,7 @@ conda install --yes m2w64-gcc libpython
 ```bash
 pip install https://github.com/themperek/cocotb-test/archive/master.zip
 ```
-or
+&emsp;or
 ```bash
 git clone https://github.com/themperek/cocotb-test.git
 pip install -e cocotb-test
