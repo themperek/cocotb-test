@@ -28,7 +28,7 @@ def module_run_at_beginning(request):
     request.addfinalizer(module_run_at_end)
 
 
-@pytest.mark.skipif(os.environ["SIM"] != "icarus", reason="Custom for Icarus")
+@pytest.mark.skipif(os.getenv["SIM"] != "icarus", reason="Custom for Icarus")
 def test_dff_custom_icarus():
     run(
         simulator=IcarusCustom,
