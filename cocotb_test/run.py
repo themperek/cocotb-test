@@ -5,7 +5,6 @@ import inspect
 import cocotb_test.simulator
 from cocotb_test.build_libs import build_libs
 
-import pytest
 import pkg_resources
 from xml.etree import cElementTree as ET
 
@@ -77,16 +76,15 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     sim.run()
 
+    assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
+    
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
         for tc in ts.iter("testcase"):
             for failure in tc.iter("failure"):
-                # raise ValueError('{} class="{}" test="{}" error={}'.format(failure.get('message'), tc.get('classname'), tc.get('name'), failure.get('stdout')))
-                pytest.fail(
-                    '{} class="{}" test="{}" error={}'.format(
-                        failure.get("message"),
-                        tc.get("classname"),
-                        tc.get("name"),
-                        failure.get("stdout"),
-                    )
+                assert False, '{} class="{}" test="{}" error={}'.format(
+                    failure.get("message"),
+                    tc.get("classname"),
+                    tc.get("name"),
+                    failure.get("stdout"),
                 )
