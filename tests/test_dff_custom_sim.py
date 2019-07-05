@@ -66,7 +66,3 @@ def test_dff_custom_ius():
         module="dff_cocotb",
         defsfile="ius_defines.f",  # extra custom argument
     )
-
-
-if __name__ == "__main__":
-    test_dff_custom()
