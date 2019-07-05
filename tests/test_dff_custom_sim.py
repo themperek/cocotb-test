@@ -19,8 +19,8 @@ class IcarusCustom(Icarus):
         ]
 
 
-@pytest.mark.skipif(os.environ["SIM"] != "icarus", reason="Custom for Icarus")
-def test_dff_custom():
+@pytest.mark.skipif(os.getenv("SIM") != "icarus", reason="Custom for Icarus")
+def test_dff_custom_icarus():
     run(
         simulator=IcarusCustom,
         verilog_sources=["dff.v"],
@@ -48,8 +48,8 @@ class IusCustom(Ius):
         return [cmd]
 
 
-@pytest.mark.skipif(os.environ["SIM"] != "ius", reason="Custom for IUS")
-def test_dff_custom():
+@pytest.mark.skipif(os.getenv("SIM") != "ius", reason="Custom for IUS")
+def test_dff_custom_ius():
     run(
         simulator=IusCustom,
         toplevel="dff",
