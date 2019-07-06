@@ -105,6 +105,7 @@ def build_libs():
         "libcocotbutils",
         include_dirs=[include_dir],
         sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.c")],
+        extra_link_args=["-Wl,-rpath," + build_dir],
     )
 
     _build_lib(libcocotbutils, dist, build_dir)
@@ -131,6 +132,7 @@ def build_libs():
         library_dirs=[build_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.c")],
+        extra_link_args=["-Wl,-rpath," + build_dir],
     )
 
     _build_lib(libcocotb, dist, build_dir)
@@ -145,6 +147,7 @@ def build_libs():
             os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
             os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
         ],
+        extra_link_args=["-Wl,-rpath," + build_dir],
     )
 
     _build_lib(libgpi, dist, build_dir)
