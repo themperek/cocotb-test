@@ -1,3 +1,6 @@
+#!/bin/env python3
+
+import argparse
 import os
 import sys
 import sysconfig
@@ -26,8 +29,9 @@ class build_ext(_build_ext):
 
 
 def _symlink_force(target, link_name):
+    """Force creating a symlink, or copy on Windows."""
 
-    if os.name == "nt":  # On Windows there is an issue with symlink !Workaround'
+    if os.name == "nt":  # On Windows there is an issue with symlink !Workaround!
         shutil.copy2(target, link_name)
         return
 
@@ -42,6 +46,7 @@ def _symlink_force(target, link_name):
 
 
 def _build_lib(lib, dist, build_dir):
+    """Use setuptools to build `lib` into `build_dir`."""
 
     dist.ext_modules = [lib]
 
@@ -70,7 +75,10 @@ def _build_lib(lib, dist, build_dir):
     return dir_name, ext_name
 
 
-def build_libs():
+def build_libs(build_dir="cocotb_build"):
+    """Call `_build_lib()` for all necessary libraries.
+
+    Some libraries are built only depending on the SIM environment variable."""
 
     cfg_vars = distutils.sysconfig.get_config_vars()
     for key, value in cfg_vars.items():
@@ -82,7 +90,9 @@ def build_libs():
 
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
     share_lib_dir = os.path.join(share_dir, "lib")
-    build_dir = os.path.join(os.getcwd(), "build")
+    # build_dir_abs = os.path.join(os.getcwd(), build_dir)
+    build_dir_abs = os.path.abspath(build_dir)
+
     ext_modules = []
 
     if os.name == "nt":
@@ -108,7 +118,7 @@ def build_libs():
         extra_link_args=["-Wl,-rpath," + build_dir],
     )
 
-    _build_lib(libcocotbutils, dist, build_dir)
+    _build_lib(libcocotbutils, dist, build_dir_abs)
 
     gpilog_ex_link_args = []
     if sys.platform == "darwin":
@@ -118,31 +128,31 @@ def build_libs():
         "libgpilog",
         include_dirs=[include_dir],
         libraries=[python_lib_link, "pthread", "m", "cocotbutils"],
-        library_dirs=[build_dir],
+        library_dirs=[build_dir_abs],
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.c")],
         extra_link_args=gpilog_ex_link_args,
     )
 
-    _build_lib(libgpilog, dist, build_dir)
+    _build_lib(libgpilog, dist, build_dir_abs)
 
     libcocotb = Extension(
         "libcocotb",
         define_macros=[("PYTHON_SO_LIB", python_lib)],
         include_dirs=[include_dir],
-        library_dirs=[build_dir],
+        library_dirs=[build_dir_abs],
         libraries=["gpilog", "cocotbutils"],
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.c")],
         extra_link_args=["-Wl,-rpath," + build_dir],
     )
 
-    _build_lib(libcocotb, dist, build_dir)
+    _build_lib(libcocotb, dist, build_dir_abs)
 
     libgpi = Extension(
         "libgpi",
         define_macros=[("LIB_EXT", ext_name), ("SINGLETON_HANDLES", "")],
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
-        library_dirs=[build_dir],
+        library_dirs=[build_dir_abs],
         sources=[
             os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
             os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
@@ -150,21 +160,22 @@ def build_libs():
         extra_link_args=["-Wl,-rpath," + build_dir],
     )
 
-    _build_lib(libgpi, dist, build_dir)
+    _build_lib(libgpi, dist, build_dir_abs)
 
     libsim = Extension(
         "simulator",
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "gpi"],
-        library_dirs=[build_dir],
+        library_dirs=[build_dir_abs],
         sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.c")],
     )
 
-    _build_lib(libsim, dist, build_dir)
+    _build_lib(libsim, dist, build_dir_abs)
 
     extra_lib = []
     extra_lib_path = []
-    if os.environ["SIM"] == "icarus" and os.name == "nt":
+
+    if os.getenv("SIM") == "icarus" and os.name == "nt":
         iverilog_path = find_executable("iverilog")
         if iverilog_path is None:
             raise ValueError("Icarus Verilog executable not found.")
@@ -177,15 +188,15 @@ def build_libs():
         define_macros=[("VPI_CHECKING", "1")],
         include_dirs=[include_dir],
         libraries=["gpi", "gpilog"] + extra_lib,
-        library_dirs=[build_dir] + extra_lib_path,
+        library_dirs=[build_dir_abs] + extra_lib_path,
         sources=[
             os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
             os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
         ],
-        extra_link_args=["-Wl,-rpath," + build_dir],
+        extra_link_args=["-Wl,-rpath," + build_dir_abs],
     )
 
-    _build_lib(libvpi, dist, build_dir)
+    _build_lib(libvpi, dist, build_dir_abs)
 
     if os.name == "posix":
         libvhpi = Extension(
@@ -193,17 +204,17 @@ def build_libs():
             include_dirs=[include_dir],
             define_macros=[("VHPI_CHECKING", 1)],
             libraries=["gpi", "gpilog", "stdc++"],
-            library_dirs=[build_dir],
+            library_dirs=[build_dir_abs],
             sources=[
                 os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
                 os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
             ],
-            extra_link_args=["-Wl,-rpath," + build_dir],
+            extra_link_args=["-Wl,-rpath," + build_dir_abs],
         )
 
-        _build_lib(libvhpi, dist, build_dir)
+        _build_lib(libvhpi, dist, build_dir_abs)
 
-    if os.environ["SIM"] == "questa":
+    if os.getenv("SIM") == "questa":
         vsim_path = find_executable("vsim")
         questa_path = os.path.dirname(os.path.dirname(vsim_path))
 
@@ -211,20 +222,31 @@ def build_libs():
             "libfli",
             include_dirs=[include_dir, os.path.join(questa_path, "include")],
             libraries=["gpi", "gpilog", "stdc++"],
-            library_dirs=[build_dir],
+            library_dirs=[build_dir_abs],
             sources=[
                 os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
             ],
-            extra_link_args=["-Wl,-rpath," + build_dir],
+            extra_link_args=["-Wl,-rpath," + build_dir_abs],
         )
 
-        _build_lib(libfli, dist, build_dir)
+        _build_lib(libfli, dist, build_dir_abs)
 
     _symlink_force(
-        os.path.join(build_dir, "libvpi." + ext_name),
-        os.path.join(build_dir, "gpivpi.vpl"),
+        os.path.join(build_dir_abs, "libvpi." + ext_name),
+        os.path.join(build_dir_abs, "gpivpi.vpl"),
     )
 
-    return build_dir, ext_name
+    return build_dir_abs, ext_name
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="""Compile cocotb libraries.""")
+    parser.add_argument('--build-dir',
+                        # default = os.path.join(os.getcwd(), "cocotb_build"),
+                        default = "cocotb_build",
+                        help="The directory to build the libraries into.")
+    args = parser.parse_args()
+    build_libs(build_dir=args.build_dir)
