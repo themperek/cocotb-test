@@ -157,7 +157,7 @@ class Questa(Simulator):
             do_script += "vcom -mixedsvvh +define+COCOTB_SIM {DEFINES} {INCDIR} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                 VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
                 DEFINES=" ".join(
-                    as_tcl_value(v) for v in self.get_define_commands(self.includes)
+                    as_tcl_value(v) for v in self.get_define_commands(self.defines)
                 ),
                 INCDIR=" ".join(
                     as_tcl_value(v) for v in self.get_include_commands(self.includes)
@@ -170,7 +170,7 @@ class Questa(Simulator):
             do_script += "vlog -mixedsvvh +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}\n".format(
                 VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
                 DEFINES=" ".join(
-                    as_tcl_value(v) for v in self.get_define_commands(self.includes)
+                    as_tcl_value(v) for v in self.get_define_commands(self.defines)
                 ),
                 INCDIR=" ".join(
                     as_tcl_value(v) for v in self.get_include_commands(self.includes)
