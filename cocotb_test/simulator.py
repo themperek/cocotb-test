@@ -113,13 +113,18 @@ class Icarus(Simulator):
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
+            + self.extra_compile_args
             + self.verilog_sources
         )
 
         return cmd_compile
 
     def run_command(self):
-        return ["vvp", "-M", self.lib_dir, "-m", "gpivpi", self.sim_file]
+        return (
+            ["vvp", "-M", self.lib_dir, "-m", "gpivpi"]
+            + self.extra_simulation_args
+            + [self.sim_file]
+        )
 
     def build_command(self):
         return [self.compile_command(), self.run_command()]
@@ -149,7 +154,7 @@ class Questa(Simulator):
         """
 
         if self.vhdl_sources:
-            do_script += "vcom -mixedsvvh +define+COCOTB_SIM {DEFINES} {INCDIR} {VHDL_SOURCES}\n".format(
+            do_script += "vcom -mixedsvvh +define+COCOTB_SIM {DEFINES} {INCDIR} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                 VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
                 DEFINES=" ".join(
                     as_tcl_value(v) for v in self.get_define_commands(self.includes)
@@ -157,11 +162,12 @@ class Questa(Simulator):
                 INCDIR=" ".join(
                     as_tcl_value(v) for v in self.get_include_commands(self.includes)
                 ),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.extra_compile_args),
             )
             os.environ["GPI_EXTRA"] = "fli"
 
         if self.verilog_sources:
-            do_script += "vlog -mixedsvvh +define+COCOTB_SIM -sv {DEFINES}  {INCDIR} {VERILOG_SOURCES}\n".format(
+            do_script += "vlog -mixedsvvh +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}\n".format(
                 VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
                 DEFINES=" ".join(
                     as_tcl_value(v) for v in self.get_define_commands(self.includes)
@@ -169,22 +175,29 @@ class Questa(Simulator):
                 INCDIR=" ".join(
                     as_tcl_value(v) for v in self.get_include_commands(self.includes)
                 ),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.extra_compile_args),
             )
 
         if self.toplevel_lang == "vhdl":
-            do_script += "vsim -onfinish exit -foreign {EXT_NAME} {TOPLEVEL}\n".format(
+            do_script += "vsim -onfinish exit -foreign {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL}\n".format(
                 TOPLEVEL=as_tcl_value(self.toplevel),
                 EXT_NAME=as_tcl_value(
                     "cocotb_init {}".format(
                         os.path.join(self.lib_dir, "libfli." + self.lib_ext)
                     )
                 ),
+                EXTRA_ARGS=" ".join(
+                    as_tcl_value(v) for v in self.extra_simulation_args
+                ),
             )
         else:
-            do_script += "vsim -onfinish exit -pli {EXT_NAME} {TOPLEVEL}\n".format(
+            do_script += "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL}\n".format(
                 TOPLEVEL=as_tcl_value(self.toplevel),
                 EXT_NAME=as_tcl_value(
                     os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
+                ),
+                EXTRA_ARGS=" ".join(
+                    as_tcl_value(v) for v in self.extra_simulation_args
                 ),
             )
 
@@ -239,11 +252,15 @@ class Ius(Simulator):
                 os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
                 + ":vlog_startup_routines_bootstrap",
                 "-plinowarn",
-                "-access", "+rwc",
-                "-top", self.toplevel,
+                "-access",
+                "+rwc",
+                "-top",
+                self.toplevel,
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
+            + self.extra_compile_args
+            + self.extra_simulation_args
             + self.verilog_sources
             + self.vhdl_sources
         )
@@ -289,10 +306,14 @@ class Vcs(Simulator):
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
+            + self.extra_compile_args
             + self.verilog_sources
         )
 
-        cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"]
+        cmd_run = [
+            os.path.join(self.sim_dir, "simv"),
+            "+define+COCOTB_SIM=1",
+        ] + self.extra_simulation_args
 
         return [cmd_build, cmd_run]
 
@@ -316,16 +337,16 @@ class Ghdl(Simulator):
 
         cmd_analyze = []
         for source_file in self.vhdl_sources:
-            cmd_analyze.append(["ghdl", "-a", source_file])
+            cmd_analyze.append(["ghdl"] + self.extra_compile_args + ["-a", source_file])
 
-        cmd_elaborate = ["ghdl", "-e", self.toplevel]
+        cmd_elaborate = ["ghdl"] + self.extra_compile_args + ["-e", self.toplevel]
 
         cmd_run = [
             "ghdl",
             "-r",
             self.toplevel,
             "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
-        ]
+        ] + self.extra_simulation_args
 
         cmd = cmd_analyze + [cmd_elaborate] + [cmd_run]
         return cmd
