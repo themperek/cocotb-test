@@ -1,5 +1,6 @@
 # cocotb-test
 [![Build Status](https://dev.azure.com/themperek/themperek/_apis/build/status/themperek.cocotb-test?branchName=master)](https://dev.azure.com/themperek/themperek/_build/latest?definitionId=2&branchName=master)
+[![PyPI version](https://badge.fury.io/py/cocotb-test.svg)](https://badge.fury.io/py/cocotb-test)
 
 ``cocotb-test`` provides standard python unit testing capabilities for [cocotb](https://github.com/potentialventures/cocotb)
 - allow the look and feal of python unit testing
