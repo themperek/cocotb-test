@@ -24,7 +24,7 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
     previous_frame = inspect.currentframe().f_back
     (run_module_filename, _, _, _, _) = inspect.getframeinfo(previous_frame)
 
-    run_dir_name = os.path.dirname(run_module_filename)
+    run_dir_name = os.getcwd()
     run_module_name = os.path.splitext(os.path.split(run_module_filename)[-1])[0]
 
     if module is None:
