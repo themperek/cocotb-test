@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/cocotb-test.svg)](https://badge.fury.io/py/cocotb-test)
 
 ``cocotb-test`` provides standard python unit testing capabilities for [cocotb](https://github.com/potentialventures/cocotb)
-- allow the look and feal of python unit testing
+- allow the look and feel of Python unit testing
 - remove the need for Makefiles
 - allow easy customization of simulation flow
 - in future allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs
@@ -12,7 +12,7 @@
 
 # Usage:
 
-- Install and use [conda](https://conda.io/miniconda.html) for python (can be installed in user/local folder).
+- Install and use [conda](https://conda.io/miniconda.html) for Python (can be installed in user/local folder).
 
 - Install development tools for conda (Windows only):
 ```bash
