@@ -36,7 +36,8 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     python_path = os.pathsep.join(sys.path)
     env["PYTHONPATH"] = os.pathsep + python_path + os.pathsep + libs_dir
-    env["PYTHONPATH"] += os.pathsep + run_dir_name
+    env["PYTHONPATH"] += os.pathsep + os.path.dirname(run_module_filename)
+    env["PYTHONPATH"] += os.pathsep + os.path.dirname(run_dir_name)
 
     for path in python_search:
         env["PYTHONPATH"] += os.pathsep + path
