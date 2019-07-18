@@ -183,6 +183,14 @@ def build_libs(build_dir="cocotb_build"):
         extra_lib = ["vpi"]
         extra_lib_path = [os.path.join(icarus_path, "lib")]
 
+    if os.getenv("SIM") == "questa" and os.name == "nt":
+        questa_path = find_executable("vsim")
+        if questa_path is None:
+            raise ValueError("Questa (vsim) executable not found.")
+        questa_path = os.path.dirname(questa_path)
+        extra_lib = ["mtipli"]
+        extra_lib_path = [questa_path]
+
     libvpi = Extension(
         "libvpi",
         define_macros=[("VPI_CHECKING", "1")],
@@ -221,8 +229,8 @@ def build_libs(build_dir="cocotb_build"):
         libfli = Extension(
             "libfli",
             include_dirs=[include_dir, os.path.join(questa_path, "include")],
-            libraries=["gpi", "gpilog", "stdc++"],
-            library_dirs=[build_dir_abs],
+            libraries=["gpi", "gpilog", "stdc++"] + extra_lib,
+            library_dirs=[build_dir_abs] + extra_lib_path,
             sources=[
                 os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
@@ -242,11 +250,12 @@ def build_libs(build_dir="cocotb_build"):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="""Compile cocotb libraries.""")
-    parser.add_argument('--build-dir',
-                        # default = os.path.join(os.getcwd(), "cocotb_build"),
-                        default = "cocotb_build",
-                        help="The directory to build the libraries into.")
+    parser = argparse.ArgumentParser(description="""Compile cocotb libraries.""")
+    parser.add_argument(
+        "--build-dir",
+        # default = os.path.join(os.getcwd(), "cocotb_build"),
+        default="cocotb_build",
+        help="The directory to build the libraries into.",
+    )
     args = parser.parse_args()
     build_libs(build_dir=args.build_dir)
