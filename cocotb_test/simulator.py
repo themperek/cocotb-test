@@ -207,15 +207,15 @@ class Questa(Simulator):
         quit
         """
 
-        do_file_path = os.path.join(self.sim_dir, "runsim.do")
-        with open(do_file_path, "w") as do_file:
-            do_file.write(do_script)
-
-        return do_file_path
+        return do_script
 
     def build_command(self):
 
-        cmd = ["vsim", "-c", "-do", self.build_script()]
+        do_file_path = os.path.join(self.sim_dir, "runsim.do")
+        with open(do_file_path, "w") as do_file:
+            do_file.write(self.build_script())
+
+        cmd = ["vsim", "-c", "-do", do_file_path]
         return [cmd]
 
 
