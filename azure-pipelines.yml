@@ -2,21 +2,31 @@ jobs:
 - job:
   strategy:
     matrix:
-      Linux-py27:
+      Linux-Icarus-py27:
         python.version: '2.7'
         imageName: 'ubuntu-16.04'
-      Linux-py37:
+        SIM: icarus
+      Linux-Icarus-py37:
         python.version: '3.7'
         imageName: 'ubuntu-16.04'
-      Windows-py37:
+        SIM: 'icarus'
+      Linux-GHDL-py37:
+        python.version: '3.7'
+        imageName: 'ubuntu-16.04'
+        SIM: 'ghdl'
+      Windows-Icarus-py37:
         python.version: '3.7'
         imageName: 'win1803'
-      Mac-py37:
+        SIM: 'icarus'
+      Mac-Icarus-py37:
         imageName: 'macos-10.13'
         python.version: '3.7'
+        SIM: 'icarus'
 
   pool:
     vmImage: $(imageName)
+  variables:
+    SIM: $(SIM)
   
   steps:    
   - powershell: |
@@ -60,11 +70,20 @@ jobs:
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
+      sudo apt-get update
       sudo apt-get install -y gperf flex bison
       git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
       cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
     displayName: Compile and Install Icarus Verilog on Linux
-    condition: eq( variables['Agent.OS'], 'Linux' )
+    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq( variables['SIM'], 'icarus'))
+    
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y gnat-4.9
+      git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+      cd ghdl && ./configure && make -j2 && sudo make install && cd ..
+    displayName: Compile and Install GHDL on Linux
+    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
     
   - script: brew install icarus-verilog
     displayName: Install Icarus Verilog on Mac
@@ -78,7 +97,7 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
   - script: |
-      echo "##vso[task.setvariable variable=SIM]icarus"
+      echo "##vso[task.setvariable variable=SIM]$(SIM)"
     displayName: Set simulator
     
   - script: |
