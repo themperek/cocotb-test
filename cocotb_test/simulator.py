@@ -23,6 +23,7 @@ class Simulator(object):
         defines=[],
         extra_compile_args=[],
         extra_simulation_args=[],
+        plus_args=[],
         **kwargs
     ):
 
@@ -40,6 +41,7 @@ class Simulator(object):
         self.defines = defines
         self.extra_compile_args = extra_compile_args
         self.extra_simulation_args = extra_simulation_args
+        self.plus_args = plus_args
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
@@ -124,6 +126,7 @@ class Icarus(Simulator):
             ["vvp", "-M", self.lib_dir, "-m", "gpivpi"]
             + self.extra_simulation_args
             + [self.sim_file]
+            + self.plus_args
         )
 
     def build_command(self):
@@ -191,7 +194,7 @@ class Questa(Simulator):
                 ),
             )
         else:
-            do_script += "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL}\n".format(
+            do_script += "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUS_ARGS}\n".format(
                 TOPLEVEL=as_tcl_value(self.toplevel),
                 EXT_NAME=as_tcl_value(
                     os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
@@ -199,6 +202,7 @@ class Questa(Simulator):
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v) for v in self.extra_simulation_args
                 ),
+                PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
 
         do_script += """log -recursive /*
