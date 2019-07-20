@@ -4,6 +4,7 @@ from cocotb.result import TestFailure
 
 import pytest
 from cocotb_test.run import run
+import os
 
 
 @cocotb.test(skip=False)
@@ -19,6 +20,7 @@ def run_test(dut):
         )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_plus_args():
     run(
         verilog_sources=["plus_args.v"],
@@ -27,11 +29,13 @@ def test_plus_args():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_fail():
     run(verilog_sources=["plus_args.v"], toplevel="plus_args")
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_test_wrong():
     run(

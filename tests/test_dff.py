@@ -3,7 +3,7 @@ import pytest
 import os
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_dff():
     run(
         verilog_sources=["dff.v"],  # sources
@@ -12,7 +12,7 @@ def test_dff():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_dff_vhdl():
     run(vhdl_sources=["dff.vhdl"], toplevel="dff", module="dff_cocotb")
 

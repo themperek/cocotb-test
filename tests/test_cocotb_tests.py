@@ -13,6 +13,7 @@ if os.path.isdir(tests_dir) == False:
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_cocotb():
     run(
         verilog_sources=[
@@ -24,6 +25,7 @@ def test_cocotb():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.skipif(sys.version_info.major == 2, reason="python3.5 api")
 def test_cocotb_35():
     run(
@@ -36,7 +38,8 @@ def test_cocotb_35():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_verilog_access():
     run(
         verilog_sources=[

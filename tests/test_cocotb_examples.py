@@ -13,7 +13,7 @@ if os.path.isdir(example_dir) == False:
         "Cocotb example directory not found. Please clone with git and install with `pip -e`"
     )
 
-
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_ping_tun_tap():
     if not (os.name == "posix" and os.geteuid() == 0):
         pytest.skip("This test works only on a POSIX OS with admin rights")
@@ -28,6 +28,7 @@ def test_ping_tun_tap():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_dff_verilog():
     run(
         verilog_sources=[os.path.join(example_dir, "dff", "hdl", "dff.v")],
@@ -37,7 +38,7 @@ def test_dff_verilog():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == 'icarus', reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == 'icarus', reason="VHDL not suported")
 def test_dff_vhdl():
     run(
         vhdl_sources=[os.path.join(example_dir, "dff", "hdl", "dff.vhdl")],
@@ -48,6 +49,7 @@ def test_dff_vhdl():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_adder_verilog():
     run(
         verilog_sources=[os.path.join(example_dir, "adder", "hdl", "adder.v")],
@@ -60,7 +62,7 @@ def test_adder_verilog():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_adder_vhdl():
     run(
         vhdl_sources=[os.path.join(example_dir, "adder", "hdl", "adder.vhdl")],
@@ -74,7 +76,8 @@ def test_adder_vhdl():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_mean():
     run(
         vhdl_sources=[
@@ -88,7 +91,8 @@ def test_mean():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_mixed_top_verilog():
     run(
         vhdl_sources=[
@@ -104,7 +108,8 @@ def test_mixed_top_verilog():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_mixed_top_vhdl():
     run(
         vhdl_sources=[
@@ -121,6 +126,7 @@ def test_mixed_top_vhdl():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_axi_lite_slave():
     run(
         verilog_sources=[
@@ -135,6 +141,7 @@ def test_axi_lite_slave():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_endian_swapper_verilog():
     run(
         verilog_sources=[
@@ -146,7 +153,7 @@ def test_endian_swapper_verilog():
     )
 
 
-@pytest.mark.skipif(os.environ["SIM"] == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_endian_swapper_vhdl():
     run(
         vhdl_sources=[
