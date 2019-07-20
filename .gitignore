@@ -150,3 +150,7 @@ bpad_*.err
 .bpad/
 .simvision/
 waves.shm/
+
+/.project
+/.pydevproject
+/.dvt
