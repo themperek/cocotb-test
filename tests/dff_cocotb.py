@@ -1,8 +1,8 @@
 # ==============================================================================
 # Authors:		Martin Zabel
-# 
+#
 # Cocotb Testbench:	For D-FF
-# 
+#
 # Description:
 # ------------------------------------
 # Automated testbench for simple D-FF.
@@ -10,14 +10,14 @@
 # License:
 # ==============================================================================
 # Copyright 2016 Technische Universitaet Dresden - Germany
-#		 Chair for VLSI-Design, Diagnostics and Architecture
-# 
+# 		 Chair for VLSI-Design, Diagnostics and Architecture
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
-#		http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
+# 		http://www.apache.org/licenses/LICENSE-2.0
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,12 +41,13 @@ from cocotb.result import TestFailure, TestSuccess
 # ==============================================================================
 class BitMonitor(Monitor):
     """Observes a single-bit input or output of DUT."""
+
     def __init__(self, name, signal, clock, callback=None, event=None):
         self.name = name
         self.signal = signal
         self.clock = clock
         Monitor.__init__(self, callback, event)
-        
+
     @coroutine
     def _monitor_recv(self):
         clkedge = RisingEdge(self.clock)
@@ -57,12 +58,14 @@ class BitMonitor(Monitor):
             vec = self.signal.value
             self._recv(vec)
 
+
 # ==============================================================================
 def input_gen():
     """Generator for input data applied by BitDriver"""
     while True:
-        yield random.randint(1,5), random.randint(1,5)
-        
+        yield random.randint(1, 5), random.randint(1, 5)
+
+
 # ==============================================================================
 class DFF_TB(object):
     def __init__(self, dut, init_val):
@@ -80,16 +83,15 @@ class DFF_TB(object):
         # Create input driver and output monitor
         self.input_drv = BitDriver(dut.d, dut.c, input_gen())
         self.output_mon = BitMonitor("output", dut.q, dut.c)
-        
+
         # Create a scoreboard on the outputs
-        self.expected_output = [ init_val ]
+        self.expected_output = [init_val]
         self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.output_mon, self.expected_output)
 
         # Reconstruct the input transactions from the pins
         # and send them to our 'model'
-        self.input_mon = BitMonitor("input", dut.d, dut.c,
-                                    callback=self.model)
+        self.input_mon = BitMonitor("input", dut.d, dut.c, callback=self.model)
 
     def model(self, transaction):
         """Model the DUT based on the input transaction."""
@@ -111,13 +113,23 @@ class DFF_TB(object):
         self.input_drv.stop()
         self.stopped = True
 
+
 # ==============================================================================
+@cocotb.coroutine
+def clock_gen(signal): #TODO: to be changed after : https://github.com/cocotb/cocotb/issues/979
+    """Generate the clock signal."""
+    while True:
+        signal <= 0
+        yield Timer(5000)  # ps
+        signal <= 1
+        yield Timer(5000)  # ps
+
+
+# ==============================================================================    # ==============================================================================
 @cocotb.coroutine
 def run_test(dut):
     """Setup testbench and run a test."""
-
-    cocotb.fork(Clock(dut.c, 5000).start())
-
+    cocotb.fork(clock_gen(dut.c))
     tb = DFF_TB(dut, BinaryValue(0, 1))
 
     clkedge = RisingEdge(dut.c)
@@ -135,8 +147,8 @@ def run_test(dut):
     # Print result of scoreboard.
     raise tb.scoreboard.result
 
+
 # ==============================================================================
 # Register the test.
 factory = TestFactory(run_test)
 factory.generate_tests()
-
