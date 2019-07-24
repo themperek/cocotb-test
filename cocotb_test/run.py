@@ -32,7 +32,9 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     env = os.environ
 
-    #env["PATH"] += os.pathsep + libs_dir
+    lib_dir_sep = os.pathsep + libs_dir + os.pathsep
+    if lib_dir_sep not in env["PATH"]:  # without checking will add forever casing error
+        env["PATH"] += lib_dir_sep
 
     python_path = os.pathsep.join(sys.path)
     env["PYTHONPATH"] = os.pathsep + python_path + os.pathsep + libs_dir
@@ -77,8 +79,10 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     sim.run()
 
-    assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
-    
+    assert os.path.isfile(
+        results_xml_file
+    ), "Simulation terminated abnormally. Results file not found."
+
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
         for tc in ts.iter("testcase"):
