@@ -115,7 +115,7 @@ def build_libs(build_dir="cocotb_build"):
         "libcocotbutils",
         include_dirs=[include_dir],
         sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.c")],
-        extra_link_args=["-Wl,-rpath," + build_dir],
+        extra_link_args=["-Wl,-rpath,$ORIGIN"],
     )
 
     _build_lib(libcocotbutils, dist, build_dir_abs)
@@ -142,7 +142,7 @@ def build_libs(build_dir="cocotb_build"):
         library_dirs=[build_dir_abs],
         libraries=["gpilog", "cocotbutils"],
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.c")],
-        extra_link_args=["-Wl,-rpath," + build_dir],
+        extra_link_args=["-Wl,-rpath,$ORIGIN"],
     )
 
     _build_lib(libcocotb, dist, build_dir_abs)
@@ -157,7 +157,7 @@ def build_libs(build_dir="cocotb_build"):
             os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
             os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
         ],
-        extra_link_args=["-Wl,-rpath," + build_dir],
+        extra_link_args=["-Wl,-rpath,$ORIGIN"],
     )
 
     _build_lib(libgpi, dist, build_dir_abs)
@@ -201,7 +201,7 @@ def build_libs(build_dir="cocotb_build"):
             os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
             os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
         ],
-        extra_link_args=["-Wl,-rpath," + build_dir_abs],
+        extra_link_args=["-Wl,-rpath,$ORIGIN"],
     )
 
     _build_lib(libvpi, dist, build_dir_abs)
@@ -217,7 +217,7 @@ def build_libs(build_dir="cocotb_build"):
                 os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
                 os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
             ],
-            extra_link_args=["-Wl,-rpath," + build_dir_abs],
+            extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
         _build_lib(libvhpi, dist, build_dir_abs)
@@ -236,7 +236,7 @@ def build_libs(build_dir="cocotb_build"):
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
             ],
-            extra_link_args=["-Wl,-rpath," + build_dir_abs],
+            extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
         _build_lib(libfli, dist, build_dir_abs)
