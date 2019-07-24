@@ -32,7 +32,7 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     env = os.environ
 
-    env["PATH"] += os.pathsep + libs_dir
+    #env["PATH"] += os.pathsep + libs_dir
 
     python_path = os.pathsep.join(sys.path)
     env["PYTHONPATH"] = os.pathsep + python_path + os.pathsep + libs_dir
