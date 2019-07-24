@@ -23,7 +23,7 @@ class Simulator(object):
         defines=[],
         compile_args=[],
         simulation_args=[],
-        extra_args = [],
+        extra_args=[],
         plus_args=[],
         **kwargs
     ):
@@ -40,15 +40,12 @@ class Simulator(object):
         self.includes = self.get_abs_paths(includes)
 
         self.defines = defines
-        self.compile_args = compile_args
-        self.simulation_args = simulation_args
-        self.extra_args = extra_args
+        self.compile_args = compile_args + extra_args
+        self.simulation_args = simulation_args + extra_args
         self.plus_args = plus_args
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
-
-        self.sim_file = os.path.join(self.sim_dir, "sim.vvp")
 
     def build_command(self):
         pass
@@ -86,6 +83,8 @@ class Icarus(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
+        self.sim_file = os.path.join(self.sim_dir, self.toplevel + ".vvp")
+
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -118,7 +117,6 @@ class Icarus(Simulator):
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.compile_args
-            + self.extra_args
             + self.verilog_sources
         )
 
@@ -128,7 +126,6 @@ class Icarus(Simulator):
         return (
             ["vvp", "-M", self.lib_dir, "-m", "gpivpi"]
             + self.simulation_args
-            + self.extra_args
             + [self.sim_file]
             + self.plus_args
         )
@@ -141,14 +138,14 @@ class Questa(Simulator):
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
-            include_cmd.append("+incdir+" + dir)
+            include_cmd.append("+incdir+" + as_tcl_value(dir))
 
         return include_cmd
 
     def get_define_commands(self, defines):
         defines_cmd = []
         for define in defines:
-            defines_cmd.append("+define+" + define)
+            defines_cmd.append("+define+" + as_tcl_value(define))
 
         return defines_cmd
 
@@ -163,12 +160,8 @@ class Questa(Simulator):
         if self.vhdl_sources:
             do_script += "vcom -mixedsvvh +define+COCOTB_SIM {DEFINES} {INCDIR} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                 VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                DEFINES=" ".join(
-                    as_tcl_value(v) for v in self.get_define_commands(self.defines)
-                ),
-                INCDIR=" ".join(
-                    as_tcl_value(v) for v in self.get_include_commands(self.includes)
-                ),
+                DEFINES=" ".join(get_define_commands(self.defines)),
+                INCDIR=" ".join(self.get_include_commands(self.includes)),
                 EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
             )
             os.environ["GPI_EXTRA"] = "fli"
@@ -176,12 +169,8 @@ class Questa(Simulator):
         if self.verilog_sources:
             do_script += "vlog -mixedsvvh +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}\n".format(
                 VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
-                DEFINES=" ".join(
-                    as_tcl_value(v) for v in self.get_define_commands(self.defines)
-                ),
-                INCDIR=" ".join(
-                    as_tcl_value(v) for v in self.get_include_commands(self.includes)
-                ),
+                DEFINES=" ".join(get_define_commands(self.defines)),
+                INCDIR=" ".join(self.get_include_commands(self.includes)),
                 EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
             )
 
@@ -193,9 +182,7 @@ class Questa(Simulator):
                         os.path.join(self.lib_dir, "libfli." + self.lib_ext)
                     )
                 ),
-                EXTRA_ARGS=" ".join(
-                    as_tcl_value(v) for v in self.simulation_args + self.extra_args
-                ),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
             )
         else:
             do_script += "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUS_ARGS}\n".format(
@@ -203,9 +190,7 @@ class Questa(Simulator):
                 EXT_NAME=as_tcl_value(
                     os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
                 ),
-                EXTRA_ARGS=" ".join(
-                    as_tcl_value(v) for v in self.simulation_args + self.extra_args
-                ),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
 
@@ -269,7 +254,6 @@ class Ius(Simulator):
             + self.get_include_commands(self.includes)
             + self.compile_args
             + self.simulation_args
-            + self.extra_args
             + self.verilog_sources
             + self.vhdl_sources
         )
@@ -316,14 +300,13 @@ class Vcs(Simulator):
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.compile_args
-            + self.extra_args
             + self.verilog_sources
         )
 
         cmd_run = [
             os.path.join(self.sim_dir, "simv"),
             "+define+COCOTB_SIM=1",
-        ] + self.simulation_args + self.extra_args
+        ] + self.simulation_args
 
         return [cmd_build, cmd_run]
 
@@ -349,14 +332,14 @@ class Ghdl(Simulator):
         for source_file in self.vhdl_sources:
             cmd_analyze.append(["ghdl"] + self.compile_args + ["-a", source_file])
 
-        cmd_elaborate = ["ghdl"] + self.compile_args + self.extra_args + ["-e", self.toplevel]
+        cmd_elaborate = ["ghdl"] + self.compile_args + ["-e", self.toplevel]
 
         cmd_run = [
             "ghdl",
             "-r",
             self.toplevel,
             "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
-        ] + self.simulation_args + self.extra_args
+        ] + self.simulation_args
 
         cmd = cmd_analyze + [cmd_elaborate] + [cmd_run]
         return cmd
