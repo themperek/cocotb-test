@@ -59,6 +59,9 @@ class RunAction(argparse.Action):
         kwargs["toplevel_lang"] = os.getenv("TOPLEVEL_LANG")
         kwargs["module"] = os.getenv("MODULE")
         kwargs["simulation_args"] = os.getenv("SIM_ARGS", "").split()
+        kwargs["compile_args"] = os.getenv("COMPILE_ARGS", "").split()
+        kwargs["extra_args"] = os.getenv("EXTRA_ARGS", "").split()
+        kwargs["plus_args"] = os.getenv("PLUS_ARGS", "").split()
         kwargs["python_search"] = (
             os.getenv("PYTHONPATH", "").replace(";", " ").replace(":", " ").split()
         )
