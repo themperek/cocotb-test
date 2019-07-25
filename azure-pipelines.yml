@@ -123,7 +123,7 @@ jobs:
   - script: |
       cd tests; make
     displayName: 'Test Makefile flow (Linux only)'
-    condition: eq( variables['Agent.OS'], 'Linux' )
+    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'icarus'))
     
   - task: PublishTestResults@2
     condition: succeededOrFailed()
