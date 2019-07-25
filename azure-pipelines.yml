@@ -120,6 +120,11 @@ jobs:
       pytest -s --junitxml=test-results.xml tests
     displayName: 'Test with pytest'
 
+  - script: |
+      cd tests; make
+    displayName: 'Test Makefile flow (Linux only)'
+    condition: eq( variables['Agent.OS'], 'Linux' )
+    
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:

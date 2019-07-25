@@ -1,0 +1,19 @@
+
+all: test
+
+export VERILOG_SOURCES
+export VHDL_SOURCES
+export TOPLEVEL_LANG
+export TOPLEVEL
+export MODULE
+export SIM_ARGS
+
+PYTHONPATH += $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+export PYTHONPATH
+
+test:
+	cocotb --run_env
+
+clean:
+	rm -rf cocotb_build
+	rm -rf sim_build
