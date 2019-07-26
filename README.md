@@ -4,7 +4,7 @@
 
 ``cocotb-test`` provides standard python unit testing capabilities for [cocotb](https://github.com/cocotb/cocotb)
 - allow the look and feel of Python unit testing
-- remove the need for Makefiles
+- remove the need for Makefiles (includes Makefile compatibility mode)
 - allow easy customization of simulation flow
 - better user experience on Windows  
 - in future allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs
