@@ -64,7 +64,7 @@ class Simulator(object):
         paths_abs = []
         for path in paths:
             if os.path.isabs(path):
-                paths_abs.append(path)
+                paths_abs.append(os.path.abspath(path))
             else:
                 paths_abs.append(os.path.abspath(os.path.join(self.run_dir, path)))
 
