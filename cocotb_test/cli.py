@@ -77,7 +77,7 @@ def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
-        "--inc_makefile",
+        "--inc-makefile",
         help="echos the makefile to include",
         action=PrintAction,
         text=makefiles_dir,
@@ -90,7 +90,7 @@ def main():
         text=version,
     )
     parser.add_argument(
-        "--run_env",
+        "--run-env",
         help="run simulation based on enviroment variables",
         action=RunAction,
     )
