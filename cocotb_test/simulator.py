@@ -75,6 +75,24 @@ class Simulator(object):
             print(" ".join(cmd))
             process = subprocess.check_call(cmd, cwd=self.sim_dir)
 
+    def outdated(self, output, dependecies):
+
+        if not os.path.isfile(output):
+            return True
+
+        output_mtime = os.path.getmtime(output)
+
+        dep_mtime = 0
+        for file in dependecies:
+            mtime = os.path.getmtime(file)
+            if mtime > dep_mtime:
+                dep_mtime = mtime
+
+        if dep_mtime > output_mtime:
+            return True
+
+        return False
+
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
@@ -131,7 +149,16 @@ class Icarus(Simulator):
         )
 
     def build_command(self):
-        return [self.compile_command(), self.run_command()]
+        cmd = []
+        if self.outdated(self.sim_file, self.verilog_sources):
+            cmd.append(self.compile_command())
+        else:
+            print("Skipping compilation:" + self.sim_file)
+
+        # TODO: check dependency
+        cmd.append(self.run_command())
+
+        return cmd
 
 
 class Questa(Simulator):
