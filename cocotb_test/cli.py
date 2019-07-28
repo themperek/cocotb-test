@@ -33,7 +33,7 @@ import sys
 import cocotb_test
 import argparse
 import pkg_resources
-from cocotb_test.run import run, clean
+from cocotb_test.run import run
 
 
 class PrintAction(argparse.Action):
@@ -47,10 +47,10 @@ class PrintAction(argparse.Action):
 
 
 def config():
+
     makefiles_dir = os.path.join(os.path.dirname(cocotb_test.__file__), "Makefile.inc")
     version = pkg_resources.get_distribution("cocotb-test").version
 
-    print
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
         "--inc-makefile",
@@ -70,6 +70,8 @@ def config():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
+    args = parser.parse_args()
+
 
 def run():
     parser = argparse.ArgumentParser(
@@ -82,11 +84,8 @@ def run():
         action="store_true",
         help="Run simulation based on enviroment variables",
     )
-    args = parser.parse_args()
 
-    if len(sys.argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
+    args = parser.parse_args()
 
     if args.env:
         kwargs = {}
@@ -102,7 +101,7 @@ def run():
         kwargs["python_search"] = (
             os.getenv("PYTHONPATH", "").replace(";", " ").replace(":", " ").split()
         )
-        run(**kwargs)
+        cocotb_test.run.run(**kwargs)
     else:
         parser.print_help(sys.stderr)
         sys.exit(1)
