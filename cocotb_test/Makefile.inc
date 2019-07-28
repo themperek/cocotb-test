@@ -12,7 +12,7 @@ PYTHONPATH += $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 export PYTHONPATH
 
 test:
-	cocotb --run-env
+	cocotb-run --env
 
 clean:
 	rm -rf cocotb_build

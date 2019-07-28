@@ -24,7 +24,13 @@ setup(
     author_email="hemperek@uni-bonn.de",
     packages=find_packages(),
     install_requires=["cocotb", "pytest"],
-    entry_points={"console_scripts": ["cocotb=cocotb_test.cli:main"]},
+    entry_points={
+        "console_scripts": [
+            "cocotb=cocotb_test.cli:config",
+            "cocotb-run=cocotb_test.cli:run",
+            "cocotb-clean=cocotb_test.cli:clean",
+        ]
+    },
     platforms="any",
     classifiers=[
         "Programming Language :: Python :: 2.7",
