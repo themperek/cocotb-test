@@ -1,6 +1,7 @@
 import os
 import sys
 import inspect
+import shutil
 
 import cocotb_test.simulator
 from cocotb_test.build_libs import build_libs
@@ -93,3 +94,24 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
                     tc.get("name"),
                     failure.get("stdout"),
                 )
+
+
+def clean(recursive=False, all=False):
+    dir = os.getcwd()
+
+    def rm_clean():
+        sim_build_dir = os.path.join(dir, "sim_build")
+        if os.path.isdir(sim_build_dir):
+            print("Removing:", sim_build_dir)
+            shutil.rmtree(sim_build_dir, ignore_errors=True)
+            if all:
+                libs_build_dir = os.path.join(dir, "cocotb_build")
+                if os.path.isdir(libs_build_dir):
+                    print("Removing:", libs_build_dir)
+                    shutil.rmtree(libs_build_dir, ignore_errors=True)
+
+    rm_clean()
+
+    if recursive:
+        for dir, subFolders, files in os.walk(dir):
+            rm_clean()

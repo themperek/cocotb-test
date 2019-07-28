@@ -33,7 +33,7 @@ import sys
 import cocotb_test
 import argparse
 import pkg_resources
-from cocotb_test.run import run
+from cocotb_test.run import run, clean
 
 
 class PrintAction(argparse.Action):
@@ -46,35 +46,11 @@ class PrintAction(argparse.Action):
         parser.exit()
 
 
-class RunAction(argparse.Action):
-    def __init__(self, option_strings, dest, text=None, **kwargs):
-        super(RunAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        kwargs = {}
-
-        kwargs["verilog_sources"] = os.getenv("VERILOG_SOURCES", "").split()
-        kwargs["vhdl_sources"] = os.getenv("VHDL_SOURCES", "").split()
-        kwargs["toplevel"] = os.getenv("TOPLEVEL")
-        kwargs["toplevel_lang"] = os.getenv("TOPLEVEL_LANG")
-        kwargs["module"] = os.getenv("MODULE")
-        kwargs["simulation_args"] = os.getenv("SIM_ARGS", "").split()
-        kwargs["compile_args"] = os.getenv("COMPILE_ARGS", "").split()
-        kwargs["extra_args"] = os.getenv("EXTRA_ARGS", "").split()
-        kwargs["plus_args"] = os.getenv("PLUS_ARGS", "").split()
-        kwargs["python_search"] = (
-            os.getenv("PYTHONPATH", "").replace(";", " ").replace(":", " ").split()
-        )
-
-        run(**kwargs)
-
-        parser.exit()
-
-
-def main():
+def config():
     makefiles_dir = os.path.join(os.path.dirname(cocotb_test.__file__), "Makefile.inc")
     version = pkg_resources.get_distribution("cocotb-test").version
 
+    print
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
         "--inc-makefile",
@@ -89,18 +65,67 @@ def main():
         action=PrintAction,
         text=version,
     )
-    parser.add_argument(
-        "--run-env",
-        help="run simulation based on enviroment variables",
-        action=RunAction,
-    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
+
+def run():
+    parser = argparse.ArgumentParser(
+        description="cocotb-run", formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        dest="env",
+        action="store_true",
+        help="Run simulation based on enviroment variables",
+    )
     args = parser.parse_args()
 
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
-if __name__ == "__main__":
-    main()
+    if args.env:
+        kwargs = {}
+        kwargs["verilog_sources"] = os.getenv("VERILOG_SOURCES", "").split()
+        kwargs["vhdl_sources"] = os.getenv("VHDL_SOURCES", "").split()
+        kwargs["toplevel"] = os.getenv("TOPLEVEL")
+        kwargs["toplevel_lang"] = os.getenv("TOPLEVEL_LANG")
+        kwargs["module"] = os.getenv("MODULE")
+        kwargs["simulation_args"] = os.getenv("SIM_ARGS", "").split()
+        kwargs["compile_args"] = os.getenv("COMPILE_ARGS", "").split()
+        kwargs["extra_args"] = os.getenv("EXTRA_ARGS", "").split()
+        kwargs["plus_args"] = os.getenv("PLUS_ARGS", "").split()
+        kwargs["python_search"] = (
+            os.getenv("PYTHONPATH", "").replace(";", " ").replace(":", " ").split()
+        )
+        run(**kwargs)
+    else:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+
+def clean():
+    parser = argparse.ArgumentParser(
+        description="cocotb-clean", formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        dest="recursive",
+        action="store_true",
+        help="Recursive clean",
+    )
+    parser.add_argument(
+        "-a",
+        "--all",
+        dest="all",
+        action="store_true",
+        help="Remove also build libraries",
+    )
+    args = parser.parse_args()
+
+    cocotb_test.run.clean(recursive=args.recursive, all=args.all)
