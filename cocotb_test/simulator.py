@@ -75,7 +75,7 @@ class Simulator(object):
             print(" ".join(cmd))
             process = subprocess.check_call(cmd, cwd=self.sim_dir)
 
-    def outdated(self, output, dependecies):
+    def outdated(self, output, dependencies):
 
         if not os.path.isfile(output):
             return True
@@ -83,7 +83,7 @@ class Simulator(object):
         output_mtime = os.path.getmtime(output)
 
         dep_mtime = 0
-        for file in dependecies:
+        for file in dependencies:
             mtime = os.path.getmtime(file)
             if mtime > dep_mtime:
                 dep_mtime = mtime
