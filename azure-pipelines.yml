@@ -129,4 +129,4 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-*.xml'
-      testRunTitle: 'Publish test results for Python $(python.version)'
+      testRunTitle: 'Test results for Python $(python.version) on $(imageName) with $(SIM)'
