@@ -48,17 +48,17 @@ class Simulator(object):
             setattr(self, arg, kwargs[arg])
 
     def build_command(self):
-        pass
+        raise NotImplementedError()
 
     def run(self):
         cmds = self.build_command()
         self.execute(cmds)
 
     def get_include_commands(self, includes):
-        pass
+        raise NotImplementedError()
 
     def get_define_commands(self, defines):
-        pass
+        raise NotImplementedError()
 
     def get_abs_paths(self, paths):
         paths_abs = []
@@ -357,9 +357,9 @@ class Ghdl(Simulator):
 
         cmd_analyze = []
         for source_file in self.vhdl_sources:
-            cmd_analyze.append(["ghdl"] + self.compile_args + ["-a", source_file])
+            cmd_analyze.append(["ghdl"] + self.compile_args + ["-i", source_file])
 
-        cmd_elaborate = ["ghdl"] + self.compile_args + ["-e", self.toplevel]
+        cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
 
         cmd_run = [
             "ghdl",
