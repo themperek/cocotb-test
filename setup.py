@@ -1,11 +1,9 @@
 from setuptools import setup
 from setuptools import find_packages
-
+import os
 import cocotb_test
 
 version = cocotb_test.__version__
-
-import os
 
 
 def read_file(fname):
@@ -23,7 +21,8 @@ class PostInstallCommand(install):
         install.run(self)
 
         lib_dir = os.path.join(self.install_lib, "cocotb_test", "libs")
-        os.makedirs(lib_dir)
+        if not os.path.exists(lib_dir):
+            os.makedirs(lib_dir)
 
         from cocotb_test.build_libs import build_libs
 
@@ -37,7 +36,8 @@ class PostDevelopCommand(develop):
         develop.run(self)
 
         lib_dir = os.path.join(os.path.dirname(cocotb_test.__file__), "libs")
-        os.makedirs(lib_dir)
+        if not os.path.exists(lib_dir):
+            os.makedirs(lib_dir)
 
         from cocotb_test.build_libs import build_libs
 
