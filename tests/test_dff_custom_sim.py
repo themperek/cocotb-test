@@ -14,7 +14,7 @@ class IcarusCustom(Icarus):
             "-M",
             self.lib_dir,
             "-m",
-            "gpivpi",
+            "libvpi",
             self.sim_file,
         ]
 
