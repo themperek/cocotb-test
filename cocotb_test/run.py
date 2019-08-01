@@ -57,24 +57,23 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     sim_build_dir = os.path.join(os.getcwd(), "sim_build")
 
-    # fo = tempfile.NamedTemporaryFile()
-    # results_xml_file = fo.name
-    # fo.close()
-    # env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
-
-    results_xml_file = os.path.join(sim_build_dir, "results.xml")
-
-    if not os.path.exists(sim_build_dir):
-        os.makedirs(sim_build_dir)
-
     kwargs["toplevel"] = toplevel
     kwargs["run_dir"] = run_dir_name
     kwargs["sim_dir"] = sim_build_dir
     kwargs["lib_dir"] = os.path.join(libs_dir, env["SIM"])
     kwargs["lib_ext"] = ext_name
 
-    if os.path.isfile(results_xml_file):
-        os.remove(results_xml_file)
+    if not os.path.exists(sim_build_dir):
+        os.makedirs(sim_build_dir)
+
+    results_xml_file_defulat = os.path.join(sim_build_dir, "results.xml")
+    if os.path.isfile(results_xml_file_defulat):
+        os.remove(results_xml_file_defulat)
+        
+    fo = tempfile.NamedTemporaryFile()
+    results_xml_file = fo.name
+    fo.close()
+    env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
 
     if simulator:
         sim = simulator(**kwargs)
@@ -91,6 +90,10 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     sim.run()
 
+    #HACK: for compatibility to be removed
+    if os.path.isfile(results_xml_file_defulat):
+        results_xml_file = results_xml_file_defulat
+    
     assert os.path.isfile(
         results_xml_file
     ), "Simulation terminated abnormally. Results file not found."
