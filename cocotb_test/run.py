@@ -21,8 +21,11 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
             "Set SIM variable. Supported: " + ", ".join(supported_sim)
         )
 
-    libs_dir, ext_name = build_libs()
-
+    libs_dir = os.path.join(os.path.dirname(__file__), "libs")
+    ext_name = "so"
+    if os.name == "nt":
+        ext_name = "dll"
+    
     previous_frame = inspect.currentframe().f_back
     (run_module_filename, _, _, _, _) = inspect.getframeinfo(previous_frame)
 

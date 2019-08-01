@@ -154,3 +154,5 @@ waves.shm/
 /.project
 /.pydevproject
 /.dvt
+
+/cocotb_test/libs
