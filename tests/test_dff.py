@@ -14,7 +14,7 @@ def test_dff():
 
 @pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_dff_vhdl():
-    run(vhdl_sources=["dff.vhdl"], toplevel="dff", module="dff_cocotb")
+    run(vhdl_sources=["dff.vhdl"], toplevel="dff_vhdl", module="dff_cocotb", toplevel_lang="vhdl")
 
 
 if __name__ == "__main__":

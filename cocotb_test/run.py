@@ -2,6 +2,7 @@ import os
 import sys
 import inspect
 import shutil
+import tempfile
 
 import cocotb_test.simulator
 from cocotb_test.build_libs import build_libs
@@ -20,8 +21,11 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
             "Set SIM variable. Supported: " + ", ".join(supported_sim)
         )
 
-    libs_dir, ext_name = build_libs()
-
+    libs_dir = os.path.join(os.path.dirname(__file__), "libs")
+    ext_name = "so"
+    if os.name == "nt":
+        ext_name = "dll"
+    
     previous_frame = inspect.currentframe().f_back
     (run_module_filename, _, _, _, _) = inspect.getframeinfo(previous_frame)
 
@@ -33,14 +37,15 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
 
     env = os.environ
 
-    lib_dir_sep = os.pathsep + libs_dir + os.pathsep
+    lib_dir_sep = os.pathsep + os.path.join(libs_dir, env["SIM"]) + os.pathsep
     if lib_dir_sep not in env["PATH"]:  # without checking will add forever casing error
         env["PATH"] += lib_dir_sep
 
     python_path = os.pathsep.join(sys.path)
-    env["PYTHONPATH"] = os.pathsep + python_path + os.pathsep + libs_dir
+    env["PYTHONPATH"] = os.pathsep + os.path.join(libs_dir, env["SIM"])
     env["PYTHONPATH"] += os.pathsep + os.path.dirname(run_module_filename)
     env["PYTHONPATH"] += os.pathsep + os.path.dirname(run_dir_name)
+    env["PYTHONPATH"] += os.pathsep + python_path
 
     for path in python_search:
         env["PYTHONPATH"] += os.pathsep + path
@@ -51,6 +56,12 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
     env["VERSION"] = pkg_resources.get_distribution("cocotb").version
 
     sim_build_dir = os.path.join(os.getcwd(), "sim_build")
+
+    # fo = tempfile.NamedTemporaryFile()
+    # results_xml_file = fo.name
+    # fo.close()
+    # env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
+
     results_xml_file = os.path.join(sim_build_dir, "results.xml")
 
     if not os.path.exists(sim_build_dir):
@@ -59,7 +70,7 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
     kwargs["toplevel"] = toplevel
     kwargs["run_dir"] = run_dir_name
     kwargs["sim_dir"] = sim_build_dir
-    kwargs["lib_dir"] = libs_dir
+    kwargs["lib_dir"] = os.path.join(libs_dir, env["SIM"])
     kwargs["lib_ext"] = ext_name
 
     if os.path.isfile(results_xml_file):
@@ -94,6 +105,8 @@ def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
                     tc.get("name"),
                     failure.get("stdout"),
                 )
+
+    return results_xml_file
 
 
 def clean(recursive=False, all=False):

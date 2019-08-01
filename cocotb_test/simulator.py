@@ -142,7 +142,7 @@ class Icarus(Simulator):
 
     def run_command(self):
         return (
-            ["vvp", "-M", self.lib_dir, "-m", "gpivpi"]
+            ["vvp", "-M", self.lib_dir, "-m", "libvpi"]
             + self.simulation_args
             + [self.sim_file]
             + self.plus_args
@@ -266,6 +266,7 @@ class Ius(Simulator):
             [
                 "irun",
                 "-64",
+                "-v93",
                 "-define",
                 "COCOTB_SIM=1",
                 "-loadvpi",
