@@ -1,6 +1,8 @@
 import subprocess
 import os
 import sys
+import inspect
+import pkg_resources
 
 if sys.version_info.major >= 3:
     from tkinter import _stringify as as_tcl_value
@@ -11,11 +13,10 @@ else:
 class Simulator(object):
     def __init__(
         self,
-        run_dir,
-        sim_dir,
-        lib_dir,
-        lib_ext,
         toplevel,
+        run_filename,
+        module=None,
+        python_search=[],
         toplevel_lang="verilog",
         verilog_sources=[],
         vhdl_sources=[],
@@ -28,10 +29,22 @@ class Simulator(object):
         **kwargs
     ):
 
-        self.run_dir = run_dir
-        self.sim_dir = sim_dir
-        self.lib_dir = lib_dir
-        self.lib_ext = lib_ext
+        self.sim_dir = os.path.join(os.getcwd(), "sim_build")
+
+        libs_dir = os.path.join(os.path.dirname(__file__), "libs")
+        self.lib_dir = os.path.join(libs_dir, os.getenv("SIM"))
+
+        self.lib_ext = "so"
+        if os.name == "nt":
+            self.lib_ext = "dll"
+
+        self.run_dir = os.path.dirname(run_filename)
+
+        self.module = module
+        if self.module is None:
+            self.module = os.path.splitext(os.path.split(run_filename)[-1])[0]
+
+        self.python_search = python_search
 
         self.toplevel = toplevel
         self.toplevel_lang = toplevel_lang
@@ -46,6 +59,31 @@ class Simulator(object):
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
+
+        self.set_env()
+
+    def set_env(self):
+        env = os.environ
+
+        lib_dir_sep = os.pathsep + self.lib_dir + os.pathsep
+        if lib_dir_sep not in env["PATH"]:  # without checking will add forever casing error
+            env["PATH"] += lib_dir_sep
+
+        python_path = os.pathsep.join(sys.path)
+        env["PYTHONPATH"] = os.pathsep + self.lib_dir
+        env["PYTHONPATH"] += os.pathsep + self.run_dir
+        env["PYTHONPATH"] += os.pathsep + python_path
+
+        for path in self.python_search:
+            env["PYTHONPATH"] += os.pathsep + path
+
+        env["TOPLEVEL"] = self.toplevel
+        env["COCOTB_SIM"] = "1"
+        env["MODULE"] = self.module
+        env["VERSION"] = pkg_resources.get_distribution("cocotb").version
+
+        if not os.path.exists(self.sim_dir):
+            os.makedirs(self.sim_dir)
 
     def build_command(self):
         raise NotImplementedError()
@@ -122,16 +160,7 @@ class Icarus(Simulator):
     def compile_command(self):
 
         cmd_compile = (
-            [
-                "iverilog",
-                "-o",
-                self.sim_file,
-                "-D",
-                "COCOTB_SIM=1",
-                "-s",
-                self.toplevel,
-                "-g2012",
-            ]
+            ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-s", self.toplevel, "-g2012"]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.compile_args
@@ -141,12 +170,7 @@ class Icarus(Simulator):
         return cmd_compile
 
     def run_command(self):
-        return (
-            ["vvp", "-M", self.lib_dir, "-m", "libvpi"]
-            + self.simulation_args
-            + [self.sim_file]
-            + self.plus_args
-        )
+        return ["vvp", "-M", self.lib_dir, "-m", "libvpi"] + self.simulation_args + [self.sim_file] + self.plus_args
 
     def build_command(self):
         cmd = []
@@ -204,19 +228,13 @@ class Questa(Simulator):
         if self.toplevel_lang == "vhdl":
             do_script += "vsim -onfinish exit -foreign {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL}\n".format(
                 TOPLEVEL=as_tcl_value(self.toplevel),
-                EXT_NAME=as_tcl_value(
-                    "cocotb_init {}".format(
-                        os.path.join(self.lib_dir, "libfli." + self.lib_ext)
-                    )
-                ),
+                EXT_NAME=as_tcl_value("cocotb_init {}".format(os.path.join(self.lib_dir, "libfli." + self.lib_ext))),
                 EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
             )
         else:
             do_script += "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUS_ARGS}\n".format(
                 TOPLEVEL=as_tcl_value(self.toplevel),
-                EXT_NAME=as_tcl_value(
-                    os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
-                ),
+                EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi." + self.lib_ext)),
                 EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
@@ -270,8 +288,7 @@ class Ius(Simulator):
                 "-define",
                 "COCOTB_SIM=1",
                 "-loadvpi",
-                os.path.join(self.lib_dir, "libvpi." + self.lib_ext)
-                + ":vlog_startup_routines_bootstrap",
+                os.path.join(self.lib_dir, "libvpi." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
                 "-plinowarn",
                 "-access",
                 "+rwc",
@@ -331,10 +348,7 @@ class Vcs(Simulator):
             + self.verilog_sources
         )
 
-        cmd_run = [
-            os.path.join(self.sim_dir, "simv"),
-            "+define+COCOTB_SIM=1",
-        ] + self.simulation_args
+        cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"] + self.simulation_args
 
         return [cmd_build, cmd_run]
 
@@ -362,12 +376,7 @@ class Ghdl(Simulator):
 
         cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
 
-        cmd_run = [
-            "ghdl",
-            "-r",
-            self.toplevel,
-            "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
-        ] + self.simulation_args
+        cmd_run = ["ghdl", "-r", self.toplevel, "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext)] + self.simulation_args
 
         cmd = cmd_analyze + [cmd_elaborate] + [cmd_run]
         return cmd

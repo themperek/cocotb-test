@@ -7,107 +7,54 @@ import tempfile
 import cocotb_test.simulator
 from cocotb_test.build_libs import build_libs
 
-import pkg_resources
 from xml.etree import cElementTree as ET
 
 
-def run(toplevel, module=None, python_search=[], simulator=None, **kwargs):
+def run(simulator=None, **kwargs):
 
     supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl"]
-    if ("SIM" in os.environ and os.environ["SIM"] in supported_sim) or simulator:
+    if (os.getenv("SIM") in supported_sim) or simulator:
         pass
     else:
-        raise NotImplementedError(
-            "Set SIM variable. Supported: " + ", ".join(supported_sim)
-        )
+        raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
 
-    libs_dir = os.path.join(os.path.dirname(__file__), "libs")
-    ext_name = "so"
-    if os.name == "nt":
-        ext_name = "dll"
-    
-    previous_frame = inspect.currentframe().f_back
-    (run_module_filename, _, _, _, _) = inspect.getframeinfo(previous_frame)
-
-    run_dir_name = os.path.dirname(run_module_filename)
-    run_module_name = os.path.splitext(os.path.split(run_module_filename)[-1])[0]
-
-    if module is None:
-        module = run_module_name
-
-    env = os.environ
-
-    lib_dir_sep = os.pathsep + os.path.join(libs_dir, env["SIM"]) + os.pathsep
-    if lib_dir_sep not in env["PATH"]:  # without checking will add forever casing error
-        env["PATH"] += lib_dir_sep
-
-    python_path = os.pathsep.join(sys.path)
-    env["PYTHONPATH"] = os.pathsep + os.path.join(libs_dir, env["SIM"])
-    env["PYTHONPATH"] += os.pathsep + os.path.dirname(run_module_filename)
-    env["PYTHONPATH"] += os.pathsep + os.path.dirname(run_dir_name)
-    env["PYTHONPATH"] += os.pathsep + python_path
-
-    for path in python_search:
-        env["PYTHONPATH"] += os.pathsep + path
-
-    env["TOPLEVEL"] = toplevel
-    env["COCOTB_SIM"] = "1"
-    env["MODULE"] = module
-    env["VERSION"] = pkg_resources.get_distribution("cocotb").version
-
-    sim_build_dir = os.path.join(os.getcwd(), "sim_build")
-
-    kwargs["toplevel"] = toplevel
-    kwargs["run_dir"] = run_dir_name
-    kwargs["sim_dir"] = sim_build_dir
-    kwargs["lib_dir"] = os.path.join(libs_dir, env["SIM"])
-    kwargs["lib_ext"] = ext_name
-
-    if not os.path.exists(sim_build_dir):
-        os.makedirs(sim_build_dir)
-
-    results_xml_file_defulat = os.path.join(sim_build_dir, "results.xml")
-    if os.path.isfile(results_xml_file_defulat):
-        os.remove(results_xml_file_defulat)
-        
-    fo = tempfile.NamedTemporaryFile()
-    results_xml_file = fo.name
-    fo.close()
-    env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
+    run_filename = inspect.getframeinfo(inspect.currentframe().f_back)[0]
+    kwargs["run_filename"] = run_filename
 
     if simulator:
         sim = simulator(**kwargs)
-    elif env["SIM"] == "icarus":
+    elif os.getenv("SIM") == "icarus":
         sim = cocotb_test.simulator.Icarus(**kwargs)
-    elif env["SIM"] == "questa":
+    elif os.getenv("SIM") == "questa":
         sim = cocotb_test.simulator.Questa(**kwargs)
-    elif env["SIM"] == "ius":
+    elif os.getenv("SIM") == "ius":
         sim = cocotb_test.simulator.Ius(**kwargs)
-    elif env["SIM"] == "vcs":
+    elif os.getenv("SIM") == "vcs":
         sim = cocotb_test.simulator.Vcs(**kwargs)
-    elif env["SIM"] == "ghdl":
+    elif os.getenv("SIM") == "ghdl":
         sim = cocotb_test.simulator.Ghdl(**kwargs)
+
+    results_xml_file_defulat = os.path.join(sim.sim_dir, "results.xml")
+    if os.path.isfile(results_xml_file_defulat):
+        os.remove(results_xml_file_defulat)
+
+    fo = tempfile.NamedTemporaryFile()
+    results_xml_file = fo.name
+    fo.close()
+    os.environ["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
 
     sim.run()
 
-    #HACK: for compatibility to be removed
+    # HACK: for compatibility to be removed
     if os.path.isfile(results_xml_file_defulat):
         results_xml_file = results_xml_file_defulat
-    
-    assert os.path.isfile(
-        results_xml_file
-    ), "Simulation terminated abnormally. Results file not found."
+    assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
 
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
         for tc in ts.iter("testcase"):
             for failure in tc.iter("failure"):
-                assert False, '{} class="{}" test="{}" error={}'.format(
-                    failure.get("message"),
-                    tc.get("classname"),
-                    tc.get("name"),
-                    failure.get("stdout"),
-                )
+                assert False, '{} class="{}" test="{}" error={}'.format(failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout"))
 
     return results_xml_file
 
