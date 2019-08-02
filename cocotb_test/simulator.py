@@ -3,6 +3,7 @@ import os
 import sys
 import inspect
 import pkg_resources
+import tempfile
 
 if sys.version_info.major >= 3:
     from tkinter import _stringify as as_tcl_value
@@ -60,27 +61,29 @@ class Simulator(object):
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
 
-        self.set_env()
+        self.env = {}
 
     def set_env(self):
-        env = os.environ
+
+        for e in os.environ:
+            self.env[e] = os.environ[e]
 
         lib_dir_sep = os.pathsep + self.lib_dir + os.pathsep
-        if lib_dir_sep not in env["PATH"]:  # without checking will add forever casing error
-            env["PATH"] += lib_dir_sep
+        if lib_dir_sep not in self.env["PATH"]:  # without checking will add forever casing error
+            self.env["PATH"] += lib_dir_sep
 
         python_path = os.pathsep.join(sys.path)
-        env["PYTHONPATH"] = os.pathsep + self.lib_dir
-        env["PYTHONPATH"] += os.pathsep + self.run_dir
-        env["PYTHONPATH"] += os.pathsep + python_path
+        self.env["PYTHONPATH"] = os.pathsep + self.lib_dir
+        self.env["PYTHONPATH"] += os.pathsep + self.run_dir
+        self.env["PYTHONPATH"] += os.pathsep + python_path
 
         for path in self.python_search:
-            env["PYTHONPATH"] += os.pathsep + path
+            self.env["PYTHONPATH"] += os.pathsep + path
 
-        env["TOPLEVEL"] = self.toplevel
-        env["COCOTB_SIM"] = "1"
-        env["MODULE"] = self.module
-        env["VERSION"] = pkg_resources.get_distribution("cocotb").version
+        self.env["TOPLEVEL"] = self.toplevel
+        self.env["COCOTB_SIM"] = "1"
+        self.env["MODULE"] = self.module
+        self.env["VERSION"] = pkg_resources.get_distribution("cocotb").version
 
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
@@ -89,8 +92,23 @@ class Simulator(object):
         raise NotImplementedError()
 
     def run(self):
+        results_xml_file_defulat = os.path.join(self.sim_dir, "results.xml")
+        if os.path.isfile(results_xml_file_defulat):
+            os.remove(results_xml_file_defulat)
+
+        fo = tempfile.NamedTemporaryFile()
+        results_xml_file = fo.name
+        fo.close()
+        self.env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
+
         cmds = self.build_command()
         self.execute(cmds)
+
+        # HACK: for compatibility to be removed
+        if os.path.isfile(results_xml_file_defulat):
+            results_xml_file = results_xml_file_defulat
+
+        return results_xml_file
 
     def get_include_commands(self, includes):
         raise NotImplementedError()
@@ -109,9 +127,10 @@ class Simulator(object):
         return paths_abs
 
     def execute(self, cmds):
+        self.set_env()
         for cmd in cmds:
             print(" ".join(cmd))
-            process = subprocess.check_call(cmd, cwd=self.sim_dir)
+            process = subprocess.check_call(cmd, cwd=self.sim_dir, env=self.env)
 
     def outdated(self, output, dependencies):
 
@@ -215,7 +234,7 @@ class Questa(Simulator):
                 INCDIR=" ".join(self.get_include_commands(self.includes)),
                 EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
             )
-            os.environ["GPI_EXTRA"] = "fli"
+            self.env["GPI_EXTRA"] = "fli"
 
         if self.verilog_sources:
             do_script += "vlog -mixedsvvh +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}\n".format(
@@ -261,7 +280,7 @@ class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Ius, self).__init__(*argv, **kwargs)
 
-        os.environ["GPI_EXTRA"] = "vhpi"
+        self.env["GPI_EXTRA"] = "vhpi"
 
     def get_include_commands(self, includes):
         include_cmd = []

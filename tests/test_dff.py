@@ -4,7 +4,7 @@ import os
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
-def test_dff():
+def test_dff_verilog():
     run(
         verilog_sources=["dff.v"],  # sources
         toplevel="dff",  # top level HDL
@@ -18,4 +18,4 @@ def test_dff_vhdl():
 
 
 if __name__ == "__main__":
-    test_dff()
+    test_dff_verilog()

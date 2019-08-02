@@ -1,8 +1,6 @@
 import os
-import sys
 import inspect
-import shutil
-import tempfile
+
 
 import cocotb_test.simulator
 from cocotb_test.build_libs import build_libs
@@ -34,20 +32,8 @@ def run(simulator=None, **kwargs):
     elif os.getenv("SIM") == "ghdl":
         sim = cocotb_test.simulator.Ghdl(**kwargs)
 
-    results_xml_file_defulat = os.path.join(sim.sim_dir, "results.xml")
-    if os.path.isfile(results_xml_file_defulat):
-        os.remove(results_xml_file_defulat)
+    results_xml_file = sim.run()
 
-    fo = tempfile.NamedTemporaryFile()
-    results_xml_file = fo.name
-    fo.close()
-    os.environ["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
-
-    sim.run()
-
-    # HACK: for compatibility to be removed
-    if os.path.isfile(results_xml_file_defulat):
-        results_xml_file = results_xml_file_defulat
     assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
 
     tree = ET.parse(results_xml_file)
