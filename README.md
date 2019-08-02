@@ -6,8 +6,8 @@
 - allow the look and feel of Python unit testing
 - remove the need for Makefiles (includes Makefile compatibility mode)
 - allow easy customization of simulation flow
-- better user experience on Windows  
-- in future allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs
+- better user experience on Windows
+- allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs
 
 # **!Proof of Concept!**
 
