@@ -45,9 +45,26 @@ class PostDevelopCommand(develop):
         build_libs(build_dir=lib_dir)
 
 
+# force platform specyfic wheel  (root_is_pure)
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            self.root_is_pure = False
+
+
+except ImportError:
+    bdist_wheel = None
+
 setup(
     name="cocotb-test",
-    cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand},
+    cmdclass={
+        "install": PostInstallCommand,
+        "develop": PostDevelopCommand,
+        "bdist_wheel": bdist_wheel,
+    },
     version=version,
     description="",
     url="",
@@ -73,5 +90,4 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     ],
-    ext_modules=[Extension(name="force.platform.specyfic.wheels", sources=[])],
 )
