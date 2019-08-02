@@ -1,6 +1,6 @@
 import os
 import inspect
-
+import shutil
 
 import cocotb_test.simulator
 from cocotb_test.build_libs import build_libs
