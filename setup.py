@@ -1,5 +1,6 @@
 from setuptools import setup
 from setuptools import find_packages
+from setuptools import Extension
 import os
 import cocotb_test
 
@@ -72,4 +73,5 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     ],
+    ext_modules=[Extension(name="force.platform.specyfic.wheels", sources=[])],
 )
