@@ -136,7 +136,7 @@ def run_test(dut):
 
     # Apply random input data by input_gen via BitDriver for 100 clock cycle.
     tb.start()
-    for i in range(100000):
+    for i in range(10000):
         yield clkedge
 
     # Stop generation of input data. One more clock cycle is needed to capture
