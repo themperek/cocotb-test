@@ -5,7 +5,7 @@ CWD=$(shell pwd)
 TOPLEVEL_LANG=verilog
 VERILOG_SOURCES =$(CWD)/dff.v
 
-TOPLEVEL=dff
+TOPLEVEL=dff_test
 MODULE=dff_cocotb
 
 ifeq ($(SIM),questa)
