@@ -4,18 +4,15 @@ import os
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
-def test_dff_verilog():
-    run(
-        verilog_sources=["dff.v"],  # sources
-        toplevel="dff",  # top level HDL
-        module="dff_cocotb",  # name of cocotb test module
-    )
+@pytest.mark.parametrize("seed", range(10))
+def test_dff_verilog(seed):
+    run(verilog_sources=["dff.v"], toplevel="dff_test", module="dff_cocotb")  # sources  # top level HDL  # name of cocotb test module
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_dff_vhdl():
-    run(vhdl_sources=["dff.vhdl"], toplevel="dff_vhdl", module="dff_cocotb", toplevel_lang="vhdl")
+    run(vhdl_sources=["dff.vhdl"], toplevel="dff_test_vhdl", module="dff_cocotb", toplevel_lang="vhdl")
 
 
 if __name__ == "__main__":
-    test_dff_verilog()
+    test_dff_verilog(1)

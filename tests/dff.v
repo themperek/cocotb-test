@@ -25,7 +25,7 @@
 // limitations under the License.
 // =============================================================================
 
-module dff (c,d,q);
+module dff_test (c,d,q);
    input wire c, d;
    output reg q = 1'b0;
 
