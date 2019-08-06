@@ -7,7 +7,7 @@
 - remove the need for Makefiles (includes Makefile compatibility mode)
 - allow easy customization of simulation flow
 - easy installation (especially on Windows)
-- allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs
+- allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs (need [#1053](https://github.com/cocotb/cocotb/pull/1053) )
 
 # **!Proof of Concept!**
 
