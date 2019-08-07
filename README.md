@@ -51,5 +51,5 @@ For cocotb tests/examples install cocotb in editable mode
 ```bash
 git clone https://github.com/potentialventures/cocotb.git
 pip install -e cocotb
-SIM=icarus pytest -s --junitxml=test-results.xml tests
+SIM=icarus pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
 ```
