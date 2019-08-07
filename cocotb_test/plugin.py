@@ -10,7 +10,7 @@ class ResultsCocotb(object):
         self.results_xml_dir = os.path.abspath(".cocotb-results")
 
     def get_results_xml_file(self, nodeid):
-        return os.path.join(self.results_xml_dir, nodeid.replace(os.sep, "_") + ".xml")
+        return os.path.join(self.results_xml_dir, nodeid.replace(os.sep, "_").replace("/", "_").replace(":", "-") + ".xml")
 
     def pytest_runtest_logreport(self, report):
         if report.when == "call" and report.outcome != "skipped":
