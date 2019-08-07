@@ -117,7 +117,7 @@ jobs:
     
   - script: |
       set SIM=icarus
-      pytest -s --junitxml=test-results.xml tests
+      pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
     displayName: 'Test with pytest'
 
   - script: |
