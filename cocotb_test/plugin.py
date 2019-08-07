@@ -48,7 +48,8 @@ class ResultsCocotb(object):
                         # for tc in ts.getiterator("testcase"):
                         use_element.extend(list(ts))
 
-        ET.ElementTree(result).write(self.results_xml_output, encoding="UTF-8")
+        if self.results_xml_output:
+            ET.ElementTree(result).write(self.results_xml_output, encoding="UTF-8")
 
     def pytest_runtest_teardown(self, item, nextitem):
         results_xml_file = self.get_results_xml_file(item._nodeid)
