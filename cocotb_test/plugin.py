@@ -48,8 +48,7 @@ class ResultsCocotb(object):
                         # for tc in ts.getiterator("testcase"):
                         use_element.extend(list(ts))
 
-        if self.results_xml_output:
-            ET.ElementTree(result).write(self.results_xml_output, encoding="UTF-8")
+        ET.ElementTree(result).write(self.results_xml_output, encoding="UTF-8")
 
     def pytest_runtest_teardown(self, item, nextitem):
         results_xml_file = self.get_results_xml_file(item._nodeid)
@@ -66,8 +65,9 @@ def pytest_unconfigure(config):
 
 
 def pytest_configure(config):
-    config._cocotb = ResultsCocotb(config.option.cocotb_xml)
-    config.pluginmanager.register(config._cocotb)
+    if config.option.cocotb_xml:
+        config._cocotb = ResultsCocotb(config.option.cocotb_xml)
+        config.pluginmanager.register(config._cocotb)
 
 
 def pytest_addoption(parser):
