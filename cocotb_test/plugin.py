@@ -26,6 +26,7 @@ class ResultsCocotb(object):
     def pytest_runtest_setup(self, item):
 
         os.environ["COCOTB_RESULTS_FILE_NAME"] = self.get_results_xml_file(item._nodeid)
+        os.environ["RESULT_TESTPACKAGE"] = item._nodeid
 
     def pytest_sessionfinish(self, session):
 
@@ -36,17 +37,20 @@ class ResultsCocotb(object):
 
             if os.path.isfile(fname):
                 tree = ET.parse(fname)
-                for ts in tree.getiterator("testsuite"):
+                for testsuite in tree.getiterator("testsuite"):
                     use_element = None
+
+                    for testcase in testsuite.getiterator("testcase"):
+                        testcase.set("classname", "cocotb." + testcase.get("classname"))  # add cocotb. for easeir selection
+
                     for existing in result:
-                        if existing.get("name") == ts.get("name") and (existing.get("package") == ts.get("package")):
+                        if existing.get("name") == testsuite.get("name") and (existing.get("package") == testsuite.get("package")):
                             use_element = existing
                             break
                     if use_element is None:
-                        result.append(ts)
+                        result.append(testsuite)
                     else:
-                        # for tc in ts.getiterator("testcase"):
-                        use_element.extend(list(ts))
+                        use_element.extend(list(testsuite))
 
         ET.ElementTree(result).write(self.results_xml_output, encoding="UTF-8")
 
