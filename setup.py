@@ -60,11 +60,7 @@ except ImportError:
 
 setup(
     name="cocotb-test",
-    cmdclass={
-        "install": PostInstallCommand,
-        "develop": PostDevelopCommand,
-        "bdist_wheel": bdist_wheel,
-    },
+    cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand, "bdist_wheel": bdist_wheel},
     version=version,
     description="",
     url="",
@@ -77,11 +73,8 @@ setup(
     setup_requires=["cocotb"],
     install_requires=["cocotb", "pytest"],
     entry_points={
-        "console_scripts": [
-            "cocotb=cocotb_test.cli:config",
-            "cocotb-run=cocotb_test.cli:run",
-            "cocotb-clean=cocotb_test.cli:clean",
-        ]
+        "console_scripts": ["cocotb=cocotb_test.cli:config", "cocotb-run=cocotb_test.cli:run", "cocotb-clean=cocotb_test.cli:clean"],
+        "pytest11": ["pytest-cocotb = cocotb_test.plugin"],
     },
     platforms="any",
     classifiers=[
