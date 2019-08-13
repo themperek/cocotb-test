@@ -36,14 +36,14 @@ def _rename_safe(target, link_name):
 
     if sys.platform == "darwin":  # On Mac there is an issue with rename? Workaround!
         try:
-             os.symlink(target, link_name)
+            os.symlink(target, link_name)
         except OSError as e:
             if e.errno == errno.EEXIST:
                 os.remove(link_name)
                 os.symlink(target, link_name)
             else:
                 raise e
-        return 
+        return
 
     if os.name == "nt":  # On Windows there is an issue with symlink and rename? !Workaround!
         shutil.copy2(target, link_name)
@@ -82,9 +82,7 @@ def _build_lib(lib, dist, build_dir):
 
     target = os.path.join(os.path.abspath(dir_name), lib_name + "." + ext_name)
     if target != lib_path:
-        _rename_safe(
-            lib_path, os.path.join(os.path.abspath(dir_name), lib_name + "." + ext_name)
-        )
+        _rename_safe(lib_path, os.path.join(os.path.abspath(dir_name), lib_name + "." + ext_name))
 
     return dir_name, ext_name
 
@@ -168,10 +166,7 @@ def build_libs(build_dir="cocotb_build"):
             include_dirs=[include_dir],
             libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
             library_dirs=[build_dir_abs],
-            sources=[
-                os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
-                os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
-            ],
+            sources=[os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"), os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp")],
             extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
@@ -192,10 +187,7 @@ def build_libs(build_dir="cocotb_build"):
     libvpi_include_dirs = [include_dir]
     libvpi_libraries = ["gpi", "gpilog"]
     # libvpi_library_dirs = [build_dir_abs]
-    libvpi_sources = [
-        os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
-        os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
-    ]
+    libvpi_sources = [os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"), os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp")]
     libvpi_extra_link_args = ["-Wl,-rpath,$ORIGIN"]
 
     # For Icarus
@@ -207,9 +199,7 @@ def build_libs(build_dir="cocotb_build"):
     if os.name == "nt":
         iverilog_path = find_executable("iverilog")
         if iverilog_path is None:
-            logger.warning(
-                "Icarus Verilog executable not found. VPI interface will not be avaliable."
-            )
+            logger.warning("Icarus Verilog executable not found. VPI interface will not be avaliable.")
             icarus_compile = False
         else:
             icarus_path = os.path.dirname(os.path.dirname(iverilog_path))
@@ -230,10 +220,7 @@ def build_libs(build_dir="cocotb_build"):
 
         _build_lib(libvpi_icarus, dist, icarus_build_dir)
 
-        _rename_safe(
-            os.path.join(icarus_build_dir, "libvpi." + ext_name),
-            os.path.join(icarus_build_dir, "libvpi.vpl"),
-        )
+        _rename_safe(os.path.join(icarus_build_dir, "libvpi." + ext_name), os.path.join(icarus_build_dir, "libvpi.vpl"))
 
     # For Questa
     questa_extra_lib = []
@@ -245,9 +232,7 @@ def build_libs(build_dir="cocotb_build"):
 
     if os.name == "nt":
         if vsim_path is None:
-            logger.warning(
-                "Questa (vsim) executable not found. VPI interface will not be avaliable."
-            )
+            logger.warning("Questa (vsim) executable not found. VPI interface will not be avaliable.")
             questa_compile = False
         else:
             questa_path = os.path.dirname(vsim_path)
@@ -269,9 +254,7 @@ def build_libs(build_dir="cocotb_build"):
         _build_lib(libvpi_questa, dist, questa_build_dir)
 
     if vsim_path is None:
-        logger.warning(
-            "Questa (vsim) executable not found. FLI interface will not be avaliable."
-        )
+        logger.warning("Questa (vsim) executable not found. FLI interface will not be avaliable.")
     else:
         questa_path = os.path.dirname(os.path.dirname(vsim_path))
         libfli = Extension(
@@ -280,14 +263,17 @@ def build_libs(build_dir="cocotb_build"):
             libraries=["gpi", "gpilog", "stdc++"] + questa_extra_lib,
             library_dirs=libvpi_library_dirs + questa_extra_lib_path,
             sources=[
-                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+                os.path.join(share_lib_dir, "fli", "FliImplx.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
             ],
             extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
-        _build_lib(libfli, dist, questa_build_dir)
+        try:
+            _build_lib(libfli, dist, questa_build_dir)
+        except:
+            logger.warning("Building FLI intercae for Questa faild!")  # some Modelsim version doesn not include FLI?
 
     # For GHDL
     if os.name == "posix":
@@ -303,7 +289,7 @@ def build_libs(build_dir="cocotb_build"):
             sources=libvpi_sources,
             extra_link_args=libvpi_extra_link_args,
         )
-    
+
         _build_lib(libvpi_ghdl, dist, ghdl_build_dir)
 
     # For ius
@@ -329,10 +315,7 @@ def build_libs(build_dir="cocotb_build"):
             define_macros=[("VHPI_CHECKING", 1)],
             libraries=["gpi", "gpilog", "stdc++"],
             library_dirs=libvpi_library_dirs,
-            sources=[
-                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
-                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
-            ],
+            sources=[os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"), os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp")],
             extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
