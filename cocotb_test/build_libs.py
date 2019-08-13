@@ -263,7 +263,7 @@ def build_libs(build_dir="cocotb_build"):
             libraries=["gpi", "gpilog", "stdc++"] + questa_extra_lib,
             library_dirs=libvpi_library_dirs + questa_extra_lib_path,
             sources=[
-                os.path.join(share_lib_dir, "fli", "FliImplx.cpp"),
+                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
             ],
