@@ -245,11 +245,9 @@ class Questa(Simulator):
                 cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
             if self.vhdl_sources:
-                do_script = "vcom -mixedsvvh -work {RTL_LIBRARY} +define+COCOTB_SIM {DEFINES} {INCDIR} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
+                do_script = "vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                    DEFINES=" ".join(self.get_define_commands(self.defines)),
-                    INCDIR=" ".join(self.get_include_commands(self.includes)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
                 self.env["GPI_EXTRA"] = "fli"
