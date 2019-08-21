@@ -131,6 +131,24 @@ class Simulator(object):
 
         return paths_abs
 
+    def execute_log(self, cmds):
+        self.set_env()
+        for cmd in cmds:
+            print(" ".join(cmd))
+
+            output_log = ""
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.sim_dir, env=self.env)
+            while True:
+                out = process.stdout.read(1)
+                if not out and process.poll() != None:
+                    break
+                if out != "":
+                    output_log += out.decode("utf-8")
+                    sys.stdout.write(out.decode("utf-8"))
+                    sys.stdout.flush()
+
+        return output_log
+
     def execute(self, cmds):
         self.set_env()
         for cmd in cmds:
@@ -273,7 +291,9 @@ class Questa(Simulator):
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
 
-        do_script += " log -recursive /*; run -all; quit"
+        # do_script += " log -recursive /*";
+
+        do_script += "run -all; quit"
 
         cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
@@ -303,30 +323,44 @@ class Ius(Simulator):
         return defines_cmd
 
     def build_command(self):
-        cmd = (
-            [
-                "irun",
-                "-64",
-                "-v93",
-                "-define",
-                "COCOTB_SIM=1",
-                "-loadvpi",
-                os.path.join(self.lib_dir, "libvpi." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
-                "-plinowarn",
-                "-access",
-                "+rwc",
-                "-top",
-                self.toplevel,
-            ]
-            + self.get_define_commands(self.defines)
-            + self.get_include_commands(self.includes)
-            + self.compile_args
-            + self.simulation_args
-            + self.verilog_sources
-            + self.vhdl_sources
-        )
 
-        return [cmd]
+        out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
+
+        cmd = []
+
+        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
+            cmd_elab = (
+                [
+                    "irun",
+                    "-64",
+                    "-elaborate",
+                    "-v93",
+                    "-define",
+                    "COCOTB_SIM=1",
+                    "-loadvpi",
+                    os.path.join(self.lib_dir, "libvpi." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
+                    "-plinowarn",
+                    "-access",
+                    "+rwc",
+                    "-top",
+                    self.toplevel,
+                ]
+                + self.get_define_commands(self.defines)
+                + self.get_include_commands(self.includes)
+                + self.compile_args
+                + self.simulation_args
+                + self.verilog_sources
+                + self.vhdl_sources
+            )
+            cmd.append(cmd_elab)
+
+        else:
+            print("Skipping compilation:" + out_file)
+
+        cmd_run = ["irun", "-64", "-R"]
+        cmd.append(cmd_run)
+
+        return cmd
 
 
 class Vcs(Simulator):
