@@ -98,13 +98,13 @@ class Simulator(object):
         if os.path.isfile(results_xml_file_defulat):
             os.remove(results_xml_file_defulat)
 
-        if not os.getenv("COCOTB_RESULTS_FILE_NAME"):
+        if not os.getenv("COCOTB_RESULTS_FILE"):
             fo = tempfile.NamedTemporaryFile()
             results_xml_file = fo.name
             fo.close()
-            self.env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
+            self.env["COCOTB_RESULTS_FILE"] = results_xml_file
         else:
-            results_xml_file = os.getenv("COCOTB_RESULTS_FILE_NAME")
+            results_xml_file = os.getenv("COCOTB_RESULTS_FILE")
 
         cmds = self.build_command()
         self.execute(cmds)

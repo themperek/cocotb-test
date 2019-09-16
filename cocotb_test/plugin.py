@@ -25,7 +25,7 @@ class ResultsCocotb(object):
 
     def pytest_runtest_setup(self, item):
 
-        os.environ["COCOTB_RESULTS_FILE_NAME"] = self.get_results_xml_file(item._nodeid)
+        os.environ["COCOTB_RESULTS_FILE"] = self.get_results_xml_file(item._nodeid)
         os.environ["RESULT_TESTPACKAGE"] = item._nodeid
 
     def pytest_sessionfinish(self, session):
