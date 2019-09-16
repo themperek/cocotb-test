@@ -89,10 +89,8 @@ jobs:
     displayName: Install Icarus Verilog on Mac
     condition: eq( variables['Agent.OS'], 'Darwin' )  
     
-  - powershell: |
-      Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190809-x64_setup.exe -OutFile iverilog-x64_setup.exe
-      Start-Process .\iverilog-x64_setup.exe -ArgumentList '/VERYSILENT' -Wait
-      Write-Host "##vso[task.prependpath]C:\iverilog\bin"
+  - script: |
+      conda install -c conda-forge iverilog
     displayName: 'Download and Install Icarus Verilog on Windows'
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
