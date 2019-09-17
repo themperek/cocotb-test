@@ -18,6 +18,7 @@
 - Install development tools for conda (Windows only):
 ```bash
 conda install --yes m2w64-gcc libpython
+conda install -c conda-forge iverilog
 ```
 
 - Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
