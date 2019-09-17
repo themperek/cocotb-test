@@ -17,7 +17,7 @@
 
 - Install development tools for conda (Windows only):
 ```bash
-conda install --yes m2w64-gcc libpython
+conda install m2w64-gcc libpython
 conda install -c conda-forge iverilog
 ```
 
