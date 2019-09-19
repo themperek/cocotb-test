@@ -73,6 +73,14 @@ jobs:
       conda install --yes -c conda-forge iverilog
     displayName: 'Download and Install Icarus Verilog'
 
+  - script: |	
+      sudo apt-get update	
+      sudo apt-get install -y gnat-4.9	
+      git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36	
+      cd ghdl && ./configure && make -j2 && sudo make install && cd ..	
+    displayName: Compile and Install GHDL on Linux	
+    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
+    
   - script: |
       echo "##vso[task.setvariable variable=SIM]$(SIM)"
     displayName: Set simulator
