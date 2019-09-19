@@ -70,29 +70,8 @@ jobs:
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
-      sudo apt-get update
-      sudo apt-get install -y gperf flex bison
-      git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
-      cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
-    displayName: Compile and Install Icarus Verilog on Linux
-    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq( variables['SIM'], 'icarus'))
-    
-  - script: |
-      sudo apt-get update
-      sudo apt-get install -y gnat-4.9
-      git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
-      cd ghdl && ./configure && make -j2 && sudo make install && cd ..
-    displayName: Compile and Install GHDL on Linux
-    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
-    
-  - script: brew install icarus-verilog
-    displayName: Install Icarus Verilog on Mac
-    condition: eq( variables['Agent.OS'], 'Darwin' )  
-    
-  - script: |
       conda install -c conda-forge iverilog
-    displayName: 'Download and Install Icarus Verilog on Windows'
-    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    displayName: 'Download and Install Icarus Verilog'
 
   - script: |
       echo "##vso[task.setvariable variable=SIM]$(SIM)"
