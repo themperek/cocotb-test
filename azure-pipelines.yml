@@ -70,7 +70,7 @@ jobs:
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
-      conda install -c conda-forge iverilog
+      conda install --yes -c conda-forge iverilog
     displayName: 'Download and Install Icarus Verilog'
 
   - script: |
