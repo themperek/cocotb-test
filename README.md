@@ -25,12 +25,12 @@ conda install --yes -c conda-forge iverilog
 ```
 - Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
-pip install https://github.com/themperek/cocotb-test/archive/master.zip
+pip install -v https://github.com/themperek/cocotb-test/archive/master.zip
 ```
 &emsp;or
 ```bash
 git clone https://github.com/themperek/cocotb-test.git
-pip install -e cocotb-test
+pip install -v -e cocotb-test
 ```
 
 - Create a `test_dff.py` file (check [test folder](https://github.com/themperek/cocotb-test/tree/master/tests) for more examples):
