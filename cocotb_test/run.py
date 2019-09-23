@@ -30,6 +30,8 @@ def run(simulator=None, sim=os.getenv("SIM", "icarus"), **kwargs):
         sim = cocotb_test.simulator.Vcs(**kwargs)
     elif os.getenv("SIM") == "ghdl":
         sim = cocotb_test.simulator.Ghdl(**kwargs)
+    elif os.getenv("SIM") == "aldec":
+        sim = cocotb_test.simulator.Aldec(**kwargs)
 
     results_xml_file = sim.run()
 
@@ -39,7 +41,9 @@ def run(simulator=None, sim=os.getenv("SIM", "icarus"), **kwargs):
     for ts in tree.iter("testsuite"):
         for tc in ts.iter("testcase"):
             for failure in tc.iter("failure"):
-                assert False, '{} class="{}" test="{}" error={}'.format(failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout"))
+                assert False, '{} class="{}" test="{}" error={}'.format(
+                    failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout")
+                )
 
     return results_xml_file
 

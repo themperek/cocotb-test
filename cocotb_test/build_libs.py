@@ -107,16 +107,19 @@ def build_libs(build_dir="cocotb_build"):
 
     ext_modules = []
 
+    ld_library = sysconfig.get_config_var("LDLIBRARY")
+    if ld_library:
+        python_lib_link = sysconfig.get_config_var("LDLIBRARY")[0][3:]
+    else:
+        python_version = sysconfig.get_python_version().replace(".", "")
+        python_lib_link = "python" + python_version
+
     if os.name == "nt":
         ext_name = "dll"
-        python_version = distutils.sysconfig.get_python_version()
-        python_version.replace(".", "")
-        python_lib = "python" + python_version + ".dll"
-        python_lib_link = python_lib.split(".")[0]
     else:
-        python_lib = sysconfig.get_config_var("LDLIBRARY")
-        python_lib_link = os.path.splitext(python_lib)[0][3:]
         ext_name = "so"
+
+    python_lib = python_lib_link + "." + ext_name
 
     include_dir = os.path.join(share_dir, "include")
 
@@ -166,7 +169,10 @@ def build_libs(build_dir="cocotb_build"):
             include_dirs=[include_dir],
             libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
             library_dirs=[build_dir_abs],
-            sources=[os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"), os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp")],
+            sources=[
+                os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
+                os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
+            ],
             extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
@@ -187,7 +193,10 @@ def build_libs(build_dir="cocotb_build"):
     libvpi_include_dirs = [include_dir]
     libvpi_libraries = ["gpi", "gpilog"]
     # libvpi_library_dirs = [build_dir_abs]
-    libvpi_sources = [os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"), os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp")]
+    libvpi_sources = [
+        os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
+    ]
     libvpi_extra_link_args = ["-Wl,-rpath,$ORIGIN"]
 
     # For Icarus
@@ -226,13 +235,13 @@ def build_libs(build_dir="cocotb_build"):
     questa_extra_lib = []
     questa_extra_lib_path = []
     questa_compile = True
-    vsim_path = find_executable("vsim")
+    vsim_path = find_executable("vsimk")
     questa_build_dir = os.path.join(build_dir_abs, "questa")
     libvpi_library_dirs = [questa_build_dir]
 
     if os.name == "nt":
         if vsim_path is None:
-            logger.warning("Questa (vsim) executable not found. VPI interface will not be avaliable.")
+            logger.warning("Questa executable not found. VPI interface will not be avaliable.")
             questa_compile = False
         else:
             questa_path = os.path.dirname(vsim_path)
@@ -315,7 +324,10 @@ def build_libs(build_dir="cocotb_build"):
             define_macros=[("VHPI_CHECKING", 1)],
             libraries=["gpi", "gpilog", "stdc++"],
             library_dirs=libvpi_library_dirs,
-            sources=[os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"), os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp")],
+            sources=[
+                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
+                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
+            ],
             extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
@@ -337,6 +349,49 @@ def build_libs(build_dir="cocotb_build"):
         )
 
         _build_lib(libvpi_vcs, dist, vcs_build_dir)
+
+    # For Aldec
+    aldec_extra_lib = []
+    aldec_extra_lib_path = []
+    aldec_compile = True
+    vsimsa_path = find_executable("vsimsa")
+    aldec_build_dir = os.path.join(build_dir_abs, "aldec")
+    libvpi_library_dirs = [aldec_build_dir]
+
+    aldec_path = os.path.dirname(vsimsa_path)
+    aldec_extra_lib = ["aldecpli"]
+    aldec_extra_lib_path = [aldec_path]
+
+    if vsimsa_path is None:
+        logger.warning("Riviera executable not found. No Vpi/Vhpi interface will not be avaliable.")
+    else:
+        build_libs_common(aldec_build_dir)
+        libvpi_aldec = Extension(
+            "libvpi",
+            define_macros=libvpi_define_macros + [("ALDEC", 1)],
+            include_dirs=libvpi_include_dirs,
+            libraries=libvpi_libraries + aldec_extra_lib,
+            library_dirs=libvpi_library_dirs + aldec_extra_lib_path,
+            sources=libvpi_sources,
+            extra_link_args=libvpi_extra_link_args,
+        )
+
+        _build_lib(libvpi_aldec, dist, aldec_build_dir)
+
+        libvhpi_aldec = Extension(
+            "libvhpi",
+            include_dirs=[include_dir],
+            define_macros=[("VHPI_CHECKING", 1), ("ALDEC", 1)],
+            libraries=["gpi", "gpilog", "stdc++"] + aldec_extra_lib,
+            library_dirs=libvpi_library_dirs + aldec_extra_lib_path,
+            sources=[
+                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
+                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
+            ],
+            extra_link_args=["-Wl,-rpath,$ORIGIN"],
+        )
+
+        _build_lib(libvhpi_aldec, dist, aldec_build_dir)
 
     return build_dir_abs, ext_name
 
