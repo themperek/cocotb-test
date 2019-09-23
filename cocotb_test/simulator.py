@@ -30,10 +30,11 @@ class Simulator(object):
         plus_args=None,
         force_compile=False,
         testcase=None,
+        sim_build="sim_build",
         **kwargs
     ):
 
-        self.sim_dir = os.path.join(os.getcwd(), "sim_build")
+        self.sim_dir = os.path.join(os.getcwd(), sim_build)
 
         self.sim_name = sim_name
 
