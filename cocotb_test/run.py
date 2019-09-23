@@ -7,13 +7,13 @@ import cocotb_test.simulator
 from xml.etree import cElementTree as ET
 
 
-def run(simulator=None, **kwargs):
+def run(simulator=None, sim=os.getenv("SIM", "icarus"), **kwargs):
 
     supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl"]
-    if (os.getenv("SIM") in supported_sim) or simulator:
+    if (sim in supported_sim) or simulator:
         pass
     else:
-        raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
+        raise NotImplementedError("Set SIM/sim variable. Supported: " + ", ".join(supported_sim))
 
     run_filename = inspect.getframeinfo(inspect.currentframe().f_back)[0]
     kwargs["run_filename"] = run_filename

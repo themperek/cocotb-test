@@ -71,30 +71,14 @@ jobs:
     
   - script: |
       sudo apt-get update
-      sudo apt-get install -y gperf flex bison
-      git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
-      cd iverilog && autoconf && ./configure && make -j && sudo make install && cd ..
-    displayName: Compile and Install Icarus Verilog on Linux
-    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq( variables['SIM'], 'icarus'))
-    
-  - script: |
-      sudo apt-get update
       sudo apt-get install -y gnat-4.9
       git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
       cd ghdl && ./configure && make -j2 && sudo make install && cd ..
     displayName: Compile and Install GHDL on Linux
     condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
     
-  - script: brew install icarus-verilog
-    displayName: Install Icarus Verilog on Mac
-    condition: eq( variables['Agent.OS'], 'Darwin' )  
-    
-  - powershell: |
-      Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190327-x64_setup.exe -OutFile iverilog-x64_setup.exe
-      Start-Process .\iverilog-x64_setup.exe -ArgumentList '/VERYSILENT' -Wait
-      Write-Host "##vso[task.prependpath]C:\iverilog\bin"
-    displayName: 'Download and Install Icarus Verilog on Windows'
-    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+  - script: conda install --yes -c conda-forge iverilog
+    displayName: Install Icarus Verilog
 
   - script: |
       echo "##vso[task.setvariable variable=SIM]$(SIM)"

@@ -15,5 +15,4 @@ test:
 	cocotb-run --env
 
 clean:
-	rm -rf cocotb_build
-	rm -rf sim_build
+	cocotb-clean

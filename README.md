@@ -19,7 +19,10 @@
 ```bash
 conda install --yes m2w64-gcc libpython
 ```
-
+- Install simulator (for Icarus Verilog):
+```bash
+conda install --yes -c conda-forge iverilog
+```
 - Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
 pip install https://github.com/themperek/cocotb-test/archive/master.zip
