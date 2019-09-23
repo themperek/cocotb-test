@@ -12,8 +12,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# import distutils.log
-# distutils.log.set_verbosity(-1) # Disable logging in disutils
+import distutils.log
+
+distutils.log.set_verbosity(0)  # Disable logging comiliation commands in disutils
 # distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
 
 from setuptools import Extension
@@ -188,23 +189,48 @@ def build_libs(build_dir="cocotb_build"):
 
         _build_lib(libsim, dist, build_dir_abs)
 
-    # VPI common
-    libvpi_define_macros = [("VPI_CHECKING", "1")]
-    libvpi_include_dirs = [include_dir]
-    libvpi_libraries = ["gpi", "gpilog"]
-    # libvpi_library_dirs = [build_dir_abs]
-    libvpi_sources = [
-        os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
-        os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
-    ]
-    libvpi_extra_link_args = ["-Wl,-rpath,$ORIGIN"]
+    def build_vpi(build_dir, sim_define, extra_lib=[], extra_lib_dir=[]):
+        build_libs_common(build_dir)
 
-    # For Icarus
+        libvpi = Extension(
+            "libvpi",
+            define_macros=[("VPI_CHECKING", "1")] + [(sim_define, "")],
+            include_dirs=[include_dir],
+            libraries=["gpi", "gpilog"] + extra_lib,
+            library_dirs=[build_dir] + extra_lib_dir,
+            sources=[
+                os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
+                os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
+            ],
+            extra_link_args=["-Wl,-rpath,$ORIGIN"],
+        )
+
+        _build_lib(libvpi, dist, build_dir)
+
+    def build_vhpi(build_dir, sim_define, extra_lib=[], extra_lib_dir=[]):
+        libvhpi = Extension(
+            "libvhpi",
+            include_dirs=[include_dir],
+            define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
+            libraries=["gpi", "gpilog", "stdc++"] + extra_lib,
+            library_dirs=[build_dir] + extra_lib_dir,
+            sources=[
+                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
+                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
+            ],
+            extra_link_args=["-Wl,-rpath,$ORIGIN"],
+        )
+
+        _build_lib(libvhpi, dist, build_dir)
+
+    #
+    #  Icarus Verilog
+    #
+    logger.warning("Compiling interface libraries for Icarus Verilog ...")
+    icarus_build_dir = os.path.join(build_dir_abs, "icarus")
+    icarus_compile = True
     icarus_extra_lib = []
     icarus_extra_lib_path = []
-    icarus_compile = True
-    icarus_build_dir = os.path.join(build_dir_abs, "icarus")
-    libvpi_library_dirs = [icarus_build_dir]
     if os.name == "nt":
         iverilog_path = find_executable("iverilog")
         if iverilog_path is None:
@@ -216,61 +242,51 @@ def build_libs(build_dir="cocotb_build"):
             icarus_extra_lib_path = [os.path.join(icarus_path, "lib")]
 
     if icarus_compile:
-        build_libs_common(icarus_build_dir)
-        libvpi_icarus = Extension(
-            "libvpi",
-            define_macros=libvpi_define_macros,
-            include_dirs=libvpi_include_dirs,
-            libraries=libvpi_libraries + icarus_extra_lib,
-            library_dirs=libvpi_library_dirs + icarus_extra_lib_path,
-            sources=libvpi_sources,
-            extra_link_args=libvpi_extra_link_args,
+        build_vpi(
+            build_dir=icarus_build_dir,
+            sim_define="ICARUS",
+            extra_lib=icarus_extra_lib,
+            extra_lib_dir=icarus_extra_lib_path,
         )
-
-        _build_lib(libvpi_icarus, dist, icarus_build_dir)
 
         _rename_safe(os.path.join(icarus_build_dir, "libvpi." + ext_name), os.path.join(icarus_build_dir, "libvpi.vpl"))
 
-    # For Questa
-    questa_extra_lib = []
-    questa_extra_lib_path = []
-    questa_compile = True
+    #
+    #  Modelsim/Questa
+    #
+    logger.warning("Compiling interface libraries for Questa ...")
     vsim_path = find_executable("vopt")
     questa_build_dir = os.path.join(build_dir_abs, "questa")
-    libvpi_library_dirs = [questa_build_dir]
+    questa_compile = True
+    questa_extra_lib = []
+    questa_extra_lib_path = []
 
     if os.name == "nt":
         if vsim_path is None:
-            logger.warning("Questa executable not found. VPI interface will not be avaliable.")
+            logger.warning("Questa executable (vopt) not found. VPI interface will not be avaliable.")
             questa_compile = False
         else:
-            questa_path = os.path.dirname(vsim_path)
+            questa_bin_dir = os.path.dirname(vsim_path)
             questa_extra_lib = ["mtipli"]
-            questa_extra_lib_path = [questa_path]
+            questa_extra_lib_path = [questa_bin_dir]
 
     if questa_compile:
-        build_libs_common(questa_build_dir)
-        libvpi_questa = Extension(
-            "libvpi",
-            define_macros=libvpi_define_macros,
-            include_dirs=libvpi_include_dirs,
-            libraries=libvpi_libraries + questa_extra_lib,
-            library_dirs=libvpi_library_dirs + questa_extra_lib_path,
-            sources=libvpi_sources,
-            extra_link_args=libvpi_extra_link_args,
+        build_vpi(
+            build_dir=questa_build_dir,
+            sim_define="MODELSIM",
+            extra_lib=questa_extra_lib,
+            extra_lib_dir=questa_extra_lib_path,
         )
 
-        _build_lib(libvpi_questa, dist, questa_build_dir)
-
     if vsim_path is None:
-        logger.warning("Questa (vsim) executable not found. FLI interface will not be avaliable.")
+        logger.warning("Questa executable (vopt) executable not found. FLI interface will not be avaliable.")
     else:
-        questa_path = os.path.dirname(os.path.dirname(vsim_path))
+        questa_dir = os.path.dirname(os.path.dirname(vsim_path))
         libfli = Extension(
             "libfli",
-            include_dirs=[include_dir, os.path.join(questa_path, "include")],
+            include_dirs=[include_dir, os.path.join(questa_dir, "include")],
             libraries=["gpi", "gpilog", "stdc++"] + questa_extra_lib,
-            library_dirs=libvpi_library_dirs + questa_extra_lib_path,
+            library_dirs=[questa_build_dir] + questa_extra_lib_path,
             sources=[
                 os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
                 os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
@@ -284,113 +300,51 @@ def build_libs(build_dir="cocotb_build"):
         except:
             logger.warning("Building FLI intercae for Questa faild!")  # some Modelsim version doesn not include FLI?
 
-    # For GHDL
+    #
+    # GHDL
+    #
     if os.name == "posix":
+        logger.warning("Compiling interface libraries for GHDL ...")
         ghdl_build_dir = os.path.join(build_dir_abs, "ghdl")
-        build_libs_common(ghdl_build_dir)
-        libvpi_library_dirs = [ghdl_build_dir]
-        libvpi_ghdl = Extension(
-            "libvpi",
-            define_macros=libvpi_define_macros,
-            include_dirs=libvpi_include_dirs,
-            libraries=libvpi_libraries,
-            library_dirs=libvpi_library_dirs,
-            sources=libvpi_sources,
-            extra_link_args=libvpi_extra_link_args,
-        )
+        build_vpi(build_dir=ghdl_build_dir, sim_define="GHDL")
 
-        _build_lib(libvpi_ghdl, dist, ghdl_build_dir)
-
-    # For ius
+    #
+    # IUS
+    #
     if os.name == "posix":
+        logger.warning("Compiling interface libraries for IUS ...")
         ius_build_dir = os.path.join(build_dir_abs, "ius")
-        build_libs_common(ius_build_dir)
-        libvpi_library_dirs = [ius_build_dir]
-        libvpi_ius = Extension(
-            "libvpi",
-            define_macros=libvpi_define_macros,
-            include_dirs=libvpi_include_dirs,
-            libraries=libvpi_libraries,
-            library_dirs=libvpi_library_dirs,
-            sources=libvpi_sources,
-            extra_link_args=libvpi_extra_link_args,
-        )
+        build_vpi(build_dir=ius_build_dir, sim_define="IUS")
+        build_vhpi(build_dir=ius_build_dir, sim_define="IUS")
 
-        _build_lib(libvpi_ius, dist, ius_build_dir)
-
-        libvhpi_ius = Extension(
-            "libvhpi",
-            include_dirs=[include_dir],
-            define_macros=[("VHPI_CHECKING", 1)],
-            libraries=["gpi", "gpilog", "stdc++"],
-            library_dirs=libvpi_library_dirs,
-            sources=[
-                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
-                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
-            ],
-            extra_link_args=["-Wl,-rpath,$ORIGIN"],
-        )
-
-        _build_lib(libvhpi_ius, dist, ius_build_dir)
-
-    # For vcs
+    #
+    # VCS
+    #
     if os.name == "posix":
+        logger.warning("Compiling interface libraries for VCS ...")
         vcs_build_dir = os.path.join(build_dir_abs, "vcs")
-        build_libs_common(vcs_build_dir)
-        libvpi_library_dirs = [vcs_build_dir]
-        libvpi_vcs = Extension(
-            "libvpi",
-            define_macros=libvpi_define_macros,
-            include_dirs=libvpi_include_dirs,
-            libraries=libvpi_libraries,
-            library_dirs=libvpi_library_dirs,
-            sources=libvpi_sources,
-            extra_link_args=libvpi_extra_link_args,
-        )
+        build_vpi(build_dir=vcs_build_dir, sim_define="VCS")
 
-        _build_lib(libvpi_vcs, dist, vcs_build_dir)
-
-    # For Aldec
+    #
+    # Aldec
+    #
     vsimsa_path = find_executable("vsimsa")
-    
     if vsimsa_path is None:
-        logger.warning("Riviera executable not found. No Vpi/Vhpi interface will not be avaliable.")
+        logger.warning("Riviera executable not found. No VPI/VHPI interface will not be avaliable.")
     else:
-        aldec_extra_lib = []
-        aldec_extra_lib_path = []
+        logger.warning("Compiling interface libraries for Aldec ...")
         aldec_build_dir = os.path.join(build_dir_abs, "aldec")
-        libvpi_library_dirs = [aldec_build_dir]
         aldec_path = os.path.dirname(vsimsa_path)
         aldec_extra_lib = ["aldecpli"]
         aldec_extra_lib_path = [aldec_path]
 
-        build_libs_common(aldec_build_dir)
-        libvpi_aldec = Extension(
-            "libvpi",
-            define_macros=libvpi_define_macros + [("ALDEC", 1)],
-            include_dirs=libvpi_include_dirs,
-            libraries=libvpi_libraries + aldec_extra_lib,
-            library_dirs=libvpi_library_dirs + aldec_extra_lib_path,
-            sources=libvpi_sources,
-            extra_link_args=libvpi_extra_link_args,
+        build_vpi(
+            build_dir=aldec_build_dir, sim_define="ALDEC", extra_lib=aldec_extra_lib, extra_lib_dir=aldec_extra_lib_path
         )
 
-        _build_lib(libvpi_aldec, dist, aldec_build_dir)
-
-        libvhpi_aldec = Extension(
-            "libvhpi",
-            include_dirs=[include_dir],
-            define_macros=[("VHPI_CHECKING", 1), ("ALDEC", 1)],
-            libraries=["gpi", "gpilog", "stdc++"] + aldec_extra_lib,
-            library_dirs=libvpi_library_dirs + aldec_extra_lib_path,
-            sources=[
-                os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
-                os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
-            ],
-            extra_link_args=["-Wl,-rpath,$ORIGIN"],
+        build_vhpi(
+            build_dir=aldec_build_dir, sim_define="ALDEC", extra_lib=aldec_extra_lib, extra_lib_dir=aldec_extra_lib_path
         )
-
-        _build_lib(libvhpi_aldec, dist, aldec_build_dir)
 
     return build_dir_abs, ext_name
 

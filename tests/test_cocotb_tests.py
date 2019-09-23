@@ -53,7 +53,7 @@ def test_verilog_access():
                 "uart2bus_top.v",
             ]
         ]
-        + [os.path.join(tests_dir, "designs", "uart2bus", "top", "verilog_toplevel.v")],
+        + [os.path.join(tests_dir, "designs", "uart2bus", "top", "verilog_toplevel.sv")],
         vhdl_sources=[
             os.path.join(
                 tests_dir, "designs", "uart2bus", "vhdl", "uart2BusTop_pkg.vhd"
