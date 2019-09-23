@@ -179,6 +179,7 @@ class Simulator(object):
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
+        kwargs['sim_name'] = "icarus"
         super(Icarus, self).__init__(*argv, **kwargs)
 
         if self.vhdl_sources:

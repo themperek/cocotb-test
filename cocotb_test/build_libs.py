@@ -108,18 +108,18 @@ def build_libs(build_dir="cocotb_build"):
     ext_modules = []
 
     ld_library = sysconfig.get_config_var("LDLIBRARY")
-    if ld_library:
-        python_lib_link = sysconfig.get_config_var("LDLIBRARY")[0][3:]
+    if ld_library != "":
+        python_lib_link = os.path.splitext(sysconfig.get_config_var("LDLIBRARY"))[0][3:]
     else:
         python_version = sysconfig.get_python_version().replace(".", "")
         python_lib_link = "python" + python_version
 
     if os.name == "nt":
         ext_name = "dll"
+        python_lib = python_lib_link + "." + ext_name
     else:
         ext_name = "so"
-
-    python_lib = python_lib_link + "." + ext_name
+        python_lib = "lib" + python_lib_link + "." + ext_name
 
     include_dir = os.path.join(share_dir, "include")
 
@@ -235,7 +235,7 @@ def build_libs(build_dir="cocotb_build"):
     questa_extra_lib = []
     questa_extra_lib_path = []
     questa_compile = True
-    vsim_path = find_executable("vsimk")
+    vsim_path = find_executable("vopt")
     questa_build_dir = os.path.join(build_dir_abs, "questa")
     libvpi_library_dirs = [questa_build_dir]
 
