@@ -108,8 +108,8 @@ def build_libs(build_dir="cocotb_build"):
     ext_modules = []
 
     ld_library = sysconfig.get_config_var("LDLIBRARY")
-    if ld_library != "":
-        python_lib_link = os.path.splitext(sysconfig.get_config_var("LDLIBRARY"))[0][3:]
+    if ld_library:
+        python_lib_link = os.path.splitext(ld_library)[0][3:]
     else:
         python_version = sysconfig.get_python_version().replace(".", "")
         python_lib_link = "python" + python_version
