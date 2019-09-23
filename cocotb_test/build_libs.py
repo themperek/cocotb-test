@@ -351,20 +351,19 @@ def build_libs(build_dir="cocotb_build"):
         _build_lib(libvpi_vcs, dist, vcs_build_dir)
 
     # For Aldec
-    aldec_extra_lib = []
-    aldec_extra_lib_path = []
-    aldec_compile = True
     vsimsa_path = find_executable("vsimsa")
-    aldec_build_dir = os.path.join(build_dir_abs, "aldec")
-    libvpi_library_dirs = [aldec_build_dir]
-
-    aldec_path = os.path.dirname(vsimsa_path)
-    aldec_extra_lib = ["aldecpli"]
-    aldec_extra_lib_path = [aldec_path]
-
+    
     if vsimsa_path is None:
         logger.warning("Riviera executable not found. No Vpi/Vhpi interface will not be avaliable.")
     else:
+        aldec_extra_lib = []
+        aldec_extra_lib_path = []
+        aldec_build_dir = os.path.join(build_dir_abs, "aldec")
+        libvpi_library_dirs = [aldec_build_dir]
+        aldec_path = os.path.dirname(vsimsa_path)
+        aldec_extra_lib = ["aldecpli"]
+        aldec_extra_lib_path = [aldec_path]
+
         build_libs_common(aldec_build_dir)
         libvpi_aldec = Extension(
             "libvpi",

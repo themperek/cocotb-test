@@ -14,6 +14,7 @@ else:
 class Simulator(object):
     def __init__(
         self,
+        sim_name,
         toplevel,
         run_filename,
         module=None,
@@ -33,8 +34,10 @@ class Simulator(object):
 
         self.sim_dir = os.path.join(os.getcwd(), "sim_build")
 
+        self.sim_name = sim_name
+
         libs_dir = os.path.join(os.path.dirname(__file__), "libs")
-        self.lib_dir = os.path.join(libs_dir, os.getenv("SIM"))
+        self.lib_dir = os.path.join(libs_dir, sim_name)
 
         self.lib_ext = "so"
         if os.name == "nt":
@@ -98,13 +101,13 @@ class Simulator(object):
         if os.path.isfile(results_xml_file_defulat):
             os.remove(results_xml_file_defulat)
 
-        if not os.getenv("COCOTB_RESULTS_FILE_NAME"):
+        if not os.getenv("COCOTB_RESULTS_FILE"):
             fo = tempfile.NamedTemporaryFile()
             results_xml_file = fo.name
             fo.close()
-            self.env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
+            self.env["COCOTB_RESULTS_FILE"] = results_xml_file
         else:
-            results_xml_file = os.getenv("COCOTB_RESULTS_FILE_NAME")
+            results_xml_file = os.getenv("COCOTB_RESULTS_FILE")
 
         cmds = self.build_command()
         self.execute(cmds)

@@ -7,30 +7,33 @@ import cocotb_test.simulator
 from xml.etree import cElementTree as ET
 
 
-def run(simulator=None, sim=os.getenv("SIM", "icarus"), **kwargs):
+def run(simulator=None, **kwargs):
 
-    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl"]
-    if (sim in supported_sim) or simulator:
+    sim_env = os.getenv("SIM", "icarus")
+
+    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl", "aldec"]
+    if (sim_env in supported_sim) or simulator:
         pass
     else:
         raise NotImplementedError("Set SIM/sim variable. Supported: " + ", ".join(supported_sim))
 
     run_filename = inspect.getframeinfo(inspect.currentframe().f_back)[0]
     kwargs["run_filename"] = run_filename
+    kwargs["sim_name"] = sim_env
 
     if simulator:
         sim = simulator(**kwargs)
-    elif os.getenv("SIM") == "icarus":
+    elif sim_env == "icarus":
         sim = cocotb_test.simulator.Icarus(**kwargs)
-    elif os.getenv("SIM") == "questa":
+    elif sim_env == "questa":
         sim = cocotb_test.simulator.Questa(**kwargs)
-    elif os.getenv("SIM") == "ius":
+    elif sim_env == "ius":
         sim = cocotb_test.simulator.Ius(**kwargs)
-    elif os.getenv("SIM") == "vcs":
+    elif sim_env == "vcs":
         sim = cocotb_test.simulator.Vcs(**kwargs)
-    elif os.getenv("SIM") == "ghdl":
+    elif sim_env == "ghdl":
         sim = cocotb_test.simulator.Ghdl(**kwargs)
-    elif os.getenv("SIM") == "aldec":
+    elif sim_env == "aldec":
         sim = cocotb_test.simulator.Aldec(**kwargs)
 
     results_xml_file = sim.run()
