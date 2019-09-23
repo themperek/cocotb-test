@@ -29,6 +29,7 @@ class Simulator(object):
         extra_args=None,
         plus_args=None,
         force_compile=False,
+        testcase=None,
         **kwargs
     ):
 
@@ -100,6 +101,9 @@ class Simulator(object):
             setattr(self, arg, kwargs[arg])
 
         self.env = {}
+        
+        if testcase is not None:
+            self.env["TESTCASE"] = testcase
 
     def set_env(self):
 
