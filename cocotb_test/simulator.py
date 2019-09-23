@@ -14,6 +14,7 @@ else:
 class Simulator(object):
     def __init__(
         self,
+        sim_name,
         toplevel,
         run_filename,
         module=None,
@@ -33,8 +34,10 @@ class Simulator(object):
 
         self.sim_dir = os.path.join(os.getcwd(), "sim_build")
 
+        self.sim_name = sim_name
+
         libs_dir = os.path.join(os.path.dirname(__file__), "libs")
-        self.lib_dir = os.path.join(libs_dir, os.getenv("SIM"))
+        self.lib_dir = os.path.join(libs_dir, sim_name)
 
         self.lib_ext = "so"
         if os.name == "nt":
@@ -98,10 +101,13 @@ class Simulator(object):
         if os.path.isfile(results_xml_file_defulat):
             os.remove(results_xml_file_defulat)
 
-        fo = tempfile.NamedTemporaryFile()
-        results_xml_file = fo.name
-        fo.close()
-        self.env["COCOTB_RESULTS_FILE_NAME"] = results_xml_file
+        if not os.getenv("COCOTB_RESULTS_FILE"):
+            fo = tempfile.NamedTemporaryFile()
+            results_xml_file = fo.name
+            fo.close()
+            self.env["COCOTB_RESULTS_FILE"] = results_xml_file
+        else:
+            results_xml_file = os.getenv("COCOTB_RESULTS_FILE")
 
         cmds = self.build_command()
         self.execute(cmds)
@@ -127,6 +133,24 @@ class Simulator(object):
                 paths_abs.append(os.path.abspath(os.path.join(self.run_dir, path)))
 
         return paths_abs
+
+    def execute_log(self, cmds):
+        self.set_env()
+        for cmd in cmds:
+            print(" ".join(cmd))
+
+            output_log = ""
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.sim_dir, env=self.env)
+            while True:
+                out = process.stdout.read(1)
+                if not out and process.poll() != None:
+                    break
+                if out != "":
+                    output_log += out.decode("utf-8")
+                    sys.stdout.write(out.decode("utf-8"))
+                    sys.stdout.flush()
+
+        return output_log
 
     def execute(self, cmds):
         self.set_env()
@@ -155,6 +179,7 @@ class Simulator(object):
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
+        kwargs['sim_name'] = "icarus"
         super(Icarus, self).__init__(*argv, **kwargs)
 
         if self.vhdl_sources:
@@ -242,11 +267,9 @@ class Questa(Simulator):
                 cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
             if self.vhdl_sources:
-                do_script = "vcom -mixedsvvh -work {RTL_LIBRARY} +define+COCOTB_SIM {DEFINES} {INCDIR} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
+                do_script = "vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                    DEFINES=" ".join(self.get_define_commands(self.defines)),
-                    INCDIR=" ".join(self.get_include_commands(self.includes)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
                 self.env["GPI_EXTRA"] = "fli"
@@ -272,7 +295,9 @@ class Questa(Simulator):
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
 
-        do_script += " log -recursive /*; run -all; quit"
+        # do_script += " log -recursive /*";
+
+        do_script += "run -all; quit"
 
         cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
@@ -302,30 +327,44 @@ class Ius(Simulator):
         return defines_cmd
 
     def build_command(self):
-        cmd = (
-            [
-                "irun",
-                "-64",
-                "-v93",
-                "-define",
-                "COCOTB_SIM=1",
-                "-loadvpi",
-                os.path.join(self.lib_dir, "libvpi." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
-                "-plinowarn",
-                "-access",
-                "+rwc",
-                "-top",
-                self.toplevel,
-            ]
-            + self.get_define_commands(self.defines)
-            + self.get_include_commands(self.includes)
-            + self.compile_args
-            + self.simulation_args
-            + self.verilog_sources
-            + self.vhdl_sources
-        )
 
-        return [cmd]
+        out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
+
+        cmd = []
+
+        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
+            cmd_elab = (
+                [
+                    "irun",
+                    "-64",
+                    "-elaborate",
+                    "-v93",
+                    "-define",
+                    "COCOTB_SIM=1",
+                    "-loadvpi",
+                    os.path.join(self.lib_dir, "libvpi." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
+                    "-plinowarn",
+                    "-access",
+                    "+rwc",
+                    "-top",
+                    self.toplevel,
+                ]
+                + self.get_define_commands(self.defines)
+                + self.get_include_commands(self.includes)
+                + self.compile_args
+                + self.simulation_args
+                + self.verilog_sources
+                + self.vhdl_sources
+            )
+            cmd.append(cmd_elab)
+
+        else:
+            print("Skipping compilation:" + out_file)
+
+        cmd_run = ["irun", "-64", "-R"]
+        cmd.append(cmd_run)
+
+        return cmd
 
 
 class Vcs(Simulator):
@@ -398,7 +437,85 @@ class Ghdl(Simulator):
 
         cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
 
-        cmd_run = ["ghdl", "-r", self.toplevel, "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext)] + self.simulation_args
+        cmd_run = [
+            "ghdl",
+            "-r",
+            self.toplevel,
+            "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
+        ] + self.simulation_args
 
         cmd = cmd_analyze + [cmd_elaborate] + [cmd_run]
+        return cmd
+
+
+class Aldec(Simulator):
+    def get_include_commands(self, includes):
+        include_cmd = []
+        for dir in includes:
+            include_cmd.append("+incdir+" + as_tcl_value(dir))
+
+        return include_cmd
+
+    def get_define_commands(self, defines):
+        defines_cmd = []
+        for define in defines:
+            defines_cmd.append("+define+" + as_tcl_value(define))
+
+        return defines_cmd
+
+    def build_command(self):
+
+        self.rtl_library = self.toplevel
+
+        cmd = []
+
+        out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
+
+        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
+
+            if self.verilog_sources:
+                do_script = "onerror quit; alib {RTL_LIBRARY}; alog -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; exit".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
+                    DEFINES=" ".join(self.get_define_commands(self.defines)),
+                    INCDIR=" ".join(self.get_include_commands(self.includes)),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                )
+                cmd.append(["vsimsa"] + ["-do"] + [do_script])
+
+            if self.vhdl_sources:
+                do_script = "do C:/Users/themperek/git/cocotb-test/tests/do.do; alib {RTL_LIBRARY}; acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; exit".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                )
+                cmd.append(["vsimsa"] + ["-do"] + [do_script])
+
+        else:
+            print("Skipping compilation:" + out_file)
+
+        if self.toplevel_lang == "vhdl":
+            do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL}; ".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                TOPLEVEL=as_tcl_value(self.toplevel),
+                EXT_NAME=as_tcl_value(os.path.join("libvhpi")),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+            )
+            if self.verilog_sources:
+                self.env["GPI_EXTRA"] = "vpi"
+        else:
+            do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                TOPLEVEL=as_tcl_value(self.toplevel),
+                EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi")),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
+            )
+            if self.vhdl_sources:
+                self.env["GPI_EXTRA"] = "vhpi"
+
+        do_script += "run -all; exit"
+
+        cmd.append(["vsimsa"] + ["-do"] + [do_script])
+
         return cmd

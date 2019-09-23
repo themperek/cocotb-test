@@ -156,3 +156,5 @@ waves.shm/
 /.dvt
 
 /cocotb_test/libs
+.cocotb-results
+
