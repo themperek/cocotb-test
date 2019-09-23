@@ -18,16 +18,16 @@ class Simulator(object):
         toplevel,
         run_filename,
         module=None,
-        python_search=[],
+        python_search=None,
         toplevel_lang="verilog",
-        verilog_sources=[],
-        vhdl_sources=[],
-        includes=[],
-        defines=[],
-        compile_args=[],
-        simulation_args=[],
-        extra_args=[],
-        plus_args=[],
+        verilog_sources=None,
+        vhdl_sources=None,
+        includes=None,
+        defines=None,
+        compile_args=None,
+        simulation_args=None,
+        extra_args=None,
+        plus_args=None,
         force_compile=False,
         **kwargs
     ):
@@ -49,17 +49,50 @@ class Simulator(object):
         if self.module is None:
             self.module = os.path.splitext(os.path.split(run_filename)[-1])[0]
 
+        if python_search is None:
+            python_search = []
+            
         self.python_search = python_search
 
         self.toplevel = toplevel
         self.toplevel_lang = toplevel_lang
+        
+        if verilog_sources is None:
+            verilog_sources = []
+
         self.verilog_sources = self.get_abs_paths(verilog_sources)
+        
+        if vhdl_sources is None:
+            vhdl_sources = []
+
         self.vhdl_sources = self.get_abs_paths(vhdl_sources)
+
+        if includes is None:
+            includes = []
+
         self.includes = self.get_abs_paths(includes)
 
+        if defines is None:
+            defines = []
+
         self.defines = defines
+        
+        if compile_args is None:
+            compile_args = []
+
+        if extra_args is None:
+            extra_args = []
+
         self.compile_args = compile_args + extra_args
+
+        if simulation_args is None:
+            simulation_args = []
+
         self.simulation_args = simulation_args + extra_args
+
+        if plus_args is None:
+            plus_args = []
+
         self.plus_args = plus_args
         self.force_compile = force_compile
 
