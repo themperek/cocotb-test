@@ -7,7 +7,7 @@
 - remove the need for Makefiles (includes Makefile compatibility mode)
 - allow easy customization of simulation flow
 - easy installation (especially on Windows)
-- allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) for parallel runs (need [#1053](https://github.com/cocotb/cocotb/pull/1053) )
+- allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) or [pytest-parallel](https://github.com/browsertron/pytest-parallel) for parallel runs
 
 # **!Proof of Concept!**
 
@@ -17,11 +17,11 @@
 
 - Install development tools for conda (Windows only):
 ```bash
-conda install --yes m2w64-gcc libpython
+conda install m2w64-gcc libpython
 ```
 - Install simulator (for Icarus Verilog):
 ```bash
-conda install --yes -c conda-forge iverilog
+conda install -c conda-forge iverilog
 ```
 - Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
