@@ -31,6 +31,9 @@ class Simulator(object):
         force_compile=False,
         testcase=None,
         sim_build="sim_build",
+        seed=None,
+        extra_env=None,
+        compile_only=False,
         **kwargs
     ):
 
@@ -97,15 +100,22 @@ class Simulator(object):
 
         self.plus_args = plus_args
         self.force_compile = force_compile
+        self.compile_only = compile_only
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
 
-        self.env = {}
+        if extra_env is not None:
+            self.env = extra_env
+        else:
+            self.env = {}
         
         if testcase is not None:
             self.env["TESTCASE"] = testcase
 
+        if seed is not None:
+            self.env["RANDOM_SEED"] = seed
+            
     def set_env(self):
 
         for e in os.environ:
@@ -263,8 +273,9 @@ class Icarus(Simulator):
         else:
             print("Skipping compilation:" + self.sim_file)
 
-        # TODO: check dependency
-        cmd.append(self.run_command())
+        # TODO: check dependency?
+        if not self.compile_only:
+            cmd.append(self.run_command())
 
         return cmd
 
@@ -317,27 +328,28 @@ class Questa(Simulator):
         else:
             print("Skipping compilation:" + out_file)
 
-        if self.toplevel_lang == "vhdl":
-            do_script = "vsim -onfinish exit -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                TOPLEVEL=as_tcl_value(self.toplevel),
-                EXT_NAME=as_tcl_value("cocotb_init {}".format(os.path.join(self.lib_dir, "libfli." + self.lib_ext))),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
-            )
-        else:
-            do_script = "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                TOPLEVEL=as_tcl_value(self.toplevel),
-                EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi." + self.lib_ext)),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
-                PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
-            )
+        if not self.compile_only:
+            if self.toplevel_lang == "vhdl":
+                do_script = "vsim -onfinish exit -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    EXT_NAME=as_tcl_value("cocotb_init {}".format(os.path.join(self.lib_dir, "libfli." + self.lib_ext))),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                )
+            else:
+                do_script = "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi." + self.lib_ext)),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                    PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
+                )
 
-        # do_script += " log -recursive /*";
+            # do_script += " log -recursive /*";
 
-        do_script += "run -all; quit"
+            do_script += "run -all; quit"
 
-        cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
+            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         return cmd
 
@@ -399,8 +411,9 @@ class Ius(Simulator):
         else:
             print("Skipping compilation:" + out_file)
 
-        cmd_run = ["irun", "-64", "-R"]
-        cmd.append(cmd_run)
+        if not self.compile_only:
+            cmd_run = ["irun", "-64", "-R"]
+            cmd.append(cmd_run)
 
         return cmd
 
@@ -424,6 +437,8 @@ class Vcs(Simulator):
 
         pli_cmd = "acc+=rw,wn:*"
 
+        cmd = []
+
         do_file_path = os.path.join(self.sim_dir, "pli.tab")
         with open(do_file_path, "w") as pli_file:
             pli_file.write(pli_cmd)
@@ -446,10 +461,13 @@ class Vcs(Simulator):
             + self.compile_args
             + self.verilog_sources
         )
-
-        cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"] + self.simulation_args
-
-        return [cmd_build, cmd_run]
+        cmd.append(cmd_build)
+         
+        if not self.compile_only:
+            cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"] + self.simulation_args
+            cmd.append(cmd_run)
+            
+        return cmd
 
 
 class Ghdl(Simulator):
@@ -469,11 +487,14 @@ class Ghdl(Simulator):
 
     def build_command(self):
 
-        cmd_analyze = []
+        cmd = []
+        
         for source_file in self.vhdl_sources:
-            cmd_analyze.append(["ghdl"] + self.compile_args + ["-i", source_file])
+            cmd.append(["ghdl"] + self.compile_args + ["-i", source_file])
 
+        
         cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
+        cmd.append(cmd_elaborate)
 
         cmd_run = [
             "ghdl",
@@ -482,7 +503,9 @@ class Ghdl(Simulator):
             "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
         ] + self.simulation_args
 
-        cmd = cmd_analyze + [cmd_elaborate] + [cmd_run]
+        if not self.compile_only:
+            cmd.append(cmd_run)
+        
         return cmd
 
 
@@ -532,28 +555,29 @@ class Aldec(Simulator):
         else:
             print("Skipping compilation:" + out_file)
 
-        if self.toplevel_lang == "vhdl":
-            do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL}; ".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                TOPLEVEL=as_tcl_value(self.toplevel),
-                EXT_NAME=as_tcl_value(os.path.join("libvhpi")),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
-            )
-            if self.verilog_sources:
-                self.env["GPI_EXTRA"] = "vpi"
-        else:
-            do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                TOPLEVEL=as_tcl_value(self.toplevel),
-                EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi")),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
-                PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
-            )
-            if self.vhdl_sources:
-                self.env["GPI_EXTRA"] = "vhpi"
-
-        do_script += "run -all; exit"
-
-        cmd.append(["vsimsa"] + ["-do"] + [do_script])
+        if not self.compile_only:
+            if self.toplevel_lang == "vhdl":
+                do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL}; ".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    EXT_NAME=as_tcl_value(os.path.join("libvhpi")),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                )
+                if self.verilog_sources:
+                    self.env["GPI_EXTRA"] = "vpi"
+            else:
+                do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi")),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                    PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
+                )
+                if self.vhdl_sources:
+                    self.env["GPI_EXTRA"] = "vhpi"
+    
+            do_script += "run -all; exit"
+    
+            cmd.append(["vsimsa"] + ["-do"] + [do_script])
 
         return cmd
