@@ -4,11 +4,21 @@ import sys
 import inspect
 import pkg_resources
 import tempfile
+import re
 
-if sys.version_info.major >= 3:
-    from tkinter import _stringify as as_tcl_value
-else:
-    from Tkinter import _stringify as as_tcl_value
+_magic_re = re.compile(r"([\\{}])")
+_space_re = re.compile(r"([\s])", re.ASCII)
+
+
+def as_tcl_value(value):
+    # add '\' before special characters and spaces
+    value = _magic_re.sub(r"\\\1", value)
+    value = value.replace("\n", r"\n")
+    value = _space_re.sub(r"\\\1", value)
+    if value[0] == '"':
+        value = "\\" + value
+
+    return value
 
 
 class Simulator(object):
@@ -56,17 +66,17 @@ class Simulator(object):
 
         if python_search is None:
             python_search = []
-            
+
         self.python_search = python_search
 
         self.toplevel = toplevel
         self.toplevel_lang = toplevel_lang
-        
+
         if verilog_sources is None:
             verilog_sources = []
 
         self.verilog_sources = self.get_abs_paths(verilog_sources)
-        
+
         if vhdl_sources is None:
             vhdl_sources = []
 
@@ -81,7 +91,7 @@ class Simulator(object):
             defines = []
 
         self.defines = defines
-        
+
         if compile_args is None:
             compile_args = []
 
@@ -109,13 +119,13 @@ class Simulator(object):
             self.env = extra_env
         else:
             self.env = {}
-        
+
         if testcase is not None:
             self.env["TESTCASE"] = testcase
 
         if seed is not None:
             self.env["RANDOM_SEED"] = seed
-            
+
     def set_env(self):
 
         for e in os.environ:
@@ -227,7 +237,7 @@ class Simulator(object):
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
-        kwargs['sim_name'] = "icarus"
+        kwargs["sim_name"] = "icarus"
         super(Icarus, self).__init__(*argv, **kwargs)
 
         if self.vhdl_sources:
@@ -333,7 +343,9 @@ class Questa(Simulator):
                 do_script = "vsim -onfinish exit -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value("cocotb_init {}".format(os.path.join(self.lib_dir, "libfli." + self.lib_ext))),
+                    EXT_NAME=as_tcl_value(
+                        "cocotb_init {}".format(os.path.join(self.lib_dir, "libfli." + self.lib_ext))
+                    ),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 )
             else:
@@ -462,11 +474,11 @@ class Vcs(Simulator):
             + self.verilog_sources
         )
         cmd.append(cmd_build)
-         
+
         if not self.compile_only:
             cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"] + self.simulation_args
             cmd.append(cmd_run)
-            
+
         return cmd
 
 
@@ -488,11 +500,10 @@ class Ghdl(Simulator):
     def build_command(self):
 
         cmd = []
-        
+
         for source_file in self.vhdl_sources:
             cmd.append(["ghdl"] + self.compile_args + ["-i", source_file])
 
-        
         cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
         cmd.append(cmd_elaborate)
 
@@ -505,7 +516,7 @@ class Ghdl(Simulator):
 
         if not self.compile_only:
             cmd.append(cmd_run)
-        
+
         return cmd
 
 
@@ -575,9 +586,9 @@ class Aldec(Simulator):
                 )
                 if self.vhdl_sources:
                     self.env["GPI_EXTRA"] = "vhpi"
-    
+
             do_script += "run -all; exit"
-    
+
             cmd.append(["vsimsa"] + ["-do"] + [do_script])
 
         return cmd
