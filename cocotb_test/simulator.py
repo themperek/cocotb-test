@@ -315,16 +315,6 @@ class Questa(Simulator):
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
 
-            if self.verilog_sources:
-                do_script = "vlog -mixedsvvh -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
-                    DEFINES=" ".join(self.get_define_commands(self.defines)),
-                    INCDIR=" ".join(self.get_include_commands(self.includes)),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                )
-                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
-
             if self.vhdl_sources:
                 do_script = "vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
@@ -333,6 +323,16 @@ class Questa(Simulator):
                 )
                 self.env["GPI_EXTRA"] = "fli"
 
+                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
+
+            if self.verilog_sources:
+                do_script = "vlog -mixedsvvh -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
+                    DEFINES=" ".join(self.get_define_commands(self.defines)),
+                    INCDIR=" ".join(self.get_include_commands(self.includes)),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                )
                 cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         else:
@@ -539,45 +539,44 @@ class Aldec(Simulator):
 
         self.rtl_library = self.toplevel
 
-        cmd = []
+        do_script = "\nonerror {\n quit -code 1 \n} \n"
 
         out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
 
+            do_script += "alib {RTL_LIBRARY} \n".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
+
+            if self.vhdl_sources:
+                do_script += "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                )
+
             if self.verilog_sources:
-                do_script = "onerror quit; alib {RTL_LIBRARY}; alog -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; exit".format(
+                do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
                     DEFINES=" ".join(self.get_define_commands(self.defines)),
                     INCDIR=" ".join(self.get_include_commands(self.includes)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
-                cmd.append(["vsimsa"] + ["-do"] + [do_script])
-
-            if self.vhdl_sources:
-                do_script = "do C:/Users/themperek/git/cocotb-test/tests/do.do; alib {RTL_LIBRARY}; acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; exit".format(
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                )
-                cmd.append(["vsimsa"] + ["-do"] + [do_script])
-
         else:
             print("Skipping compilation:" + out_file)
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
-                do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL}; ".format(
+                do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(os.path.join("libvhpi")),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvhpi")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 )
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = "vpi"
             else:
-                do_script = "onerror quit; asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                do_script += "asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi")),
@@ -587,8 +586,11 @@ class Aldec(Simulator):
                 if self.vhdl_sources:
                     self.env["GPI_EXTRA"] = "vhpi"
 
-            do_script += "run -all; exit"
+            do_script += "run -all \nexit"
 
-            cmd.append(["vsimsa"] + ["-do"] + [do_script])
+        do_file = tempfile.NamedTemporaryFile(delete=False)
+        do_file.write(do_script.encode())
+        do_file.close()
+        #print(do_script)
 
-        return cmd
+        return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
