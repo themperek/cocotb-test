@@ -106,8 +106,6 @@ def build_libs(build_dir="cocotb_build"):
     # build_dir_abs = os.path.join(os.getcwd(), build_dir)
     build_dir_abs = os.path.abspath(build_dir)
 
-    ext_modules = []
-
     ld_library = sysconfig.get_config_var("LDLIBRARY")
     if ld_library:
         python_lib_link = os.path.splitext(ld_library)[0][3:]
@@ -345,6 +343,13 @@ def build_libs(build_dir="cocotb_build"):
         build_vhpi(
             build_dir=aldec_build_dir, sim_define="ALDEC", extra_lib=aldec_extra_lib, extra_lib_dir=aldec_extra_lib_path
         )
+
+    #
+    # Verilator
+    #
+    logger.warning("Compiling interface libraries for Verilator ...")
+    vcs_build_dir = os.path.join(build_dir_abs, "verilator")
+    build_vpi(build_dir=vcs_build_dir, sim_define="VERILATOR")
 
     return build_dir_abs, ext_name
 

@@ -5,6 +5,7 @@ import inspect
 import pkg_resources
 import tempfile
 import re
+from distutils.spawn import find_executable
 
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
@@ -591,6 +592,71 @@ class Aldec(Simulator):
         do_file = tempfile.NamedTemporaryFile(delete=False)
         do_file.write(do_script.encode())
         do_file.close()
-        #print(do_script)
+        # print(do_script)
 
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
+
+
+class Verilator(Simulator):
+    def __init__(self, *argv, **kwargs):
+        super(Verilator, self).__init__(*argv, **kwargs)
+
+        if self.vhdl_sources:
+            raise ValueError("This simulator does not support VHDL")
+
+    def get_include_commands(self, includes):
+        include_cmd = []
+        for dir in includes:
+            include_cmd.append("+incdir+" + dir)
+
+        return include_cmd
+
+    def get_define_commands(self, defines):
+        defines_cmd = []
+        for define in defines:
+            defines_cmd.append("+define+" + define)
+
+        return defines_cmd
+
+    def build_command(self):
+
+        cmd = []
+
+        out_file = os.path.join(self.sim_dir, self.toplevel)
+        verilator_cpp = os.path.join(os.path.dirname(os.path.dirname(self.lib_dir)), "share", "verilator.cpp")
+        verilator_exec = find_executable("verilator")
+        if verilator_exec is None:
+            raise ValueError("Verilator executable not found.")
+
+        cmd.append(
+            [
+                "perl",
+                verilator_exec,
+                "-cc",
+                "--exe",
+                "-Mdir",
+                self.sim_dir,
+                "-DCOCOTB_SIM=1",
+                "--top-module",
+                self.toplevel,
+                "--vpi",
+                "--public-flat-rw",
+                "--prefix",
+                "Vtop",
+                "-o",
+                self.toplevel,
+                "-LDFLAGS",
+                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lvpi -lgpi -lcocotb -lgpilog -lcocotbutils".format(
+                    LIB_DIR=self.lib_dir
+                ),
+                verilator_cpp,
+            ]
+            + self.verilog_sources
+        )
+
+        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
+
+        if not self.compile_only:
+            cmd.append([out_file])
+
+        return cmd

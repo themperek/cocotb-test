@@ -11,7 +11,7 @@ def run(simulator=None, **kwargs):
 
     sim_env = os.getenv("SIM", "icarus")
 
-    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl", "aldec"]
+    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl", "aldec", "verilator"]
     if (sim_env in supported_sim) or simulator:
         pass
     else:
@@ -35,6 +35,8 @@ def run(simulator=None, **kwargs):
         sim = cocotb_test.simulator.Ghdl(**kwargs)
     elif sim_env == "aldec":
         sim = cocotb_test.simulator.Aldec(**kwargs)
+    elif sim_env == "verilator":
+        sim = cocotb_test.simulator.Verilator(**kwargs)
 
     results_xml_file = sim.run()
 
