@@ -58,6 +58,13 @@ try:
 except ImportError:
     bdist_wheel = None
 
+def package_files(directory):
+    paths = []
+    for (fpath, _, filenames) in os.walk(directory):
+        for filename in filenames:
+            paths.append(os.path.join('..', fpath, filename))
+    return paths
+
 setup(
     name="cocotb-test",
     cmdclass={"install": PostInstallCommand, "develop": PostDevelopCommand, "bdist_wheel": bdist_wheel},
@@ -72,6 +79,7 @@ setup(
     packages=find_packages(),
     setup_requires=["cocotb"],
     install_requires=["cocotb", "pytest"],
+    package_data={'cocotb_test': package_files('cocotb_test/share')},
     entry_points={
         "console_scripts": ["cocotb=cocotb_test.cli:config", "cocotb-run=cocotb_test.cli:run", "cocotb-clean=cocotb_test.cli:clean"],
         "pytest11": ["pytest-cocotb = cocotb_test.plugin"],

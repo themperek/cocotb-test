@@ -347,9 +347,10 @@ def build_libs(build_dir="cocotb_build"):
     #
     # Verilator
     #
-    logger.warning("Compiling interface libraries for Verilator ...")
-    vcs_build_dir = os.path.join(build_dir_abs, "verilator")
-    build_vpi(build_dir=vcs_build_dir, sim_define="VERILATOR")
+    if os.name == "posix":
+        logger.warning("Compiling interface libraries for Verilator ...")
+        vcs_build_dir = os.path.join(build_dir_abs, "verilator")
+        build_vpi(build_dir=vcs_build_dir, sim_define="VERILATOR")
 
     return build_dir_abs, ext_name
 
