@@ -1,0 +1,2 @@
+recursive-include cocotb_test/share *.cpp
+include README.md

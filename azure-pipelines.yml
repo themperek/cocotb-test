@@ -22,6 +22,10 @@ jobs:
         imageName: 'macos-10.13'
         python.version: '3.7'
         SIM: 'icarus'
+      Linux-Verilator-py37:
+        python.version: '3.7'
+        imageName: 'ubuntu-16.04'
+        SIM: 'verilator'
 
   pool:
     vmImage: $(imageName)
@@ -77,8 +81,19 @@ jobs:
     displayName: Compile and Install GHDL on Linux
     condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
     
+  - script: |
+      sudo apt-get update
+      sudo apt-get install git make autoconf g++ flex bison   # First time prerequisites
+      sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)
+      sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
+      git clone http://git.veripool.org/git/verilator --depth=1
+      cd verilator && autoconf && ./configure && make -j2 && sudo make install && cd ..
+    displayName: Compile and Install Verilator on Linux
+    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'verilator'))
+
   - script: conda install --yes -c conda-forge iverilog
     displayName: Install Icarus Verilog
+    condition: eq(variables['SIM'], 'icarus')
 
   - script: |
       echo "##vso[task.setvariable variable=SIM]$(SIM)"
@@ -103,6 +118,7 @@ jobs:
       set SIM=icarus
       pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
     displayName: 'Test with pytest'
+    condition: ne(variables['SIM'], 'verilator')
 
   - script: |
       cd tests; make
