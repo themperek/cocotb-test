@@ -607,14 +607,14 @@ class Verilator(Simulator):
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
-            include_cmd.append("+incdir+" + dir)
+            include_cmd.append("-I" + dir)
 
         return include_cmd
 
     def get_define_commands(self, defines):
         defines_cmd = []
         for define in defines:
-            defines_cmd.append("+define+" + define)
+            defines_cmd.append("-D" + define)
 
         return defines_cmd
 
@@ -646,11 +646,12 @@ class Verilator(Simulator):
                 "-o",
                 self.toplevel,
                 "-LDFLAGS",
-                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lvpi -lgpi -lcocotb -lgpilog -lcocotbutils".format(
-                    LIB_DIR=self.lib_dir
-                ),
-                verilator_cpp,
+                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lvpi".format(LIB_DIR=self.lib_dir)
             ]
+            + self.compile_args
+            + self.get_define_commands(self.defines)
+            + self.get_include_commands(self.includes)
+            + [verilator_cpp]
             + self.verilog_sources
         )
 
