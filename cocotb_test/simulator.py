@@ -138,11 +138,12 @@ class Simulator(object):
 
         python_path = os.pathsep.join(sys.path)
         self.env["PYTHONPATH"] = os.pathsep + self.lib_dir
-        self.env["PYTHONPATH"] += os.pathsep + self.run_dir
-        self.env["PYTHONPATH"] += os.pathsep + python_path
 
         for path in self.python_search:
             self.env["PYTHONPATH"] += os.pathsep + path
+        
+        self.env["PYTHONPATH"] += os.pathsep + self.run_dir
+        self.env["PYTHONPATH"] += os.pathsep + python_path
 
         self.env["TOPLEVEL"] = self.toplevel
         self.env["COCOTB_SIM"] = "1"
@@ -358,7 +359,7 @@ class Questa(Simulator):
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
 
-            # do_script += " log -recursive /*";
+            # do_script += "log -recursive /*;"
 
             do_script += "run -all; quit"
 
