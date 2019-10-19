@@ -125,7 +125,7 @@ class Simulator(object):
             self.env["TESTCASE"] = testcase
 
         if seed is not None:
-            self.env["RANDOM_SEED"] = seed
+            self.env["RANDOM_SEED"] = str(seed)
 
     def set_env(self):
 
