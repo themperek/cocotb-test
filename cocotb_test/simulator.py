@@ -45,6 +45,7 @@ class Simulator(object):
         seed=None,
         extra_env=None,
         compile_only=False,
+        gui=False,
         **kwargs
     ):
 
@@ -126,6 +127,8 @@ class Simulator(object):
 
         if seed is not None:
             self.env["RANDOM_SEED"] = str(seed)
+
+        self.gui = gui
 
     def set_env(self):
 
@@ -342,7 +345,8 @@ class Questa(Simulator):
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
-                do_script = "vsim -onfinish exit -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                    ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(
@@ -351,7 +355,8 @@ class Questa(Simulator):
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 )
             else:
-                do_script = "vsim -onfinish exit -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                    ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi." + self.lib_ext)),
@@ -361,9 +366,10 @@ class Questa(Simulator):
 
             # do_script += "log -recursive /*;"
 
-            do_script += "run -all; quit"
+            if not self.gui:
+                do_script += "run -all; quit"
 
-            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
+            cmd.append(["vsim"] + (["-gui"] if self.gui else ["-c"]) + ["-do"] + [do_script])
 
         return cmd
 
@@ -426,7 +432,7 @@ class Ius(Simulator):
             print("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["irun", "-64", "-R"]
+            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")]
             cmd.append(cmd_run)
 
         return cmd
@@ -480,6 +486,9 @@ class Vcs(Simulator):
         if not self.compile_only:
             cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"] + self.simulation_args
             cmd.append(cmd_run)
+
+        if self.gui:
+            cmd.append("-gui") #not tested!
 
         return cmd
 
