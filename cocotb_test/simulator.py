@@ -29,6 +29,7 @@ class Simulator(object):
         toplevel,
         run_filename,
         module=None,
+        workdir=None,
         python_search=None,
         toplevel_lang="verilog",
         verilog_sources=None,
@@ -65,6 +66,11 @@ class Simulator(object):
         self.module = module
         if self.module is None:
             self.module = os.path.splitext(os.path.split(run_filename)[-1])[0]
+
+        self.workdir = self.sim_dir
+        absworkdir = os.path.abspath(workdir)
+        if os.path.isdir(absworkdir):
+            self.workdir = absworkdir
 
         if python_search is None:
             python_search = []
@@ -160,7 +166,7 @@ class Simulator(object):
         raise NotImplementedError()
 
     def run(self):
-        results_xml_file_defulat = os.path.join(self.sim_dir, "results.xml")
+        results_xml_file_defulat = os.path.join(self.workdir, "results.xml")
         if os.path.isfile(results_xml_file_defulat):
             os.remove(results_xml_file_defulat)
 
@@ -203,7 +209,7 @@ class Simulator(object):
             print(" ".join(cmd))
 
             output_log = ""
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.sim_dir, env=self.env)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.workdir, env=self.env)
             while True:
                 out = process.stdout.read(1)
                 if not out and process.poll() != None:
@@ -219,7 +225,7 @@ class Simulator(object):
         self.set_env()
         for cmd in cmds:
             print(" ".join(cmd))
-            process = subprocess.check_call(cmd, cwd=self.sim_dir, env=self.env)
+            process = subprocess.check_call(cmd, cwd=self.workdir, env=self.env)
 
     def outdated(self, output, dependencies):
 
