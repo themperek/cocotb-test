@@ -40,15 +40,16 @@ def run(simulator=None, **kwargs):
 
     results_xml_file = sim.run()
 
-    assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
+    if not kwargs.get("compile_only", False):
+        assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
 
-    tree = ET.parse(results_xml_file)
-    for ts in tree.iter("testsuite"):
-        for tc in ts.iter("testcase"):
-            for failure in tc.iter("failure"):
-                assert False, '{} class="{}" test="{}" error={}'.format(
-                    failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout")
-                )
+        tree = ET.parse(results_xml_file)
+        for ts in tree.iter("testsuite"):
+            for tc in ts.iter("testcase"):
+                for failure in tc.iter("failure"):
+                    assert False, '{} class="{}" test="{}" error={}'.format(
+                        failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout")
+                    )
 
     return results_xml_file
 
