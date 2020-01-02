@@ -68,9 +68,11 @@ class Simulator(object):
             self.module = os.path.splitext(os.path.split(run_filename)[-1])[0]
 
         self.workdir = self.sim_dir
-        absworkdir = os.path.abspath(workdir)
-        if os.path.isdir(absworkdir):
-            self.workdir = absworkdir
+
+        if workdir is not None:
+            absworkdir = os.path.abspath(workdir)
+            if os.path.isdir(absworkdir):
+                self.workdir = absworkdir
 
         if python_search is None:
             python_search = []
