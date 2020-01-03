@@ -87,7 +87,7 @@ jobs:
     displayName: Set simulator
     
   - script: |
-      conda install -c conda-forge tox
+      conda install --yes -c conda-forge tox
       tox
     displayName: 'Package Test with Tox'
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
