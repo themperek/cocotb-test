@@ -51,27 +51,14 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Darwin' )
     
   - script: |
-      conda update -q -y conda
       conda init
+      conda install -y python=$(python.version) pytest
+      conda update -q -y conda
     displayName: Update conda
 
   - script: conda install --yes m2w64-gcc libpython
     displayName: Install Windows conda development
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
-    
-  - script: |
-       conda create -n myenv -y python=$(python.version)
-    displayName: Create Anaconda environment
-    
-  - script: |
-      conda activate myenv
-    displayName: Activate Anaconda environment on Windows
-    condition: eq( variables['Agent.OS'], 'Windows_NT' )
-    
-  - script: |
-      source activate myenv
-    displayName: Activate Anaconda environment
-    condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
       sudo apt-get update
@@ -100,7 +87,7 @@ jobs:
     displayName: Set simulator
     
   - script: |
-      pip install tox
+      conda install --yes -c conda-forge tox
       tox
     displayName: 'Package Test with Tox'
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
