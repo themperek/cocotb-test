@@ -106,13 +106,13 @@ jobs:
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
-      pip install -e .
-    displayName: 'Install cocotb-test'
-    
-  - script: |
       git clone https://github.com/potentialventures/cocotb
       pip install -e cocotb
     displayName: 'Install cocotb from source'
+    
+  - script: |
+      pip install -e .
+    displayName: 'Install cocotb-test'
     
   - script: |
       set SIM=icarus
