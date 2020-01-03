@@ -8,8 +8,11 @@ import re
 from distutils.spawn import find_executable
 
 _magic_re = re.compile(r"([\\{}])")
-_space_re = re.compile(r"([\s])", re.ASCII)
 
+if sys.version_info.major >= 3:
+    _space_re = re.compile(r"([\s])", re.ASCII)
+else:
+    _space_re = re.compile(r"([\s])")    
 
 def as_tcl_value(value):
     # add '\' before special characters and spaces
