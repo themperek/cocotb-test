@@ -51,22 +51,15 @@ jobs:
     condition: eq( variables['Agent.OS'], 'Darwin' )
     
   - script: |
-      conda update -q -y conda
       conda init
+      conda install -y python=$(python.version)
+      conda update -q -y conda
     displayName: Update conda
 
   - script: conda install --yes m2w64-gcc libpython
     displayName: Install Windows conda development
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
     
-  - script: |
-       conda create -n myenv -y python=$(python.version)
-    displayName: Create Anaconda environment
-    
-  - script: |
-      conda activate myenv
-    displayName: Activate Anaconda environment
-
   - script: |
       sudo apt-get update
       sudo apt-get install -y gnat-4.9
