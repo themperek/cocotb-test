@@ -52,7 +52,7 @@ jobs:
     
   - script: |
       conda init
-      conda install -y python=$(python.version)
+      conda install -y python=$(python.version) pytest
       conda update -q -y conda
     displayName: Update conda
 
