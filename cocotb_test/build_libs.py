@@ -22,6 +22,13 @@ class build_ext(_build_ext):
     def get_export_symbols(self, ext):
         return None
 
+cfg_vars = distutils.sysconfig.get_config_vars()
+for key, value in cfg_vars.items():
+    if type(value) == str:
+        cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
+
+if sys.platform == "darwin":
+    cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
 
 def _rename_safe(target, link_name):
     """Rename or symlink on Mac or copy on Windows."""
@@ -214,14 +221,6 @@ def build(build_dir="cocotb_build"):
 
     distutils.log.set_verbosity(0)  # Disable logging comiliation commands in disutils
     # distutils.log.set_verbosity(distutils.log.DEBUG) # Set DEBUG level
-
-    cfg_vars = distutils.sysconfig.get_config_vars()
-    for key, value in cfg_vars.items():
-        if type(value) == str:
-            cfg_vars[key] = value.replace("-Wstrict-prototypes", "")
-
-    if sys.platform == "darwin":
-        cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
 
     share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
     share_lib_dir = os.path.join(share_dir, "lib")
