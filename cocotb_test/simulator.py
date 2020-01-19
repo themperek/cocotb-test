@@ -290,7 +290,7 @@ class Icarus(Simulator):
         return cmd_compile
 
     def run_command(self):
-        return ["vvp", "-M", self.lib_dir, "-m", "libvpi"] + self.simulation_args + [self.sim_file] + self.plus_args
+        return ["vvp", "-M", self.lib_dir, "-m", "gpivpi"] + self.simulation_args + [self.sim_file] + self.plus_args
 
     def build_command(self):
         cmd = []
