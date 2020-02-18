@@ -5,6 +5,8 @@ import inspect
 import pkg_resources
 import tempfile
 import re
+import cocotb
+
 from distutils.spawn import find_executable
 
 _magic_re = re.compile(r"([\\{}])")
@@ -645,6 +647,8 @@ class Verilator(Simulator):
 
         out_file = os.path.join(self.sim_dir, self.toplevel)
         verilator_cpp = os.path.join(os.path.dirname(os.path.dirname(self.lib_dir)), "share", "verilator.cpp")
+        verilator_cpp = os.path.join(os.path.dirname(cocotb.__file__), "share", "lib", "verilator", "verilator.cpp")
+
         verilator_exec = find_executable("verilator")
         if verilator_exec is None:
             raise ValueError("Verilator executable not found.")
