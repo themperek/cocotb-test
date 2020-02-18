@@ -680,6 +680,7 @@ class Verilator(Simulator):
             + self.verilog_sources
         )
 
+        self.env["CPPFLAGS"] = "-std=c++11"
         cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
 
         if not self.compile_only:
