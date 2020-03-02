@@ -52,6 +52,7 @@ class Simulator(object):
         extra_env=None,
         compile_only=False,
         gui=False,
+        log_name=None,
         **kwargs
     ):
 
@@ -143,6 +144,8 @@ class Simulator(object):
 
         self.gui = gui
 
+        self.log_file = log_name
+
     def set_env(self):
 
         for e in os.environ:
@@ -186,7 +189,11 @@ class Simulator(object):
             results_xml_file = os.getenv("COCOTB_RESULTS_FILE")
 
         cmds = self.build_command()
-        self.execute(cmds)
+
+        if self.log_file is None:
+            self.execute(cmds)
+        else:
+            self.execute_log(cmds)
 
         # HACK: for compatibility to be removed
         if os.path.isfile(results_xml_file_defulat):
@@ -215,18 +222,24 @@ class Simulator(object):
         for cmd in cmds:
             print(" ".join(cmd))
 
+            log_file_f = open(self.log_file, "w")
+            print("Write log to", log_file_f.name)
+
             output_log = ""
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.work_dir, env=self.env)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                    cwd=self.work_dir, env=self.env)
             while True:
-                out = process.stdout.read(1)
+                out = process.stdout.readline()
                 if not out and process.poll() != None:
                     break
                 if out != "":
                     output_log += out.decode("utf-8")
+                    log_file_f.write(out.decode("utf-8"))
                     sys.stdout.write(out.decode("utf-8"))
                     sys.stdout.flush()
 
-        return output_log
+            log_file_f.close()
+            return output_log
 
     def execute(self, cmds):
         self.set_env()
