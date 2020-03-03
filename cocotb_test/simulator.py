@@ -6,6 +6,7 @@ import pkg_resources
 import tempfile
 import re
 import cocotb
+import signal
 
 from distutils.spawn import find_executable
 
@@ -142,9 +143,16 @@ class Simulator(object):
         if seed is not None:
             self.env["RANDOM_SEED"] = str(seed)
 
+        self.process = None
+
         self.gui = gui
 
-        self.log_file = log_name
+        self.log_name = log_name
+        self.log_file = None
+
+        # Catch SIGINT and SIGTERM
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def set_env(self):
 
@@ -222,30 +230,30 @@ class Simulator(object):
         for cmd in cmds:
             print(" ".join(cmd))
 
-            log_file_f = open(self.log_file, "w")
-            print("Write log to", log_file_f.name)
+            self.log_file = open(self.log_name, "w")
+            print("Write log to", self.log_file.name)
 
             output_log = ""
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+            self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                     cwd=self.work_dir, env=self.env)
             while True:
-                out = process.stdout.readline()
-                if not out and process.poll() != None:
+                out = self.process.stdout.readline()
+                if not out and self.process.poll() != None:
                     break
                 if out != "":
                     output_log += out.decode("utf-8")
-                    log_file_f.write(out.decode("utf-8"))
+                    self.log_file.write(out.decode("utf-8"))
                     sys.stdout.write(out.decode("utf-8"))
                     sys.stdout.flush()
 
-            log_file_f.close()
+            self.log_file.close()
             return output_log
 
     def execute(self, cmds):
         self.set_env()
         for cmd in cmds:
             print(" ".join(cmd))
-            process = subprocess.check_call(cmd, cwd=self.work_dir, env=self.env)
+            self.process = subprocess.check_call(cmd, cwd=self.work_dir, env=self.env)
 
     def outdated(self, output, dependencies):
 
@@ -265,6 +273,13 @@ class Simulator(object):
 
         return False
 
+    def exit_gracefully(self, signum, frame):
+        sys.stdout.flush()
+        if self.log_file is not None:
+            self.log_file.close()
+        if self.process is not None:
+            self.process.kill()
+        print("Exiting")
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
