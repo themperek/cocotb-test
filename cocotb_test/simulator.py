@@ -198,7 +198,7 @@ class Simulator(object):
 
         cmds = self.build_command()
 
-        if self.log_file is None:
+        if self.log_name is None:
             self.execute(cmds)
         else:
             self.execute_log(cmds)
