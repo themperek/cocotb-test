@@ -7,6 +7,7 @@ import tempfile
 import re
 import cocotb
 import signal
+import pytest
 
 from distutils.spawn import find_executable
 
@@ -151,6 +152,9 @@ class Simulator(object):
         self.log_file = None
 
         # Catch SIGINT and SIGTERM
+        self.old_sigint_h = signal.getsignal(signal.SIGINT)
+        self.old_sigterm_h = signal.getsignal(signal.SIGTERM)
+
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
@@ -279,7 +283,12 @@ class Simulator(object):
             self.log_file.close()
         if self.process is not None:
             self.process.kill()
-        print("Exiting")
+            self.process.wait()
+        # Restore previous handlers
+        signal.signal(signal.SIGINT, self.old_sigint_h)
+        signal.signal(signal.SIGTERM, self.old_sigterm_h)
+        pytest.exit("Exiting " + str(signum))
+
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
