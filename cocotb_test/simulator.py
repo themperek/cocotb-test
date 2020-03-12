@@ -428,7 +428,7 @@ class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Ius, self).__init__(*argv, **kwargs)
 
-        self.env["GPI_EXTRA"] = "vhpi"
+        self.env["GPI_EXTRA"] = "cocotbvhpi"
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -631,7 +631,7 @@ class Aldec(Simulator):
                 do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvhpi")),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "cocotbvhpi")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 )
                 if self.verilog_sources:

@@ -206,8 +206,8 @@ def build_libs(build_dir="cocotb_build"):
         _build_lib(libvpi, dist, build_dir)
 
     def build_vhpi(build_dir, sim_define, extra_lib=[], extra_lib_dir=[]):
-        libvhpi = Extension(
-            "libvhpi",
+        libcocotbvhpi = Extension(
+            "libcocotbvhpi",
             include_dirs=[include_dir],
             define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
             libraries=["gpi", "gpilog", "stdc++"] + extra_lib,
@@ -219,7 +219,7 @@ def build_libs(build_dir="cocotb_build"):
             extra_link_args=["-Wl,-rpath,$ORIGIN"],
         )
 
-        _build_lib(libvhpi, dist, build_dir)
+        _build_lib(libcocotbvhpi, dist, build_dir)
 
     #
     #  Icarus Verilog
