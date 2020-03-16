@@ -77,8 +77,8 @@ setup(
     author="Tomasz Hemperek",
     author_email="hemperek@uni-bonn.de",
     packages=find_packages(),
-    setup_requires=["cocotb>=1.3.0"],
-    install_requires=["cocotb>=1.3.0", "pytest"],
+    setup_requires=["cocotb>=1.3.1"],
+    install_requires=["cocotb>=1.3.1", "pytest"],
     package_data={'cocotb_test': package_files('cocotb_test/share')},
     entry_points={
         "console_scripts": ["cocotb=cocotb_test.cli:config", "cocotb-run=cocotb_test.cli:run", "cocotb-clean=cocotb_test.cli:clean"],
