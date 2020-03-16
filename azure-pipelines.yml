@@ -94,7 +94,8 @@ jobs:
     
   - script: |
       git clone -b v1.3.0 https://github.com/potentialventures/cocconda
-      $CONDA/bin/pip install -e cocotb
+      echo $CONDA
+      ${CONDA}/bin/pip install -e cocotb
     displayName: 'Install cocotb from source'
     
   - script: |
