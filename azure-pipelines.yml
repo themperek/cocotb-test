@@ -62,7 +62,7 @@ jobs:
     
   - script: |
       sudo apt-get update
-      sudo apt-get install -y gnat-4.9
+      sudo apt-get install -y gnat
       git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
       cd ghdl && ./configure && make -j2 && sudo make install && cd ..
     displayName: Compile and Install GHDL on Linux
