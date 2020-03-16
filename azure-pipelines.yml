@@ -4,27 +4,27 @@ jobs:
     matrix:
       Linux-Icarus-py27:
         python.version: '2.7'
-        imageName: 'ubuntu-16.04'
+        imageName: 'ubuntu-latest'
         SIM: icarus
       Linux-Icarus-py37:
         python.version: '3.7'
-        imageName: 'ubuntu-16.04'
+        imageName: 'ubuntu-latest'
         SIM: 'icarus'
       Linux-GHDL-py37:
         python.version: '3.7'
-        imageName: 'ubuntu-16.04'
+        imageName: 'ubuntu-latest'
         SIM: 'ghdl'
       Windows-Icarus-py37:
         python.version: '3.7'
-        imageName: 'win1803'
+        imageName: 'windows-latest'
         SIM: 'icarus'
       Mac-Icarus-py37:
-        imageName: 'macos-10.13'
+        imageName: 'macOS-latest'
         python.version: '3.7'
         SIM: 'icarus'
       Linux-Verilator-py37:
         python.version: '3.7'
-        imageName: 'ubuntu-16.04'
+        imageName: 'ubuntu-latest'
         SIM: 'verilator'
 
   pool:
