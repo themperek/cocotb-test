@@ -93,7 +93,10 @@ jobs:
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     
   - script: |
-      git clone -b v1.3.0 https://github.com/potentialventures/cocotb
+      git clone -b v1.3.0 https://github.com/potentialventures/cocconda
+      which pip
+      which pip3
+      which conda
       pip install -e cocotb
     displayName: 'Install cocotb from source'
     
