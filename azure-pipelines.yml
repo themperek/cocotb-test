@@ -1,120 +1,119 @@
 jobs:
-- job:
-  strategy:
-    matrix:
-      Linux-Icarus-py27:
-        python.version: '2.7'
-        imageName: 'ubuntu-latest'
-        SIM: icarus
-      Linux-Icarus-py37:
-        python.version: '3.7'
-        imageName: 'ubuntu-latest'
-        SIM: 'icarus'
-      Linux-GHDL-py37:
-        python.version: '3.7'
-        imageName: 'ubuntu-latest'
-        SIM: 'ghdl'
-      Windows-Icarus-py37:
-        python.version: '3.7'
-        imageName: 'windows-latest'
-        SIM: 'icarus'
-      Mac-Icarus-py37:
-        imageName: 'macOS-latest'
-        python.version: '3.7'
-        SIM: 'icarus'
-      Linux-Verilator-py37:
-        python.version: '3.7'
-        imageName: 'ubuntu-latest'
-        SIM: 'verilator'
+  - job:
+    strategy:
+      matrix:
+        Linux-Icarus-py27:
+          python.version: "2.7"
+          imageName: "ubuntu-latest"
+          SIM: icarus
+        Linux-Icarus-py37:
+          python.version: "3.7"
+          imageName: "ubuntu-latest"
+          SIM: "icarus"
+        Linux-GHDL-py37:
+          python.version: "3.7"
+          imageName: "ubuntu-latest"
+          SIM: "ghdl"
+        Windows-Icarus-py37:
+          python.version: "3.7"
+          imageName: "windows-latest"
+          SIM: "icarus"
+        Mac-Icarus-py37:
+          imageName: "macOS-latest"
+          python.version: "3.7"
+          SIM: "icarus"
+        Linux-Verilator-py37:
+          python.version: "3.7"
+          imageName: "ubuntu-latest"
+          SIM: "verilator"
 
-  pool:
-    vmImage: $(imageName)
-  variables:
-    SIM: $(SIM)
-  
-  steps:    
-  - powershell: |
-        Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
-        Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
-        Write-Host "##vso[task.prependpath]C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin"
-    displayName: Download and Install Anaconda on Windows
-    condition: eq( variables['Agent.OS'], 'Windows_NT' )
-    
-  - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
-    condition: ne( variables['Agent.OS'], 'Windows_NT' )
-    
-  - script: |
-      sudo chown -R $USER $CONDA
-      gcc --version
-    displayName: Take ownership of conda installation
-    condition: eq( variables['Agent.OS'], 'Darwin' )
-    
-  - script: |
-      conda init
-      conda install -y python=$(python.version) pytest
-      conda update -q -y conda
-    displayName: Update conda
+    pool:
+      vmImage: $(imageName)
+    variables:
+      SIM: $(SIM)
 
-  - script: conda install --yes m2w64-gcc libpython
-    displayName: Install Windows conda development
-    condition: eq( variables['Agent.OS'], 'Windows_NT' )
-    
-  - script: |
-      sudo apt-get update
-      sudo apt-get install -y gnat
-      git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
-      cd ghdl && ./configure && make -j2 && sudo make install && cd ..
-    displayName: Compile and Install GHDL on Linux
-    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
-    
-  - script: |
-      sudo apt-get update
-      sudo apt-get install git make autoconf g++ flex bison   # First time prerequisites
-      sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)
-      sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
-      git clone http://git.veripool.org/git/verilator --depth=1
-      cd verilator && autoconf && ./configure && make -j2 && sudo make install && cd ..
-    displayName: Compile and Install Verilator on Linux
-    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'verilator'))
+    steps:
+      - powershell: |
+          Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
+          Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
+          Write-Host "##vso[task.prependpath]C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin"
+        displayName: Download and Install Anaconda on Windows
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
-  - script: conda install --yes -c conda-forge iverilog
-    displayName: Install Icarus Verilog
-    condition: eq(variables['SIM'], 'icarus')
+      - script: echo "##vso[task.prependpath]$CONDA/bin"
+        displayName: Add conda to PATH
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
-  - script: |
-      echo "##vso[task.setvariable variable=SIM]$(SIM)"
-    displayName: Set simulator
-    
-  - script: |
-      conda install --yes -c conda-forge tox
-      tox
-    displayName: 'Package Test with Tox'
-    condition: ne( variables['Agent.OS'], 'Windows_NT' )
-    
-  - script: |
-      conda install --yes pip
-      git clone -b v1.3.1 https://github.com/cocotb/cocotb.git
-      pip install -e cocotb
-    displayName: 'Install cocotb from source'
-    
-  - script: |
-      pip install -e .
-    displayName: 'Install cocotb-test'
-    
-  - script: |
-      set SIM=icarus
-      pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
-    displayName: 'Test with pytest'
-    condition: ne(variables['SIM'], 'verilator')
+      - script: |
+          sudo chown -R $USER $CONDA
+          gcc --version
+        displayName: Take ownership of conda installation
+        condition: eq( variables['Agent.OS'], 'Darwin' )
 
-  - script: |
-      cd tests; make
-    displayName: 'Test Makefile flow (Linux only)'
-    condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'icarus'))
-    
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: 'test-*.xml'
-      testRunTitle: 'Test results for Python $(python.version) on $(imageName) with $(SIM)'
+      - script: |
+          conda init
+          conda install -y python=$(python.version) pytest
+          conda update -q -y conda
+        displayName: Update conda
+      - script: conda install --yes m2w64-gcc libpython
+        displayName: Install Windows conda development
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+
+      - script: |
+          sudo apt-get update
+          sudo apt-get install -y gnat
+          git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+          cd ghdl && ./configure && make -j2 && sudo make install && cd ..
+        displayName: Compile and Install GHDL on Linux
+        condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
+
+      - script: |
+          sudo apt-get update
+          sudo apt-get install git make autoconf g++ flex bison   # First time prerequisites
+          sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)
+          sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
+          git clone http://git.veripool.org/git/verilator --depth=1
+          cd verilator && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        displayName: Compile and Install Verilator on Linux
+        condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'verilator'))
+
+      - script: conda install --yes -c conda-forge iverilog
+        displayName: Install Icarus Verilog
+        condition: eq(variables['SIM'], 'icarus')
+
+      - script: |
+          echo "##vso[task.setvariable variable=SIM]$(SIM)"
+        displayName: Set simulator
+
+      - script: |
+          conda install --yes -c conda-forge tox
+          tox
+        displayName: "Package Test with Tox"
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+
+      - script: |
+          conda install --yes pip
+          git clone -b v1.3.1 https://github.com/cocotb/cocotb.git
+          pip install -e cocotb
+        displayName: "Install cocotb from source"
+
+      - script: |
+          pip install -e .
+        displayName: "Install cocotb-test"
+
+      - script: |
+          set SIM=icarus
+          pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
+        displayName: "Test with pytest"
+        condition: ne(variables['SIM'], 'verilator')
+
+      - script: |
+          cd tests; make
+        displayName: "Test Makefile flow (Linux only)"
+        condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'icarus'))
+
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFiles: "test-*.xml"
+          testRunTitle: "Test results for Python $(python.version) on $(imageName) with $(SIM)"
