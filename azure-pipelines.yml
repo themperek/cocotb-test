@@ -29,9 +29,11 @@ jobs:
 
     pool:
       vmImage: $(imageName)
+
     variables:
       SIM: $(SIM)
-
+      readonly: true
+ 
     steps:
       - powershell: |
           Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
