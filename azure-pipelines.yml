@@ -94,14 +94,11 @@ jobs:
     
   - script: |
       git clone -b v1.3.0 https://github.com/potentialventures/cocconda
-      which pip
-      which pip3
-      which conda
-      pip install -e cocotb
+      $CONDA/bin/pip install -e cocotb
     displayName: 'Install cocotb from source'
     
   - script: |
-      pip install -e .
+      $CONDA/bin/pip install -e .
     displayName: 'Install cocotb-test'
     
   - script: |
