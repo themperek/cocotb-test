@@ -94,6 +94,8 @@ jobs:
     
   - script: |
       git clone -b v1.3.1 https://github.com/cocotb/cocotb.git
+      conda install --yes pip
+      which pip
       echo $CONDA
       ${CONDA}/bin/pip install -e cocotb
     displayName: 'Install cocotb from source'
