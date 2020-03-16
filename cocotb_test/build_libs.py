@@ -207,7 +207,7 @@ def build_libs(build_dir="cocotb_build"):
 
     def build_vhpi(build_dir, sim_define, extra_lib=[], extra_lib_dir=[]):
         libvhpi = Extension(
-            "libvhpi",
+            "libcocotbvhpi",
             include_dirs=[include_dir],
             define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
             libraries=["gpi", "gpilog", "stdc++"] + extra_lib,
