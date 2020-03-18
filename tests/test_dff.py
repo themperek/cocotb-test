@@ -2,7 +2,6 @@ from cocotb_test.run import run
 import pytest
 import os
 
-
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 #@pytest.mark.parametrize("seed", range(10))
 def test_dff_verilog():

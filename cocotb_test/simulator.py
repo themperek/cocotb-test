@@ -6,6 +6,7 @@ import pkg_resources
 import tempfile
 import re
 import cocotb
+import logging
 
 from distutils.spawn import find_executable
 
@@ -58,6 +59,10 @@ class Simulator(object):
         self.sim_dir = os.path.join(os.getcwd(), sim_build)
 
         self.sim_name = sim_name
+
+        self.logger = logging.getLogger(sim_name)
+        self.logger.setLevel(logging.INFO)
+        logging.basicConfig(format='%(levelname)s %(name)s: %(message)s')
 
         libs_dir = os.path.join(os.path.dirname(__file__), "libs")
         self.lib_dir = os.path.join(libs_dir, sim_name)
@@ -210,29 +215,32 @@ class Simulator(object):
 
         return paths_abs
 
-    def execute_log(self, cmds):
-        self.set_env()
-        for cmd in cmds:
-            print(" ".join(cmd))
-
-            output_log = ""
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=self.work_dir, env=self.env)
-            while True:
-                out = process.stdout.read(1)
-                if not out and process.poll() != None:
-                    break
-                if out != "":
-                    output_log += out.decode("utf-8")
-                    sys.stdout.write(out.decode("utf-8"))
-                    sys.stdout.flush()
-
-        return output_log
-
     def execute(self, cmds):
         self.set_env()
         for cmd in cmds:
-            print(" ".join(cmd))
-            process = subprocess.check_call(cmd, cwd=self.work_dir, env=self.env)
+            self.logger.info("Running command: "+" ".join(cmd))
+            
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.work_dir, env=self.env)
+            
+            while True:
+                out = process.stdout.readline()
+
+                if not out and process.poll() != None:
+                    break
+                
+                log_out = out.decode("utf-8").rstrip()
+                if log_out != "":
+                    self.logger.info(log_out)
+
+            if process.returncode:
+                self.logger.error("Command termindated with error %d" % process.returncode)
+                return
+
+    # def execute(self, cmds):
+    #     self.set_env()
+    #     for cmd in cmds:
+    #         print(" ".join(cmd))
+    #         process = subprocess.check_call(cmd, cwd=self.work_dir, env=self.env)
 
     def outdated(self, output, dependencies):
 

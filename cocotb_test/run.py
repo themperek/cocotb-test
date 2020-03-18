@@ -1,6 +1,7 @@
 import os
 import inspect
 import shutil
+import sys
 
 import cocotb_test.simulator
 
@@ -40,8 +41,11 @@ def run(simulator=None, **kwargs):
 
     results_xml_file = sim.run()
 
+    sys.tracebacklimit = 0 # remove not needed traceback form assert
+
     if not kwargs.get("compile_only", False):
-        assert os.path.isfile(results_xml_file), "Simulation terminated abnormally. Results file not found."
+        results_file_exist = os.path.isfile(results_xml_file)
+        assert results_file_exist, "Simulation terminated abnormally. Results file not found."
 
         tree = ET.parse(results_xml_file)
         for ts in tree.iter("testsuite"):
