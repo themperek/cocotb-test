@@ -89,7 +89,7 @@ jobs:
         condition: eq(variables['SIM'], 'icarus')
 
       - script: |
-          echo "##vso[task.setvariable variable=SIM]$(SIM)"
+          echo "##vso[task.setvariable variable=SIM;isReadonly=true]$(SIM)"
         displayName: Set simulator
 
       - script: |
