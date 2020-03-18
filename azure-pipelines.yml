@@ -89,10 +89,6 @@ jobs:
         condition: eq(variables['SIM'], 'icarus')
 
       - script: |
-          echo "##vso[task.setvariable variable=SIM]$(SIM)"
-        displayName: Set simulator
-
-      - script: |
           conda install --yes -c conda-forge tox
           tox
         displayName: "Package Test with Tox"
@@ -107,7 +103,6 @@ jobs:
         displayName: "Install cocotb-test"
 
       - script: |
-          set SIM=icarus
           pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
         displayName: "Test with pytest"
         condition: ne(variables['SIM'], 'verilator')
