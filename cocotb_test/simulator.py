@@ -307,7 +307,7 @@ class Icarus(Simulator):
         if self.outdated(self.sim_file, self.verilog_sources) or self.force_compile:
             cmd.append(self.compile_command())
         else:
-            print("Skipping compilation:" + self.sim_file)
+            self.logger.warning("Skipping compilation:" + self.sim_file)
 
         # TODO: check dependency?
         if not self.compile_only:
@@ -362,7 +362,7 @@ class Questa(Simulator):
                 cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         else:
-            print("Skipping compilation:" + out_file)
+             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
@@ -450,7 +450,7 @@ class Ius(Simulator):
             cmd.append(cmd_elab)
 
         else:
-            print("Skipping compilation:" + out_file)
+            self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
             cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")]
@@ -595,7 +595,7 @@ class Aldec(Simulator):
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
         else:
-            print("Skipping compilation:" + out_file)
+            self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
