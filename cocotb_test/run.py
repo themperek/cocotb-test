@@ -41,7 +41,7 @@ def run(simulator=None, **kwargs):
 
     results_xml_file = sim.run()
 
-    sys.tracebacklimit = 0 # remove not needed traceback form assert
+    sys.tracebacklimit = 0  # remove not needed traceback from assert
 
     if not kwargs.get("compile_only", False):
         results_file_exist = os.path.isfile(results_xml_file)
