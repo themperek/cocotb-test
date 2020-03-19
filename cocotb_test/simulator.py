@@ -362,7 +362,7 @@ class Questa(Simulator):
                 cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         else:
-             self.logger.warning("Skipping compilation:" + out_file)
+            self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
