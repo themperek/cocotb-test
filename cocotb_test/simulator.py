@@ -233,7 +233,7 @@ class Simulator(object):
                     self.logger.info(log_out)
 
             if process.returncode:
-                self.logger.error("Command termindated with error %d" % process.returncode)
+                self.logger.error("Command terminated with error %d" % process.returncode)
                 return
 
     # def execute(self, cmds):
