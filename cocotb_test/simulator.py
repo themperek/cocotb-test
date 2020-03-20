@@ -53,6 +53,7 @@ class Simulator(object):
         extra_env=None,
         compile_only=False,
         gui=False,
+        logger=None,
         **kwargs
     ):
 
@@ -60,7 +61,10 @@ class Simulator(object):
 
         self.sim_name = sim_name
 
-        self.logger = logging.getLogger(sim_name)
+        if logger is not None:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger(sim_name)
         self.logger.setLevel(logging.INFO)
         logging.basicConfig(format='%(levelname)s %(name)s: %(message)s')
 
