@@ -6,20 +6,15 @@
 - allow the look and feel of Python unit testing
 - remove the need for Makefiles (includes Makefile compatibility mode)
 - allow easy customization of simulation flow
-- easy installation (especially on Windows)
 - allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) or [pytest-parallel](https://github.com/browsertron/pytest-parallel) for parallel runs
 
 # **!Proof of Concept!**
 
 # Usage:
 
-- Install and use [conda](https://conda.io/miniconda.html) for Python (can be installed in user/local folder).
+- Install [coocotb](https://docs.cocotb.org/).
 
-- Install development tools for conda (Windows only):
-```bash
-conda install m2w64-gcc libpython
-```
-- Install simulator (for Icarus Verilog):
+- Install simulator (for Icarus Verilog with conda):
 ```bash
 conda install -c conda-forge iverilog
 ```
@@ -35,7 +30,7 @@ pip install -v -e cocotb-test
 
 - Create a `test_dff.py` file (check [test folder](https://github.com/themperek/cocotb-test/tree/master/tests) for more examples):
 ```python
-from cocotb_test.run import run
+from cocotb_test.simulator import run
 def test_dff():
     run(
         verilog_sources=["dff.v"], # sources

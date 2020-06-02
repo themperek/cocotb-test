@@ -3,38 +3,13 @@ import cocotb
 import pytest
 import sys
 
-from cocotb_test.run import run
+from cocotb_test.simulator import run
 
 tests_dir = os.path.join(os.path.dirname(os.path.dirname(cocotb.__file__)), "tests")
 
 if os.path.isdir(tests_dir) == False:
     raise IOError(
         "Cocotb test directory not found. Please clone with git and install with `pip -e`"
-    )
-
-
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
-def test_cocotb():
-    run(
-        verilog_sources=[
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
-        ],
-        python_search=[os.path.join(tests_dir, "test_cases", "test_cocotb")],
-        toplevel="sample_module",
-        module="test_cocotb",
-    )
-
-
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
-@pytest.mark.skipif(sys.version_info.major == 2, reason="python3.5 api")
-def test_cocotb_35():
-    run(
-        verilog_sources=[
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
-        ],
-        python_search=[os.path.join(tests_dir, "test_cases", "test_cocotb")],
-        toplevel="sample_module",
-        module="test_cocotb_35",
     )
 
 

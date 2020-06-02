@@ -1,21 +1,19 @@
 import subprocess
 import os
 import sys
-import inspect
-import pkg_resources
 import tempfile
 import re
 import cocotb
 import logging
+import shutil
+from xml.etree import cElementTree as ET
 
 from distutils.spawn import find_executable
+from distutils.sysconfig import get_config_var
 
 _magic_re = re.compile(r"([\\{}])")
+_space_re = re.compile(r"([\s])", re.ASCII)
 
-if sys.version_info.major >= 3:
-    _space_re = re.compile(r"([\s])", re.ASCII)
-else:
-    _space_re = re.compile(r"([\s])")    
 
 def as_tcl_value(value):
     # add '\' before special characters and spaces
@@ -31,10 +29,8 @@ def as_tcl_value(value):
 class Simulator(object):
     def __init__(
         self,
-        sim_name,
         toplevel,
-        run_filename,
-        module=None,
+        module,
         work_dir=None,
         python_search=None,
         toplevel_lang="verilog",
@@ -57,25 +53,20 @@ class Simulator(object):
     ):
 
         self.sim_dir = os.path.join(os.getcwd(), sim_build)
+        if not os.path.exists(self.sim_dir):
+            os.makedirs(self.sim_dir)
 
-        self.sim_name = sim_name
-
-        self.logger = logging.getLogger(sim_name)
+        self.logger = logging.getLogger("cocotb")
         self.logger.setLevel(logging.INFO)
-        logging.basicConfig(format='%(levelname)s %(name)s: %(message)s')
+        logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
 
-        libs_dir = os.path.join(os.path.dirname(__file__), "libs")
-        self.lib_dir = os.path.join(libs_dir, sim_name)
+        self.lib_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs")
 
         self.lib_ext = "so"
         if os.name == "nt":
             self.lib_ext = "dll"
 
-        self.run_dir = os.path.dirname(run_filename)
-
-        self.module = module
-        if self.module is None:
-            self.module = os.path.splitext(os.path.split(run_filename)[-1])[0]
+        self.module = module  # TODO: Auto discovery, try introspect ?
 
         self.work_dir = self.sim_dir
 
@@ -153,23 +144,16 @@ class Simulator(object):
         for e in os.environ:
             self.env[e] = os.environ[e]
 
-        lib_dir_sep = os.pathsep + self.lib_dir + os.pathsep
-        if lib_dir_sep not in self.env["PATH"]:  # without checking will add forever casing error
-            self.env["PATH"] += lib_dir_sep
+        self.env["PATH"] += os.pathsep + self.lib_dir
 
-        python_path = os.pathsep.join(sys.path)
-        self.env["PYTHONPATH"] = os.pathsep + self.lib_dir
-
+        self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         for path in self.python_search:
             self.env["PYTHONPATH"] += os.pathsep + path
-        
-        self.env["PYTHONPATH"] += os.pathsep + self.run_dir
-        self.env["PYTHONPATH"] += os.pathsep + python_path
+
+        self.env["PYTHONHOME"] = get_config_var("prefix")
 
         self.env["TOPLEVEL"] = self.toplevel
-        self.env["COCOTB_SIM"] = "1"
         self.env["MODULE"] = self.module
-        self.env["VERSION"] = pkg_resources.get_distribution("cocotb").version
 
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
@@ -178,25 +162,35 @@ class Simulator(object):
         raise NotImplementedError()
 
     def run(self):
-        results_xml_file_defulat = os.path.join(self.work_dir, "results.xml")
-        if os.path.isfile(results_xml_file_defulat):
-            os.remove(results_xml_file_defulat)
 
+        sys.tracebacklimit = 0  # remove not needed traceback from assert
+
+        # use temporary results file
         if not os.getenv("COCOTB_RESULTS_FILE"):
-            fo = tempfile.NamedTemporaryFile()
-            results_xml_file = fo.name
-            fo.close()
+            tmp_results_file = tempfile.NamedTemporaryFile(prefix=self.sim_dir + os.path.sep, suffix="_results.xml")
+            results_xml_file = tmp_results_file.name
+            tmp_results_file.close()
             self.env["COCOTB_RESULTS_FILE"] = results_xml_file
         else:
             results_xml_file = os.getenv("COCOTB_RESULTS_FILE")
 
         cmds = self.build_command()
+        self.set_env()
         self.execute(cmds)
 
-        # HACK: for compatibility to be removed
-        if os.path.isfile(results_xml_file_defulat):
-            results_xml_file = results_xml_file_defulat
+        if not self.compile_only:
+            results_file_exist = os.path.isfile(results_xml_file)
+            assert results_file_exist, "Simulation terminated abnormally. Results file not found."
 
+            tree = ET.parse(results_xml_file)
+            for ts in tree.iter("testsuite"):
+                for tc in ts.iter("testcase"):
+                    for failure in tc.iter("failure"):
+                        assert False, '{} class="{}" test="{}" error={}'.format(
+                            failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout"),
+                        )
+
+        print("Results file: %s" % results_xml_file)
         return results_xml_file
 
     def get_include_commands(self, includes):
@@ -211,23 +205,25 @@ class Simulator(object):
             if os.path.isabs(path):
                 paths_abs.append(os.path.abspath(path))
             else:
-                paths_abs.append(os.path.abspath(os.path.join(self.run_dir, path)))
+                paths_abs.append(os.path.abspath(os.path.join(os.getcwd(), path)))
 
         return paths_abs
 
     def execute(self, cmds):
         self.set_env()
         for cmd in cmds:
-            self.logger.info("Running command: "+" ".join(cmd))
-            
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.work_dir, env=self.env)
-            
+            self.logger.info("Running command: " + " ".join(cmd))
+
+            process = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.work_dir, env=self.env
+            )
+
             while True:
                 out = process.stdout.readline()
 
-                if not out and process.poll() != None:
+                if not out and process.poll() is not None:
                     break
-                
+
                 log_out = out.decode("utf-8").rstrip()
                 if log_out != "":
                     self.logger.info(log_out)
@@ -263,7 +259,6 @@ class Simulator(object):
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
-        kwargs["sim_name"] = "icarus"
         super(Icarus, self).__init__(*argv, **kwargs)
 
         if self.vhdl_sources:
@@ -300,7 +295,12 @@ class Icarus(Simulator):
         return cmd_compile
 
     def run_command(self):
-        return ["vvp", "-M", self.lib_dir, "-m", "libvpi"] + self.simulation_args + [self.sim_file] + self.plus_args
+        return (
+            ["vvp", "-M", self.lib_dir, "-m", "libcocotbvpi_icarus"]
+            + self.simulation_args
+            + [self.sim_file]
+            + self.plus_args
+        )
 
     def build_command(self):
         cmd = []
@@ -341,14 +341,16 @@ class Questa(Simulator):
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
 
+            if os.path.exists(os.path.join(self.sim_dir, self.rtl_library)):
+                do_script = "vdel -lib {RTL_LIBRARY} -all".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
+                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
+
             if self.vhdl_sources:
-                do_script = "vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
+                do_script = "vlib {RTL_LIBRARY}; vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
-                self.env["GPI_EXTRA"] = "fli"
-
                 cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
             if self.verilog_sources:
@@ -371,19 +373,26 @@ class Questa(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(
-                        "cocotb_init {}".format(os.path.join(self.lib_dir, "libfli." + self.lib_ext))
+                        "cocotb_init {}".format(os.path.join(self.lib_dir, "libcocotbfli_modelsim." + self.lib_ext))
                     ),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 )
+
+                if self.verilog_sources:
+                    self.env["GPI_EXTRA"] = "cocotbvpi_modelsim:cocotbvpi_entry_point"
+
             else:
                 do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi." + self.lib_ext)),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvpi_modelsim." + self.lib_ext)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
+
+                if self.vhdl_sources:
+                    self.env["GPI_EXTRA"] = "cocotbfli_modelsim:cocotbfli_entry_point"
 
             # do_script += "log -recursive /*;"
 
@@ -399,7 +408,7 @@ class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Ius, self).__init__(*argv, **kwargs)
 
-        self.env["GPI_EXTRA"] = "cocotbvhpi"
+        self.env["GPI_EXTRA"] = "cocotbvhpi_ius:cocotbvhpi_entry_point"
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -433,7 +442,7 @@ class Ius(Simulator):
                     "-define",
                     "COCOTB_SIM=1",
                     "-loadvpi",
-                    os.path.join(self.lib_dir, "libvpi." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
+                    os.path.join(self.lib_dir, "libcocotbvpi_ius." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
                     "-plinowarn",
                     "-access",
                     "+rwc",
@@ -495,7 +504,7 @@ class Vcs(Simulator):
                 "-sverilog",
                 "+define+COCOTB_SIM=1",
                 "-load",
-                os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
+                os.path.join(self.lib_dir, "libcocotbvpi_vcs." + self.lib_ext),
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
@@ -509,7 +518,7 @@ class Vcs(Simulator):
             cmd.append(cmd_run)
 
         if self.gui:
-            cmd.append("-gui") #not tested!
+            cmd.append("-gui")  # not tested!
 
         return cmd
 
@@ -543,7 +552,7 @@ class Ghdl(Simulator):
             "ghdl",
             "-r",
             self.toplevel,
-            "--vpi=" + os.path.join(self.lib_dir, "libvpi." + self.lib_ext),
+            "--vpi=" + os.path.join(self.lib_dir, "libcocotbvpi_ghdl." + self.lib_ext),
         ] + self.simulation_args
 
         if not self.compile_only:
@@ -552,7 +561,7 @@ class Ghdl(Simulator):
         return cmd
 
 
-class Aldec(Simulator):
+class Riviera(Simulator):
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -602,21 +611,21 @@ class Aldec(Simulator):
                 do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvhpi")),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvhpi_aldec")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                 )
                 if self.verilog_sources:
-                    self.env["GPI_EXTRA"] = "vpi"
+                    self.env["GPI_EXTRA"] = "cocotbvpi_aldec:cocotbvpi_entry_point"
             else:
                 do_script += "asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libvpi")),
+                    EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvpi_aldec")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
                 if self.vhdl_sources:
-                    self.env["GPI_EXTRA"] = "cocotbvhpi"
+                    self.env["GPI_EXTRA"] = "cocotbvhpi_aldec:cocotbvhpi_entry_point"
 
             do_script += "run -all \nexit"
 
@@ -679,7 +688,7 @@ class Verilator(Simulator):
                 "-o",
                 self.toplevel,
                 "-LDFLAGS",
-                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lvpi".format(LIB_DIR=self.lib_dir)
+                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lcocotbvpi_verilator".format(LIB_DIR=self.lib_dir),
             ]
             + self.compile_args
             + self.get_define_commands(self.defines)
@@ -695,3 +704,47 @@ class Verilator(Simulator):
             cmd.append([out_file])
 
         return cmd
+
+
+def run(**kwargs):
+
+    sim_env = os.getenv("SIM", "icarus")
+
+    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl", "riviera", "verilator"]
+    if sim_env in supported_sim:
+        pass
+    else:
+        raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
+
+    if sim_env == "icarus":
+        sim = Icarus(**kwargs)
+    elif sim_env == "questa":
+        sim = Questa(**kwargs)
+    elif sim_env == "ius":
+        sim = Ius(**kwargs)
+    elif sim_env == "vcs":
+        sim = Vcs(**kwargs)
+    elif sim_env == "ghdl":
+        sim = Ghdl(**kwargs)
+    elif sim_env == "riviera":
+        sim = Riviera(**kwargs)
+    elif sim_env == "verilator":
+        sim = Verilator(**kwargs)
+
+    return sim.run()
+
+
+def clean(recursive=False):
+    dir = os.getcwd()
+
+    def rm_clean():
+        sim_build_dir = os.path.join(dir, "sim_build")
+        if os.path.isdir(sim_build_dir):
+            print("Removing:", sim_build_dir)
+            shutil.rmtree(sim_build_dir, ignore_errors=True)
+
+    rm_clean()
+
+    if recursive:
+        for dir, _, _ in os.walk(dir):
+            rm_clean()
