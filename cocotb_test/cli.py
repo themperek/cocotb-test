@@ -30,10 +30,9 @@
 
 import os
 import sys
-import cocotb_test
 import argparse
 import pkg_resources
-from cocotb_test.run import run
+from cocotb_test import simulator
 
 
 class PrintAction(argparse.Action):
@@ -48,7 +47,7 @@ class PrintAction(argparse.Action):
 
 def config():
 
-    makefiles_dir = os.path.join(os.path.dirname(cocotb_test.__file__), "Makefile.inc")
+    makefiles_dir = os.path.join(os.path.dirname(__file__), "Makefile.inc")
     version = pkg_resources.get_distribution("cocotb-test").version
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -101,7 +100,7 @@ def run():
         kwargs["python_search"] = (
             os.getenv("PYTHONPATH", "").replace(";", " ").replace(":", " ").split()
         )
-        cocotb_test.run.run(**kwargs)
+        simulator.run(**kwargs)
     else:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -127,4 +126,4 @@ def clean():
     )
     args = parser.parse_args()
 
-    cocotb_test.run.clean(recursive=args.recursive, all=args.all)
+    simulator.clean(recursive=args.recursive)

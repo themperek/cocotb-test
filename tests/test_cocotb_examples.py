@@ -2,7 +2,7 @@ import os
 import cocotb
 import pytest
 
-from cocotb_test.run import run
+from cocotb_test.simulator import run
 
 example_dir = os.path.join(os.path.dirname(os.path.dirname(cocotb.__file__)), "examples")
 
@@ -151,3 +151,6 @@ def test_endian_swapper_vhdl():
         module="test_endian_swapper",
         toplevel_lang="vhdl",
     )
+
+
+

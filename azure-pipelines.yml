@@ -7,10 +7,6 @@ jobs:
   - job:
     strategy:
       matrix:
-        Linux-Icarus-py27:
-          python.version: "2.7"
-          imageName: "ubuntu-latest"
-          SIM: icarus
         Linux-Icarus-py37:
           python.version: "3.7"
           imageName: "ubuntu-latest"
@@ -95,7 +91,7 @@ jobs:
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
       - script: |
-          conda install --yes pip && git clone -b v1.3.1 https://github.com/cocotb/cocotb.git && pip install -e cocotb
+          conda install --yes pip && git clone  https://github.com/cocotb/cocotb.git && cd cocotb && git reset --hard c48b3b7 && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
       - script: |

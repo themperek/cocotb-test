@@ -3,9 +3,10 @@ from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
 import pytest
-from cocotb_test.run import run
+from cocotb_test.simulator import run
 import os
 
+hdl_dir = os.path.dirname(__file__)
 
 @cocotb.test(skip=False)
 def run_test(dut):
@@ -23,7 +24,9 @@ def run_test(dut):
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_plus_args():
     run(
-        verilog_sources=["plus_args.v"],
+        verilog_sources=[os.path.join(hdl_dir, "plus_args.v")],
+        #verilog_sources=["plus_args.v"],
+        module="test_plus_args",
         toplevel="plus_args",
         plus_args=["+USER_MODE", "+TEST=ARB_TEST"],
     )
@@ -32,14 +35,14 @@ def test_plus_args():
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_fail():
-    run(verilog_sources=["plus_args.v"], toplevel="plus_args")
+    run(verilog_sources=[os.path.join(hdl_dir,"plus_args.v")], toplevel="plus_args")
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_test_wrong():
     run(
-        verilog_sources=["plus_args.v"], toplevel="plus_args", plus_args=["+XUSER_MODE"]
+        verilog_sources=[os.path.join(hdl_dir, "plus_args.v")], toplevel="plus_args", plus_args=["+XUSER_MODE"]
     )
 
 
