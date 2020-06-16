@@ -88,8 +88,7 @@ def run():
     args = parser.parse_args()
 
     if args.env:
-        kwargs = {}
-        kwargs["verilog_sources"] = os.getenv("VERILOG_SOURCES", "").split()
+        kwargs = {"verilog_sources": os.getenv("VERILOG_SOURCES", "").split()}
         kwargs["vhdl_sources"] = os.getenv("VHDL_SOURCES", "").split()
         kwargs["toplevel"] = os.getenv("TOPLEVEL")
         kwargs["toplevel_lang"] = os.getenv("TOPLEVEL_LANG")

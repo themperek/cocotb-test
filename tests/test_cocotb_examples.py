@@ -12,7 +12,7 @@ if os.path.isdir(example_dir) == False:
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_ping_tun_tap():
-    if not (os.name == "posix" and os.geteuid() == 0):
+    if os.name != "posix" or os.geteuid() != 0:
         pytest.skip("This test works only on a POSIX OS with admin rights")
 
     run(

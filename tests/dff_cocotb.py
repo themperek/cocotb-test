@@ -116,12 +116,12 @@ class DFF_TB(object):
 
 # ==============================================================================
 @cocotb.coroutine
-def clock_gen(signal): #TODO: to be changed after : https://github.com/cocotb/cocotb/issues/979
+def clock_gen(signal):    #TODO: to be changed after : https://github.com/cocotb/cocotb/issues/979
     """Generate the clock signal."""
+    signal <= 0
+    signal <= 1
     while True:
-        signal <= 0
         yield Timer(5000)  # ps
-        signal <= 1
         yield Timer(5000)  # ps
 
 
@@ -136,7 +136,7 @@ def run_test(dut):
 
     # Apply random input data by input_gen via BitDriver for 100 clock cycle.
     tb.start()
-    for i in range(10000):
+    for _ in range(10000):
         yield clkedge
 
     # Stop generation of input data. One more clock cycle is needed to capture

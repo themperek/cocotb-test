@@ -13,9 +13,7 @@ def run(simulator=None, **kwargs):
     sim_env = os.getenv("SIM", "icarus")
 
     supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl", "aldec", "verilator"]
-    if (sim_env in supported_sim) or simulator:
-        pass
-    else:
+    if sim_env not in supported_sim and not simulator:
         raise NotImplementedError("Set SIM/sim variable. Supported: " + ", ".join(supported_sim))
 
     run_filename = inspect.getframeinfo(inspect.currentframe().f_back)[0]

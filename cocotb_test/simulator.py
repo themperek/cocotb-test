@@ -135,11 +135,7 @@ class Simulator(object):
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
 
-        if extra_env is not None:
-            self.env = extra_env
-        else:
-            self.env = {}
-
+        self.env = extra_env if extra_env is not None else {}
         if testcase is not None:
             self.env["TESTCASE"] = testcase
 
@@ -219,15 +215,15 @@ class Simulator(object):
         self.set_env()
         for cmd in cmds:
             self.logger.info("Running command: "+" ".join(cmd))
-            
+
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.work_dir, env=self.env)
-            
+
             while True:
                 out = process.stdout.readline()
 
-                if not out and process.poll() != None:
+                if not (out or process.poll() is None):
                     break
-                
+
                 log_out = out.decode("utf-8").rstrip()
                 if log_out != "":
                     self.logger.info(log_out)
@@ -255,10 +251,7 @@ class Simulator(object):
             if mtime > dep_mtime:
                 dep_mtime = mtime
 
-        if dep_mtime > output_mtime:
-            return True
-
-        return False
+        return dep_mtime > output_mtime
 
 
 class Icarus(Simulator):
@@ -289,15 +282,22 @@ class Icarus(Simulator):
 
     def compile_command(self):
 
-        cmd_compile = (
-            ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-s", self.toplevel, "-g2012"]
+        return (
+            [
+                "iverilog",
+                "-o",
+                self.sim_file,
+                "-D",
+                "COCOTB_SIM=1",
+                "-s",
+                self.toplevel,
+                "-g2012",
+            ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.compile_args
             + self.verilog_sources
         )
-
-        return cmd_compile
 
     def run_command(self):
         return ["vvp", "-M", self.lib_dir, "-m", "libvpi"] + self.simulation_args + [self.sim_file] + self.plus_args
@@ -318,18 +318,10 @@ class Icarus(Simulator):
 
 class Questa(Simulator):
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + as_tcl_value(dir))
-
-        return include_cmd
+        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + as_tcl_value(define))
-
-        return defines_cmd
+        return ["+define+" + as_tcl_value(define) for define in defines]
 
     def build_command(self):
 
@@ -461,27 +453,19 @@ class Ius(Simulator):
 
 class Vcs(Simulator):
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + dir)
-
-        return include_cmd
+        return ["+incdir+" + dir for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + define)
-
-        return defines_cmd
+        return ["+define+" + define for define in defines]
 
     def build_command(self):
-
-        pli_cmd = "acc+=rw,wn:*"
 
         cmd = []
 
         do_file_path = os.path.join(self.sim_dir, "pli.tab")
         with open(do_file_path, "w") as pli_file:
+            pli_cmd = "acc+=rw,wn:*"
+
             pli_file.write(pli_cmd)
 
         cmd_build = (
@@ -531,10 +515,11 @@ class Ghdl(Simulator):
 
     def build_command(self):
 
-        cmd = []
+        cmd = [
+            ["ghdl"] + self.compile_args + ["-i", source_file]
+            for source_file in self.vhdl_sources
+        ]
 
-        for source_file in self.vhdl_sources:
-            cmd.append(["ghdl"] + self.compile_args + ["-i", source_file])
 
         cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
         cmd.append(cmd_elaborate)
@@ -554,18 +539,10 @@ class Ghdl(Simulator):
 
 class Aldec(Simulator):
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + as_tcl_value(dir))
-
-        return include_cmd
+        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + as_tcl_value(define))
-
-        return defines_cmd
+        return ["+define+" + as_tcl_value(define) for define in defines]
 
     def build_command(self):
 
@@ -636,18 +613,10 @@ class Verilator(Simulator):
             raise ValueError("This simulator does not support VHDL")
 
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("-I" + dir)
-
-        return include_cmd
+        return ["-I" + dir for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("-D" + define)
-
-        return defines_cmd
+        return ["-D" + define for define in defines]
 
     def build_command(self):
 
