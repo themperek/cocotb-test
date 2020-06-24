@@ -7,6 +7,8 @@ import cocotb
 import logging
 import shutil
 from xml.etree import cElementTree as ET
+import signal
+import pytest
 
 from distutils.spawn import find_executable
 from distutils.sysconfig import get_config_var
@@ -139,6 +141,13 @@ class Simulator(object):
 
         self.gui = gui
 
+        # Catch SIGINT and SIGTERM
+        self.old_sigint_h = signal.getsignal(signal.SIGINT)
+        self.old_sigterm_h = signal.getsignal(signal.SIGTERM)
+
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
     def set_env(self):
 
         for e in os.environ:
@@ -214,22 +223,22 @@ class Simulator(object):
         for cmd in cmds:
             self.logger.info("Running command: " + " ".join(cmd))
 
-            process = subprocess.Popen(
+            self.process = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.work_dir, env=self.env
             )
 
             while True:
-                out = process.stdout.readline()
+                out = self.process.stdout.readline()
 
-                if not out and process.poll() is not None:
+                if not out and self.process.poll() is not None:
                     break
 
                 log_out = out.decode("utf-8").rstrip()
                 if log_out != "":
                     self.logger.info(log_out)
 
-            if process.returncode:
-                self.logger.error("Command terminated with error %d" % process.returncode)
+            if self.process.returncode:
+                self.logger.error("Command terminated with error %d" % self.process.returncode)
                 return
 
     # def execute(self, cmds):
@@ -256,6 +265,17 @@ class Simulator(object):
 
         return False
 
+    def exit_gracefully(self, signum, frame):
+        pid = None
+        if self.process is not None:
+            pid = self.process.pid
+            self.process.stdout.flush()
+            self.process.kill()
+            self.process.wait()
+        # Restore previous handlers
+        signal.signal(signal.SIGINT, self.old_sigint_h)
+        signal.signal(signal.SIGTERM, self.old_sigterm_h)
+        pytest.fail("Exiting pid: " + str(pid) + " with signum: " + str(signum), False)
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
