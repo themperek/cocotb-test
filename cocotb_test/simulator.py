@@ -452,7 +452,6 @@ class Ius(Simulator):
                 + self.get_define_commands(self.defines)
                 + self.get_include_commands(self.includes)
                 + self.compile_args
-                + self.simulation_args
                 + self.verilog_sources
                 + self.vhdl_sources
             )
@@ -462,7 +461,7 @@ class Ius(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")]
+            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args
             cmd.append(cmd_run)
 
         return cmd
