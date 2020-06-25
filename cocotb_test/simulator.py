@@ -8,7 +8,6 @@ import logging
 import shutil
 from xml.etree import cElementTree as ET
 import signal
-import pytest
 
 from distutils.spawn import find_executable
 from distutils.sysconfig import get_config_var
@@ -275,7 +274,7 @@ class Simulator(object):
         # Restore previous handlers
         signal.signal(signal.SIGINT, self.old_sigint_h)
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
-        pytest.fail("Exiting pid: " + str(pid) + " with signum: " + str(signum), False)
+        assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
