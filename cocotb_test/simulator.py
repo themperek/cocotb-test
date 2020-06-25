@@ -485,6 +485,69 @@ class Ius(Simulator):
 
         return cmd
 
+class xcelium(Simulator):
+    def __init__(self, *argv, **kwargs):
+        super(xcelium, self).__init__(*argv, **kwargs)
+
+        self.env["GPI_EXTRA"] = "cocotbvhpi_ius:cocotbvhpi_entry_point"
+
+    def get_include_commands(self, includes):
+        include_cmd = []
+        for dir in includes:
+            include_cmd.append("-incdir")
+            include_cmd.append(dir)
+
+        return include_cmd
+
+    def get_define_commands(self, defines):
+        defines_cmd = []
+        for define in defines:
+            defines_cmd.append("-define")
+            defines_cmd.append(define)
+
+        return defines_cmd
+
+    def build_command(self):
+
+        out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
+
+        cmd = []
+
+        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
+            cmd_elab = (
+                [
+                    "xrun",
+                    "-64",
+                    "-elaborate",
+                    "-v93",
+                    "-define",
+                    "COCOTB_SIM=1",
+                    "-loadvpi",
+                    os.path.join(self.lib_dir, "libcocotbvpi_ius." + self.lib_ext) + ":vlog_startup_routines_bootstrap",
+                    "-plinowarn",
+                    "-access",
+                    "+rwc",
+                    "-top",
+                    self.toplevel,
+                ]
+                + self.get_define_commands(self.defines)
+                + self.get_include_commands(self.includes)
+                + self.compile_args
+                + self.verilog_sources
+                + self.vhdl_sources
+            )
+            cmd.append(cmd_elab)
+
+        else:
+            self.logger.warning("Skipping compilation:" + out_file)
+
+        if not self.compile_only:
+            cmd_run = ["xrun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args
+            cmd.append(cmd_run)
+
+        return cmd
+
+
 
 class Vcs(Simulator):
     def get_include_commands(self, includes):
