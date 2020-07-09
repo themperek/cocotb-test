@@ -8,8 +8,6 @@
 - allow easy customization of simulation flow
 - allow to use [pytest-xdist](https://pypi.org/project/pytest-xdist/) or [pytest-parallel](https://github.com/browsertron/pytest-parallel) for parallel runs
 
-# **!Proof of Concept!**
-
 # Usage:
 
 - Install [cocotb](https://docs.cocotb.org/).
