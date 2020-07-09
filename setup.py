@@ -21,7 +21,7 @@ setup(
     author="Tomasz Hemperek",
     author_email="hemperek@uni-bonn.de",
     packages=find_packages(),
-    install_requires=["cocotb @ git+https://github.com/cocotb/cocotb@c48b3b7#egg=cocotb", "pytest"],
+    install_requires=["cocotb==1.4.*", "pytest"],
     entry_points={
         "console_scripts": [
             "cocotb=cocotb_test.cli:config",
