@@ -24,7 +24,7 @@ def run_test(dut):
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_plus_args():
     run(
-        verilog_sources=[os.path.join(hdl_dir, "plus_args.v")],
+        verilog_sources=[os.path.join(hdl_dir, "plus_args.sv")],
         #verilog_sources=["plus_args.v"],
         module="test_plus_args",
         toplevel="plus_args",
@@ -35,14 +35,14 @@ def test_plus_args():
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_fail():
-    run(verilog_sources=[os.path.join(hdl_dir,"plus_args.v")], toplevel="plus_args")
+    run(verilog_sources=[os.path.join(hdl_dir,"plus_args.sv")], toplevel="plus_args")
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_test_wrong():
     run(
-        verilog_sources=[os.path.join(hdl_dir, "plus_args.v")], toplevel="plus_args", plus_args=["+XUSER_MODE"]
+        verilog_sources=[os.path.join(hdl_dir, "plus_args.sv")], toplevel="plus_args", plus_args=["+XUSER_MODE"]
     )
 
 

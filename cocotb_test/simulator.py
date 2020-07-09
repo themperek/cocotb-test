@@ -480,7 +480,7 @@ class Ius(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args
+            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.plus_args
             cmd.append(cmd_run)
 
         return cmd
@@ -542,7 +542,7 @@ class Xcelium(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["xrun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args
+            cmd_run = ["xrun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.plus_args
             cmd.append(cmd_run)
 
         return cmd
