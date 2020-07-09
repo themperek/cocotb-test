@@ -127,10 +127,7 @@ class Simulator(object):
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
 
-        if extra_env is not None:
-            self.env = extra_env
-        else:
-            self.env = {}
+        self.env = extra_env if extra_env is not None else {}
 
         if testcase is not None:
             self.env["TESTCASE"] = testcase
@@ -275,6 +272,7 @@ class Simulator(object):
         signal.signal(signal.SIGINT, self.old_sigint_h)
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
         assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
+
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
@@ -485,6 +483,7 @@ class Ius(Simulator):
 
         return cmd
 
+
 class Xcelium(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Xcelium, self).__init__(*argv, **kwargs)
@@ -546,7 +545,6 @@ class Xcelium(Simulator):
             cmd.append(cmd_run)
 
         return cmd
-
 
 
 class Vcs(Simulator):
@@ -791,10 +789,8 @@ def run(**kwargs):
 
     sim_env = os.getenv("SIM", "icarus")
 
-    supported_sim = ["icarus", "questa", "ius", "xcelium","vcs", "ghdl", "riviera", "verilator"]
-    if sim_env in supported_sim:
-        pass
-    else:
+    supported_sim = ["icarus", "questa", "ius", "xcelium", "vcs", "ghdl", "riviera", "verilator"]
+    if sim_env not in supported_sim:
         raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
 
     if sim_env == "icarus":
