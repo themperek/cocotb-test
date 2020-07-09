@@ -12,7 +12,7 @@
 
 # Usage:
 
-- Install [coocotb](https://docs.cocotb.org/).
+- Install [cocotb](https://docs.cocotb.org/).
 
 - Install simulator (for Icarus Verilog with conda):
 ```bash
