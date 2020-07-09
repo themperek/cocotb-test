@@ -485,9 +485,9 @@ class Ius(Simulator):
 
         return cmd
 
-class xcelium(Simulator):
+class Xcelium(Simulator):
     def __init__(self, *argv, **kwargs):
-        super(xcelium, self).__init__(*argv, **kwargs)
+        super(Xcelium, self).__init__(*argv, **kwargs)
 
         self.env["GPI_EXTRA"] = "cocotbvhpi_ius:cocotbvhpi_entry_point"
 
@@ -791,7 +791,7 @@ def run(**kwargs):
 
     sim_env = os.getenv("SIM", "icarus")
 
-    supported_sim = ["icarus", "questa", "ius", "vcs", "ghdl", "riviera", "verilator"]
+    supported_sim = ["icarus", "questa", "ius", "xcelium","vcs", "ghdl", "riviera", "verilator"]
     if sim_env in supported_sim:
         pass
     else:
@@ -803,6 +803,8 @@ def run(**kwargs):
         sim = Questa(**kwargs)
     elif sim_env == "ius":
         sim = Ius(**kwargs)
+    elif sim_env == "xcelium":
+        sim = Xcelium(**kwargs)
     elif sim_env == "vcs":
         sim = Vcs(**kwargs)
     elif sim_env == "ghdl":
