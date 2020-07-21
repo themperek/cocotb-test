@@ -7,5 +7,5 @@ def run(simulator=None, **kwargs):
     if simulator:
         sim = simulator(**kwargs)
         sim.run()
-
-    cocotb_test.simulator.run(**kwargs)
+    else:
+        cocotb_test.simulator.run(**kwargs)
