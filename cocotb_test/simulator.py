@@ -622,9 +622,9 @@ class Ghdl(Simulator):
         cmd = []
 
         for source_file in self.vhdl_sources:
-            cmd.append(["ghdl"] + self.compile_args + ["-i", source_file])
+            cmd.append(["ghdl", "-i"] + self.compile_args + [source_file])
 
-        cmd_elaborate = ["ghdl"] + self.compile_args + ["-m", self.toplevel]
+        cmd_elaborate = ["ghdl", "-m"] + self.compile_args + [self.toplevel]
         cmd.append(cmd_elaborate)
 
         cmd_run = [
