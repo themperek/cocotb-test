@@ -4,7 +4,7 @@ import sys
 import tempfile
 import re
 import cocotb
-import logging
+import logging, logging.config
 import shutil
 from xml.etree import cElementTree as ET
 import signal
@@ -57,9 +57,41 @@ class Simulator(object):
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
 
+        class NoAnsiFormatter(logging.Formatter):
+            def format(self, record):
+                ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]")
+                return ansi_escape.sub("", record.msg)
+
+        logging.config.dictConfig({
+            'version': 1,
+            'formatters': {
+                'default': {'format': "%(levelname)s %(name)s: %(message)s"},
+                'noansi': {
+                            '()': NoAnsiFormatter,
+                            'format': "%(message)s"},
+            },
+            'handlers': {
+                'console': {
+                    'level': 'INFO',
+                    'class': 'logging.StreamHandler',
+                    'formatter': 'default',
+                },
+                'file': {
+                    'level': 'INFO',
+                    'class': 'logging.FileHandler',
+                    'formatter': 'noansi',
+                    'filename': self.sim_dir + "/sim.log"
+                }
+            },
+            'loggers': {
+                'cocotb': {
+                    'level': 'INFO',
+                    'handlers': ['console', 'file']
+                }
+            },
+            'disable_existing_loggers': False
+        })
         self.logger = logging.getLogger("cocotb")
-        self.logger.setLevel(logging.INFO)
-        logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
 
         self.lib_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs")
 
