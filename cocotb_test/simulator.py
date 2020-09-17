@@ -222,22 +222,20 @@ class Simulator(object):
         for cmd in cmds:
             self.logger.info("Running command: " + " ".join(cmd))
 
-            self.process = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.work_dir, env=self.env
-            )
+            with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=self.work_dir,
+                env=self.env,
+                bufsize=1,
+            ) as p:
+                for line in p.stdout:
+                    #sys.stdout.buffer.write(line)
+                    self.logger.info(line)
 
-            while True:
-                out = self.process.stdout.readline()
-
-                if not out and self.process.poll() is not None:
-                    break
-
-                log_out = out.decode("utf-8").rstrip()
-                if log_out != "":
-                    self.logger.info(log_out)
-
-            if self.process.returncode:
-                self.logger.error("Command terminated with error %d" % self.process.returncode)
+            if p.returncode:
+                self.logger.error("Command terminated with error %d" % p.returncode)
                 return
 
     # def execute(self, cmds):
