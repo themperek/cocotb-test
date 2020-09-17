@@ -231,8 +231,7 @@ class Simulator(object):
                 bufsize=1,
             ) as p:
                 for line in p.stdout:
-                    #sys.stdout.buffer.write(line)
-                    self.logger.info(line)
+                    self.logger.info(line.decode("utf-8").rstrip())
 
             if p.returncode:
                 self.logger.error("Command terminated with error %d" % p.returncode)
