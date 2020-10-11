@@ -624,11 +624,14 @@ class Ghdl(Simulator):
 
         cmd = []
 
-        for source_file in self.vhdl_sources:
-            cmd.append(["ghdl", "-i"] + self.compile_args + [source_file])
+        out_file = os.path.join(self.sim_dir, self.toplevel + ".o")
 
-        cmd_elaborate = ["ghdl", "-m"] + self.compile_args + [self.toplevel]
-        cmd.append(cmd_elaborate)
+        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
+            for source_file in self.vhdl_sources:
+                cmd.append(["ghdl", "-i"] + self.compile_args + [source_file])
+
+            cmd_elaborate = ["ghdl", "-m"] + self.compile_args + [self.toplevel]
+            cmd.append(cmd_elaborate)
 
         cmd_run = [
             "ghdl",
