@@ -725,6 +725,8 @@ class Verilator(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
+        self.env['CPPFLAGS'] =  self.env.get('CPPFLAGS', "") + " -std=c++11"
+
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -778,7 +780,6 @@ class Verilator(Simulator):
             + self.verilog_sources
         )
 
-        self.env["CPPFLAGS"] = "-std=c++11"
         cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
 
         if not self.compile_only:
