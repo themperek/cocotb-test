@@ -7,6 +7,7 @@ import cocotb
 import logging
 import shutil
 from xml.etree import cElementTree as ET
+import threading
 import signal
 
 from distutils.spawn import find_executable
@@ -140,9 +141,11 @@ class Simulator(object):
         # Catch SIGINT and SIGTERM
         self.old_sigint_h = signal.getsignal(signal.SIGINT)
         self.old_sigterm_h = signal.getsignal(signal.SIGTERM)
-
-        signal.signal(signal.SIGINT, self.exit_gracefully)
-        signal.signal(signal.SIGTERM, self.exit_gracefully)
+        
+        # works only if main thread
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, self.exit_gracefully)
+            signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def set_env(self):
 
