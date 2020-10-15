@@ -24,6 +24,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // =============================================================================
+`timescale 1us/1us
 
 module dff_test (c,d,q);
    input wire c, d;

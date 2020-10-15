@@ -55,8 +55,7 @@ class Simulator(object):
     ):
 
         self.sim_dir = os.path.join(os.getcwd(), sim_build)
-        if not os.path.exists(self.sim_dir):
-            os.makedirs(self.sim_dir)
+        os.makedirs(self.sim_dir, exist_ok=True)
 
         self.logger = logging.getLogger("cocotb")
         self.logger.setLevel(logging.INFO)
