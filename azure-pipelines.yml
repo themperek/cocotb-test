@@ -91,6 +91,10 @@ jobs:
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
       - script: |
+          pip install pytest-parallel
+        displayName: "Install pytest-parallel"
+
+      - script: |
           conda install --yes pip && git clone  https://github.com/cocotb/cocotb.git && cd cocotb && git reset --hard c48b3b7 && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
@@ -102,6 +106,12 @@ jobs:
           pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
         displayName: "Test with pytest"
         condition: ne(variables['SIM'], 'verilator')
+
+      - script: |
+          pytest -m compile tests/test_dff_param.py
+          pytest --workers 2 tests/test_dff_param.py
+        displayName: "Test with pytest-parallel"
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
       - script: |
           cd tests; make

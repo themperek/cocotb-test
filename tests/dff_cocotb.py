@@ -120,9 +120,9 @@ def clock_gen(signal): #TODO: to be changed after : https://github.com/cocotb/co
     """Generate the clock signal."""
     while True:
         signal <= 0
-        yield Timer(5000)  # ps
+        yield Timer(5, units="us")
         signal <= 1
-        yield Timer(5000)  # ps
+        yield Timer(5, units="us")
 
 
 # ==============================================================================    # ==============================================================================
