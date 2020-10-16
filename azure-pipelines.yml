@@ -108,8 +108,8 @@ jobs:
         condition: ne(variables['SIM'], 'verilator')
 
       - script: |
-          pytest -m compile tests/test_dff_param.py
-          pytest --workers 2 tests/test_dff_param.py
+          pytest -m compile tests/test_parallel.py
+          pytest --workers 2 tests/test_parallel.py
         displayName: "Test with pytest-parallel"
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
