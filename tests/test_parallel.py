@@ -6,10 +6,10 @@ tests_dir = os.path.dirname(__file__)
 
 # For parallel runs
 # Pre-compile:
-# pytest -m compile test_dff_param.py
+# pytest -m compile test_parallel.py
 # Run:
-# pytest --workers 2 test_dff_param.py
-# There are possibly better ways to o this
+# pytest --workers 2 test_parallel.py
+# There are possibly better ways to do this
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.compile
