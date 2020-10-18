@@ -40,6 +40,7 @@ class Simulator(object):
         vhdl_sources=None,
         includes=None,
         defines=None,
+        parameters=None,
         compile_args=None,
         simulation_args=None,
         extra_args=None,
@@ -103,6 +104,11 @@ class Simulator(object):
             defines = []
 
         self.defines = defines
+
+        if parameters is None:
+            parameters = {}
+
+        self.parameters = parameters
 
         if compile_args is None:
             compile_args = []
@@ -206,6 +212,9 @@ class Simulator(object):
     def get_define_commands(self, defines):
         raise NotImplementedError()
 
+    def get_parameter_commands(self, parameters):
+        raise NotImplementedError()
+
     def get_abs_paths(self, paths):
         paths_abs = []
         for path in paths:
@@ -298,12 +307,21 @@ class Icarus(Simulator):
 
         return defines_cmd
 
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-P")
+            parameters_cmd.append(self.toplevel + "." + name + "=" + str(value))
+
+        return parameters_cmd
+
     def compile_command(self):
 
         cmd_compile = (
             ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-s", self.toplevel, "-g2012"]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
+            + self.get_parameter_commands(self.parameters)
             + self.compile_args
             + self.verilog_sources
         )
@@ -739,6 +757,13 @@ class Verilator(Simulator):
 
         return defines_cmd
 
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-G" + name + "=" + str(value))
+
+        return parameters_cmd
+
     def build_command(self):
 
         cmd = []
@@ -774,6 +799,7 @@ class Verilator(Simulator):
             + self.compile_args
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
+            + self.get_parameter_commands(self.parameters)
             + [verilator_cpp]
             + self.verilog_sources
         )
