@@ -18,6 +18,10 @@ conda install -c conda-forge iverilog
 ```
 - Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
+pip install cocotb-test
+```
+&emsp;or development version
+```bash
 pip install -v https://github.com/themperek/cocotb-test/archive/master.zip
 ```
 &emsp;or
@@ -39,7 +43,7 @@ def test_dff():
 
 - Run [pytest](https://docs.pytest.org/en/latest/contents.html): 
 ```bash
-pytest -s 
+pytest -o log_cli=True
 ```
 
 # Running (some) tests and examples from cocotb
@@ -47,5 +51,12 @@ For cocotb tests/examples install cocotb in editable mode
 ```bash
 git clone https://github.com/potentialventures/cocotb.git
 pip install -e cocotb
-SIM=icarus pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
+SIM=icarus pytest -o log_cli --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
 ```
+
+# Related resources
+- [pytest logging](https://docs.pytest.org/en/stable/logging.html) - pytest logging documentation 
+- [pytest-xdist](https://pypi.org/project/pytest-xdist/) - test run parallelization (see [test_parallel](https://github.com/themperek/cocotb-test/blob/master/tests/test_parallel.py))
+- [pytest-parallel](https://github.com/browsertron/pytest-parallel) - parallel and concurrent testing  (see [test_parallel](https://github.com/themperek/cocotb-test/blob/master/tests/test_parallel.py))
+- [pytest-html](https://github.com/pytest-dev/pytest-html) - generates a HTML report for the test results
+- [pytest-sugar](https://github.com/Teemu/pytest-sugar/) - sugar
