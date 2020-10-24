@@ -471,8 +471,12 @@ class Ius(Simulator):
     def get_parameter_commands(self, parameters):
         parameters_cmd = []
         for name, value in parameters.items():
-            parameters_cmd.append("-defparam")
-            parameters_cmd.append("\"" + self.toplevel + "." + name + "=" + str(value) + "\"")
+            if self.toplevel_lang == "vhdl":
+                parameters_cmd.append("-generic")
+                parameters_cmd.append("\"" + self.toplevel + "." + name + "=>" + str(value) + "\"")
+            else:
+                parameters_cmd.append("-defparam")
+                parameters_cmd.append("\"" + self.toplevel + "." + name + "=" + str(value) + "\"")
 
         return parameters_cmd
 
@@ -543,8 +547,12 @@ class Xcelium(Simulator):
     def get_parameter_commands(self, parameters):
         parameters_cmd = []
         for name, value in parameters.items():
-            parameters_cmd.append("-defparam")
-            parameters_cmd.append("\"" + self.toplevel + "." + name + "=" + str(value) + "\"")
+            if self.toplevel_lang == "vhdl":
+                parameters_cmd.append("-generic")
+                parameters_cmd.append("\"" + self.toplevel + "." + name + "=>" + str(value) + "\"")
+            else:
+                parameters_cmd.append("-defparam")
+                parameters_cmd.append("\"" + self.toplevel + "." + name + "=" + str(value) + "\"")
 
         return parameters_cmd
 
