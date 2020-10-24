@@ -6,6 +6,10 @@ import os
 hdl_dir = os.path.dirname(__file__)
 
 class IcarusCustom(Icarus):
+    def __init__(self, logfile, *argv, **kwargs):
+        self.logfile = logfile
+        super().__init__(*argv, **kwargs)
+
     def run_command(self):
         return ["vvp", "-v", "-l", self.logfile, "-M", self.lib_dir, "-m", "libcocotbvpi_icarus", self.sim_file]
 
@@ -32,6 +36,10 @@ def test_dff_custom_icarus():
 
 
 class IusCustom(Ius):
+    def __init__(self, defsfile, *argv, **kwargs):
+        self.defsfile = defsfile
+        super().__init__(*argv, **kwargs)
+
     def build_command(self):
         cmd = [
             "xrun",
@@ -49,4 +57,10 @@ class IusCustom(Ius):
 
 @pytest.mark.skipif(os.getenv("SIM") != "ius", reason="Custom for IUS")
 def test_dff_custom_ius():
-    run(simulator=IusCustom, toplevel="dff", python_search=[hdl_dir], module="dff_cocotb", defsfile="ius_defines.f")  # extra custom argument
+    IusCustom(
+        verilog_sources=[os.path.join(hdl_dir, "dff.v")],
+        toplevel="dff_test",
+        python_search=[hdl_dir],
+        module="dff_cocotb",
+        defsfile="ius_defines.f"
+    ) 

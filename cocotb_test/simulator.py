@@ -9,6 +9,7 @@ import shutil
 from xml.etree import cElementTree as ET
 import threading
 import signal
+import warnings
 
 from distutils.spawn import find_executable
 from distutils.sysconfig import get_config_var
@@ -42,7 +43,7 @@ class Simulator(object):
         defines=None,
         parameters=None,
         compile_args=None,
-        simulation_args=None,
+        sim_args=None,
         extra_args=None,
         plus_args=None,
         force_compile=False,
@@ -52,6 +53,8 @@ class Simulator(object):
         extra_env=None,
         compile_only=False,
         gui=False,
+
+        simulation_args=None,
         **kwargs
     ):
 
@@ -61,6 +64,8 @@ class Simulator(object):
         self.logger = logging.getLogger("cocotb")
         self.logger.setLevel(logging.INFO)
         logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
+
+        warnings.simplefilter('always', DeprecationWarning)
 
         self.lib_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs")
 
@@ -118,10 +123,14 @@ class Simulator(object):
 
         self.compile_args = compile_args + extra_args
 
-        if simulation_args is None:
-            simulation_args = []
+        if sim_args is None:
+            sim_args = []
 
-        self.simulation_args = simulation_args + extra_args
+        if simulation_args is not None:
+            sim_args += simulation_args
+            warnings.warn("Using simulation_args is deprecated. Please use sim_args instead.", DeprecationWarning, stacklevel=2)
+
+        self.simulation_args = sim_args + extra_args
 
         if plus_args is None:
             plus_args = []
@@ -129,6 +138,9 @@ class Simulator(object):
         self.plus_args = plus_args
         self.force_compile = force_compile
         self.compile_only = compile_only
+
+        if kwargs:
+            warnings.warn("Using kwargs is deprecated. Please explicitly declare or arguments instead.", DeprecationWarning, stacklevel=2)
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
