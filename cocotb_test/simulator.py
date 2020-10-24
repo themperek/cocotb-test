@@ -366,6 +366,13 @@ class Questa(Simulator):
 
         return defines_cmd
 
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-g" + name + "=" + str(value))
+
+        return parameters_cmd
+
     def build_command(self):
 
         self.rtl_library = self.toplevel
@@ -410,7 +417,7 @@ class Questa(Simulator):
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(os.path.join(self.lib_dir, "libcocotbfli_modelsim." + self.lib_ext))
                     ),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                 )
 
                 if self.verilog_sources:
@@ -422,7 +429,7 @@ class Questa(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvpi_modelsim." + self.lib_ext)),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
 
@@ -461,6 +468,14 @@ class Ius(Simulator):
 
         return defines_cmd
 
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-defparam")
+            parameters_cmd.append("\"" + self.toplevel + "." + name + "=" + str(value) + "\"")
+
+        return parameters_cmd
+
     def build_command(self):
 
         out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
@@ -486,6 +501,7 @@ class Ius(Simulator):
                 ]
                 + self.get_define_commands(self.defines)
                 + self.get_include_commands(self.includes)
+                + self.get_parameter_commands(self.parameters)
                 + self.compile_args
                 + self.verilog_sources
                 + self.vhdl_sources
@@ -496,7 +512,7 @@ class Ius(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.plus_args
+            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(self.parameters) + self.plus_args
             cmd.append(cmd_run)
 
         return cmd
@@ -524,6 +540,14 @@ class Xcelium(Simulator):
 
         return defines_cmd
 
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-defparam")
+            parameters_cmd.append("\"" + self.toplevel + "." + name + "=" + str(value) + "\"")
+
+        return parameters_cmd
+
     def build_command(self):
 
         out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
@@ -549,6 +573,7 @@ class Xcelium(Simulator):
                 ]
                 + self.get_define_commands(self.defines)
                 + self.get_include_commands(self.includes)
+                + self.get_parameter_commands(self.parameters)
                 + self.compile_args
                 + self.verilog_sources
                 + self.vhdl_sources
@@ -559,7 +584,7 @@ class Xcelium(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["xrun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.plus_args
+            cmd_run = ["xrun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(self.parameters) + self.plus_args
             cmd.append(cmd_run)
 
         return cmd
@@ -579,6 +604,13 @@ class Vcs(Simulator):
             defines_cmd.append("+define+" + define)
 
         return defines_cmd
+
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-pvalue+" + self.toplevel + "/" + name + "=" + str(value))
+
+        return parameters_cmd
 
     def build_command(self):
 
@@ -605,6 +637,7 @@ class Vcs(Simulator):
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
+            + self.get_parameter_commands(self.parameters)
             + self.compile_args
             + self.verilog_sources
         )
@@ -635,6 +668,13 @@ class Ghdl(Simulator):
             defines_cmd.append("-D")
             defines_cmd.append(define)
 
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-g" + name + "=" + str(value))
+
+        return parameters_cmd
+
     def build_command(self):
 
         cmd = []
@@ -653,7 +693,7 @@ class Ghdl(Simulator):
             "-r",
             self.toplevel,
             "--vpi=" + os.path.join(self.lib_dir, "libcocotbvpi_ghdl." + self.lib_ext),
-        ] + self.simulation_args
+        ] + self.simulation_args + self.get_parameter_commands(self.parameters)
 
         if not self.compile_only:
             cmd.append(cmd_run)
@@ -675,6 +715,13 @@ class Riviera(Simulator):
             defines_cmd.append("+define+" + as_tcl_value(define))
 
         return defines_cmd
+
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-g" + name + "=" + str(value))
+
+        return parameters_cmd
 
     def build_command(self):
 
@@ -712,7 +759,7 @@ class Riviera(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvhpi_aldec")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                 )
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = "cocotbvpi_aldec:cocotbvpi_entry_point"
@@ -721,7 +768,7 @@ class Riviera(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(os.path.join(self.lib_dir, "libcocotbvpi_aldec")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
                 if self.vhdl_sources:
