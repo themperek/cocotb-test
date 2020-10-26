@@ -65,7 +65,7 @@ jobs:
       - script: |
           sudo apt-get update
           sudo apt-get install -y gnat
-          git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+          git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.37
           cd ghdl && ./configure && make -j2 && sudo make install && cd ..
         displayName: Compile and Install GHDL on Linux
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'ghdl'))
@@ -95,7 +95,7 @@ jobs:
         displayName: "Install pytest-parallel"
 
       - script: |
-          conda install --yes pip && git clone  https://github.com/cocotb/cocotb.git && cd cocotb && git reset --hard c48b3b7 && cd .. && pip install -e cocotb
+          conda install --yes pip && git clone -b v1.4.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
       - script: |

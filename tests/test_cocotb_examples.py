@@ -49,7 +49,7 @@ def test_dff_vhdl():
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_adder_verilog():
     run(
-        verilog_sources=[os.path.join(example_dir, "adder", "hdl", "adder.v")],
+        verilog_sources=[os.path.join(example_dir, "adder", "hdl", "adder.sv")],
         toplevel="adder",
         python_search=[os.path.join(example_dir, "adder", "tests"), os.path.join(example_dir, "adder", "model")],
         module="test_adder",
@@ -57,6 +57,7 @@ def test_adder_verilog():
     )
 
 
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Errors in compilation cocotb example")
 @pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
 def test_adder_vhdl():
     run(
