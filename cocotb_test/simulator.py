@@ -58,7 +58,7 @@ class Simulator(object):
         **kwargs
     ):
 
-        self.sim_dir = os.path.join(os.getcwd(), sim_build)
+        self.sim_dir = os.path.abspath(sim_build)
         os.makedirs(self.sim_dir, exist_ok=True)
 
         self.logger = logging.getLogger("cocotb")
