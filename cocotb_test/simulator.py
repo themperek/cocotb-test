@@ -52,6 +52,7 @@ class Simulator(object):
         seed=None,
         extra_env=None,
         compile_only=False,
+        waves=None,
         gui=False,
 
         simulation_args=None,
@@ -153,6 +154,11 @@ class Simulator(object):
 
         if seed is not None:
             self.env["RANDOM_SEED"] = str(seed)
+
+        if waves is None:
+            self.waves = bool(int(os.getenv("WAVES", 0)))
+        else:
+            self.waves = bool(waves)
 
         self.gui = gui
 
@@ -350,6 +356,24 @@ class Icarus(Simulator):
         )
 
     def build_command(self):
+        if self.waves:
+            dump_mod_name = "iverilog_dump"
+            dump_file_name = self.toplevel+".fst"
+            dump_mod_file_name = os.path.join(self.sim_dir, dump_mod_name+".v")
+
+            if not os.path.exists(dump_mod_file_name):
+                with open(dump_mod_file_name, 'w') as f:
+                    f.write("module iverilog_dump();\n")
+                    f.write("initial begin\n")
+                    f.write("    $dumpfile(\"%s\");\n" % dump_file_name)
+                    f.write("    $dumpvars(0, %s);\n" % self.toplevel)
+                    f.write("end\n")
+                    f.write("endmodule\n")
+
+            self.verilog_sources.append(dump_mod_file_name)
+            self.compile_args.extend(["-s", dump_mod_name])
+            self.plus_args.append("-fst")
+
         cmd = []
         if self.outdated(self.sim_file, self.verilog_sources) or self.force_compile:
             cmd.append(self.compile_command())
@@ -448,7 +472,8 @@ class Questa(Simulator):
                 if self.vhdl_sources:
                     self.env["GPI_EXTRA"] = "cocotbfli_modelsim:cocotbfli_entry_point"
 
-            # do_script += "log -recursive /*;"
+            if self.waves:
+                do_script += "log -recursive /*;"
 
             if not self.gui:
                 do_script += "run -all; quit"
@@ -794,6 +819,9 @@ class Riviera(Simulator):
                 if self.vhdl_sources:
                     self.env["GPI_EXTRA"] = "cocotbvhpi_aldec:cocotbvhpi_entry_point"
 
+            if self.waves:
+                do_script += "log -recursive /*;"
+
             do_script += "run -all \nexit"
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
@@ -845,6 +873,9 @@ class Verilator(Simulator):
         verilator_exec = find_executable("verilator")
         if verilator_exec is None:
             raise ValueError("Verilator executable not found.")
+
+        if self.waves:
+            self.compile_args.append("--trace-fst --trace-structs")
 
         cmd.append(
             [
