@@ -782,7 +782,7 @@ class Verilator(Simulator):
         cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
 
         if not self.compile_only:
-            cmd.append([out_file])
+            cmd.append([out_file] + self.plus_args)
 
         return cmd
 
