@@ -839,7 +839,7 @@ class Verilator(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        self.env['CPPFLAGS'] =  self.env.get('CPPFLAGS', "") + " -std=c++11"
+        self.env['CXXFLAGS'] =  self.env.get('CXXFLAGS', "") + " -std=c++11"
 
     def get_include_commands(self, includes):
         include_cmd = []

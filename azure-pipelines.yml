@@ -75,7 +75,7 @@ jobs:
           sudo apt-get install git make autoconf g++ flex bison   # First time prerequisites
           sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)
           sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
-          git clone http://git.veripool.org/git/verilator --depth=1
+          git clone http://git.veripool.org/git/verilator -b v4.106 --depth=1
           cd verilator && autoconf && ./configure && make -j2 && sudo make install && cd ..
         displayName: Compile and Install Verilator on Linux
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'verilator'))
