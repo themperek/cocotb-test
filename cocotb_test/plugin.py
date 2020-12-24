@@ -37,11 +37,11 @@ class ResultsCocotb(object):
 
             if os.path.isfile(fname):
                 tree = ET.parse(fname)
-                for testsuite in tree.getiterator("testsuite"):
+                for testsuite in tree.iter("testsuite"):
                     use_element = None
 
-                    for testcase in testsuite.getiterator("testcase"):
-                        testcase.set("classname", "cocotb." + testcase.get("classname"))  # add cocotb. for easeir selection
+                    for testcase in testsuite.iter("testcase"):
+                        testcase.set("classname", "cocotb." + testcase.get("classname"))  # add cocotb. for easier selection
 
                     for existing in result:
                         if existing.get("name") == testsuite.get("name") and (existing.get("package") == testsuite.get("package")):
