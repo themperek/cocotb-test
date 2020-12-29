@@ -117,13 +117,6 @@ def clean():
         action="store_true",
         help="Recursive clean",
     )
-    parser.add_argument(
-        "-a",
-        "--all",
-        dest="all",
-        action="store_true",
-        help="Remove also build libraries",
-    )
     args = parser.parse_args()
 
     simulator.clean(recursive=args.recursive)
