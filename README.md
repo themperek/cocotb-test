@@ -46,6 +46,12 @@ def test_dff():
 pytest -o log_cli=True
 ```
 
+- To clean (remove all `sim_build` folders): 
+```bash
+cocotb-clean -r
+```
+
+
 # Running (some) tests and examples from cocotb
 For cocotb tests/examples install cocotb in editable mode  
 ```bash
