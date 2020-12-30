@@ -41,16 +41,79 @@ def test_dff():
     )
 ```
 
-- Run [pytest](https://docs.pytest.org/en/latest/contents.html): 
+- Run [pytest](https://docs.pytest.org/en/latest/contents.html) (need `dff.v` and `dff_cocotb.py` in same directory where running `pytest`): 
 ```bash
-pytest -o log_cli=True
+SIM=icarus pytest -o log_cli=True test_dff.py
 ```
 
 - To clean (remove all `sim_build` folders): 
 ```bash
 cocotb-clean -r
 ```
+### Arguments for `simulator.run`:
 
+* `toplevel`: Use this to indicate the instance in the hierarchy to use as the DUT.
+* `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
+
+* `python_search` : List of additional directoreis to search for python/cocotb modules.
+* `verilog_sources`: A list of the Verilog source files to include. 
+* `vhdl_sources`: A list of the VHDL source files to include. 
+* `toplevel_lang`: see [TOPLEVEL_LANG](https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG). (default: `verilog`)
+* `includes`: A list of directories to search for includes. 
+* `defines`: A list of the defines. 
+* `parameters`: A dictionary of top-level parameters/generics. 
+* `compile_args`: Any arguments or flags to pass to the compile stage of the simulation.
+* `sim_args`: Any arguments or flags to pass to the execution of the compiled simulation.
+* `extra_args`: Passed to both the compile and execute phases of simulators.
+* `plus_args`: plusargs arguments passed to simulator.
+* `force_compile`: Force compilation even if sources did not change. (default: `False`)
+* `compile_only`: Only compile sources. Do not run simulation. (default: `False`)
+* `testcase`: The name of the test function(s) to run (see [TESTCASE](https://docs.cocotb.org/en/stable/building.html?#envvar-TESTCASE) ).
+* `sim_build`: The directory used to compile the tests. (default: `sim_build`)
+* `work_dir`: The directory used to tun the tests. (default: same as `sim_build` argument)
+* `seed`: Seed the Python random module to recreate a previous test stimulus (see [RANDOM_SEED](https://docs.cocotb.org/en/stable/building.html?#envvar-RANDOM_SEED) ).
+* `extra_env`: A dictionary of extra environment variables set in simulator process.
+* `waves`: Enable wave dumps (not all simulators supported).
+* `gui`: Starts in gui mode (not all simulators supported).
+
+
+### Environmental variables:
+
+* `SIM`: Selects which simulator to use. (default: `icarus`)
+* `WAVES`: Overwrite enable wave dumps argument. Example use `WAVES=1 pytest test_dff.py`.
+
+### pytest arguments
+
+* `cocotbxml`: Combines and saves junitxml reports from cocotb tests.  Example use `pytest --cocotbxml=test-cocotb.xml`.
+
+### Tips and tricks:
+
+* List all available test:
+```bash
+pytest --collect-only
+```
+
+* Run only selected test:
+```bash
+pytest -k test_dff_verilog_param[3]
+```
+
+* Test parameterization (for more see: [test_parameters.py](https://github.com/themperek/cocotb-test/blob/master/tests/test_parameters.py) )
+
+```python
+@pytest.mark.parametrize("width", [{"WIDTH_IN": "8"}, {"WIDTH_IN": "16"}])
+def test_dff_verilog_testcase(width):
+    run(
+        ...
+        parameters=width,
+        sim_build="sim_build/" + "_".join(("{}={}".format(*i) for i in width.items())),
+    )
+```
+
+*  Run test in parallel (after installing  [pytest-xdist](https://pypi.org/project/pytest-xdist/) )
+```bash
+pytest -n NUMCPUS
+```
 
 # Running (some) tests and examples from cocotb
 For cocotb tests/examples install cocotb in editable mode  
