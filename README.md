@@ -50,7 +50,49 @@ pytest -o log_cli=True
 ```bash
 cocotb-clean -r
 ```
+### Arguments for `simulator.run`:
 
+* `toplevel`: Use this to indicate the instance in the hierarchy to use as the DUT.
+* `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
+
+* `verilog_sources`: A list of the Verilog source files to include. 
+* `vhdl_sources`: A list of the VHDL source files to include. 
+* `toplevel_lang`: see [TOPLEVEL_LANG](https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG). (default: `verilog`)
+* `includes`: A list of directories to search for includes. 
+* `defines`: A list of the defines. 
+* `parameters`: A list of top-level parameters/generics. 
+* `compile_args`: Any arguments or flags to pass to the compile stage of the simulation.
+* `sim_args`: Any arguments or flags to pass to the execution of the compiled simulation.
+* `extra_args`: Passed to both the compile and execute phases of simulators.
+* `plus_args`: plusargs arguments passed to simulator.
+* `force_compile`: Force compilation even if sources did not change. (default: `False`)
+* `compile_only`: Only compile sources. Do not run simulation. (default: `False`)
+* `testcase`: The name of the test function(s) to run (see [TESTCASE](https://docs.cocotb.org/en/stable/building.html?#envvar-TESTCASE) ).
+* `sim_build`: The directory used to compile and run the tests. (default: `sim_build`)
+* `seed`: Seed the Python random module to recreate a previous test stimulus (see [RANDOM_SEED](https://docs.cocotb.org/en/stable/building.html?#envvar-RANDOM_SEED) ).
+* `extra_env`: A dictionary of extra environment variables set in simulator process.
+* `waves`: Enable wave dumps (not all simulators supported).
+* `gui`: Starts in gui mode (not all simulators supported).
+
+### Environmental variables:
+
+* `WAVES`: Overwrite enable wave dumps argument. Example use `WAVES=1 pytest test_dff.py`.
+
+### pytest arguments
+
+* `cocotbxml`: Combines and saves junitxml reports from cocotb tests.  Example use `pytest --cocotbxml=test-cocotb.xml`.
+
+### Tips and tricks:
+
+* List all available test:
+```bash
+pytest --collect-only
+```
+
+* Run only selected test:
+```bash
+pytest -k test_dff_verilog_param[3]
+```
 
 # Running (some) tests and examples from cocotb
 For cocotb tests/examples install cocotb in editable mode  
