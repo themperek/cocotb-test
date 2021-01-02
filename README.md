@@ -55,6 +55,7 @@ cocotb-clean -r
 * `toplevel`: Use this to indicate the instance in the hierarchy to use as the DUT.
 * `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
 
+* `python_search` : List of additional directoreis to search for python/cocotb modules.
 * `verilog_sources`: A list of the Verilog source files to include. 
 * `vhdl_sources`: A list of the VHDL source files to include. 
 * `toplevel_lang`: see [TOPLEVEL_LANG](https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG). (default: `verilog`)
@@ -68,11 +69,13 @@ cocotb-clean -r
 * `force_compile`: Force compilation even if sources did not change. (default: `False`)
 * `compile_only`: Only compile sources. Do not run simulation. (default: `False`)
 * `testcase`: The name of the test function(s) to run (see [TESTCASE](https://docs.cocotb.org/en/stable/building.html?#envvar-TESTCASE) ).
-* `sim_build`: The directory used to compile and run the tests. (default: `sim_build`)
+* `sim_build`: The directory used to compile the tests. (default: `sim_build`)
+* `work_dir`: The directory used to tun the tests. (default: same as `sim_build` argument)
 * `seed`: Seed the Python random module to recreate a previous test stimulus (see [RANDOM_SEED](https://docs.cocotb.org/en/stable/building.html?#envvar-RANDOM_SEED) ).
 * `extra_env`: A dictionary of extra environment variables set in simulator process.
 * `waves`: Enable wave dumps (not all simulators supported).
 * `gui`: Starts in gui mode (not all simulators supported).
+
 
 ### Environmental variables:
 
