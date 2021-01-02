@@ -11,7 +11,7 @@ def test_dff_verilog():
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "verilator", reason="VHDL not suported")
-@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM", "icarus") == "icarus", reason="VHDL not suported")
 def test_dff_vhdl():
     run(vhdl_sources=[os.path.join(tests_dir, "dff.vhdl")], toplevel="dff_test_vhdl", module="dff_cocotb", toplevel_lang="vhdl")
 

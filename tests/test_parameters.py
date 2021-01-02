@@ -38,7 +38,7 @@ def test_dff_verilog_testcase(parameters):
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "verilator", reason="VHDL not suported")
-@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM", "icarus") == "icarus", reason="VHDL not suported")
 @pytest.mark.parametrize(
     "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
 )
