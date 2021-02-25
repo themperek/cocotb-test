@@ -95,7 +95,7 @@ jobs:
         displayName: "Install pytest-parallel"
 
       - script: |
-          conda install --yes pip && git clone -b v1.4.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
+          conda install --yes pip && git clone -b v1.5.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
       - script: |
@@ -103,7 +103,7 @@ jobs:
         displayName: "Install cocotb-test"
 
       - script: |
-          pytest -s --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
+          pytest --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
         displayName: "Test with pytest"
         condition: ne(variables['SIM'], 'verilator')
 
