@@ -258,8 +258,7 @@ class Simulator(object):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=self.work_dir,
-                env=self.env,
-                bufsize=1,
+                env=self.env
             ) as p:
                 for line in p.stdout:
                     self.logger.info(line.decode("utf-8").rstrip())
