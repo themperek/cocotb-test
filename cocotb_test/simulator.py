@@ -736,6 +736,9 @@ class Ghdl(Simulator):
             cmd_elaborate = ["ghdl", "-m"] + self.compile_args + [self.toplevel]
             cmd.append(cmd_elaborate)
 
+        if self.waves:
+            self.simulation_args.append("--wave=" + self.toplevel + ".ghw")
+
         cmd_run = [
             "ghdl",
             "-r",
