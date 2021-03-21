@@ -727,7 +727,7 @@ class Ghdl(Simulator):
 
         cmd = []
 
-        out_file = os.path.join(self.sim_dir, self.toplevel + ".o")
+        out_file = os.path.join(self.sim_dir, self.toplevel)
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
             for source_file in self.vhdl_sources:
