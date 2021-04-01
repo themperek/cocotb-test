@@ -21,7 +21,7 @@ setup(
     author="Tomasz Hemperek",
     author_email="hemperek@uni-bonn.de",
     packages=find_packages(),
-    install_requires=["cocotb==1.4.*", "pytest"],
+    install_requires=["cocotb>=1.5", "pytest"],
     entry_points={
         "console_scripts": [
             "cocotb=cocotb_test.cli:config",

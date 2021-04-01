@@ -34,13 +34,13 @@ def test_dff_verilog_param(seed):
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
-@pytest.mark.parametrize("testcase", ["run_test_001", "run_test_001"])
-def test_dff_verilog_testcase(testcase):
+@pytest.mark.parametrize("seed", range(2))
+def test_dff_verilog_testcase(seed):
     run(
         verilog_sources=[os.path.join(tests_dir, "dff.v")],
         toplevel="dff_test",
         module="dff_cocotb",
-        testcase=testcase,
+        seed=seed
     )
 
 
