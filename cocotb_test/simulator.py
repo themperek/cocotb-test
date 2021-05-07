@@ -167,11 +167,13 @@ class Simulator(object):
         # Catch SIGINT and SIGTERM
         self.old_sigint_h = signal.getsignal(signal.SIGINT)
         self.old_sigterm_h = signal.getsignal(signal.SIGTERM)
-        
+
         # works only if main thread
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGINT, self.exit_gracefully)
             signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+        self.process = None
 
     def set_env(self):
 
@@ -260,9 +262,11 @@ class Simulator(object):
                 cwd=self.work_dir,
                 env=self.env
             ) as p:
+                self.process = p
                 for line in p.stdout:
                     self.logger.info(line.decode("utf-8").rstrip())
 
+            self.process = None
             if p.returncode:
                 self.logger.error("Command terminated with error %d" % p.returncode)
                 return
