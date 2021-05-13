@@ -743,12 +743,12 @@ class Ghdl(Simulator):
         if self.waves:
             self.simulation_args.append("--wave=" + self.toplevel + ".ghw")
 
-        cmd_run = [
-            "ghdl",
-            "-r",
-            self.toplevel,
-            "--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl"),
-        ] + self.simulation_args + self.get_parameter_commands(self.parameters)
+        cmd_run = (
+            ["ghdl", "-r"] + self.compile_args + [self.toplevel]
+            + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
+            + self.simulation_args
+            + self.get_parameter_commands(self.parameters)
+        )
 
         if not self.compile_only:
             cmd.append(cmd_run)
