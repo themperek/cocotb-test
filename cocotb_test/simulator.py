@@ -884,7 +884,7 @@ class Verilator(Simulator):
             raise ValueError("Verilator executable not found.")
 
         if self.waves:
-            self.compile_args.append("--trace-fst --trace-structs")
+            self.compile_args.extend(["--trace-fst", "--trace-structs"])
 
         cmd.append(
             [
