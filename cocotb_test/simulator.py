@@ -422,34 +422,25 @@ class Questa(Simulator):
 
         cmd = []
 
-        out_file = os.path.join(self.sim_dir, self.toplevel, "_info")
+        if self.vhdl_sources:
+            do_script = "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                FORCE= "" if self.force_compile else "-incr",
+            )
+            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
-        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
-
-            if os.path.exists(os.path.join(self.sim_dir, self.rtl_library)):
-                do_script = "vdel -lib {RTL_LIBRARY} -all".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
-                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
-
-            if self.vhdl_sources:
-                do_script = "vlib {RTL_LIBRARY}; vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                )
-                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
-
-            if self.verilog_sources:
-                do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
-                    DEFINES=" ".join(self.get_define_commands(self.defines)),
-                    INCDIR=" ".join(self.get_include_commands(self.includes)),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                )
-                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
-
-        else:
-            self.logger.warning("Skipping compilation:" + out_file)
+        if self.verilog_sources:
+            do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
+                DEFINES=" ".join(self.get_define_commands(self.defines)),
+                INCDIR=" ".join(self.get_include_commands(self.includes)),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                FORCE= "" if self.force_compile else "-incr",
+            )
+            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
