@@ -612,7 +612,7 @@ class Xcelium(Simulator):
                     "xrun",
                     "-64",
                     "-v93",
-                    "-elaborate"
+                    "-elaborate",
                     "-define",
                     "COCOTB_SIM=1",
                     "-loadvpi",
