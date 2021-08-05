@@ -41,6 +41,7 @@ class Simulator(object):
         toplevel_lang="verilog",
         verilog_sources=None,
         vhdl_sources=None,
+        vhdl_sources_lib=None,
         includes=None,
         defines=None,
         parameters=None,
@@ -102,6 +103,11 @@ class Simulator(object):
             vhdl_sources = []
 
         self.vhdl_sources = self.get_abs_paths(vhdl_sources)
+
+        if vhdl_sources_lib is None:
+            vhdl_sources_lib = {}
+
+        self.vhdl_sources_lib = vhdl_sources_lib
 
         if includes is None:
             includes = []
@@ -727,6 +733,9 @@ class Ghdl(Simulator):
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
             for source_file in self.vhdl_sources:
                 cmd.append(["ghdl", "-i"] + self.compile_args + [source_file])
+
+            for lib, source_lib in self.vhdl_sources_lib.items():
+                cmd.append(["ghdl", "-i"] + self.compile_args + ["--work=" + lib] + self.get_abs_paths(source_lib))
 
             cmd_elaborate = ["ghdl", "-m"] + self.compile_args + [self.toplevel]
             cmd.append(cmd_elaborate)

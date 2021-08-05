@@ -90,6 +90,7 @@ def run():
         kwargs = {}
         kwargs["verilog_sources"] = os.getenv("VERILOG_SOURCES", "").split()
         kwargs["vhdl_sources"] = os.getenv("VHDL_SOURCES", "").split()
+        kwargs["vhdl_sources_lib"] = os.getenv("VHDL_SOURCES_LIB", "").split()
         kwargs["toplevel"] = os.getenv("TOPLEVEL")
         kwargs["toplevel_lang"] = os.getenv("TOPLEVEL_LANG")
         kwargs["module"] = os.getenv("MODULE")
