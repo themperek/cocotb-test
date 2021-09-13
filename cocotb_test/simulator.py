@@ -56,7 +56,7 @@ class Simulator(object):
         compile_only=False,
         waves=None,
         gui=False,
-
+        extra_cmd=None,
         simulation_args=None,
         **kwargs
     ):
@@ -163,6 +163,11 @@ class Simulator(object):
             self.waves = bool(waves)
 
         self.gui = gui
+
+        if extra_cmd is None:
+            self.extra_cmd = []
+        else:
+            self.extra_cmd = extra_cmd
 
         # Catch SIGINT and SIGTERM
         self.old_sigint_h = signal.getsignal(signal.SIGINT)
@@ -862,7 +867,6 @@ class Activehdl(Simulator):
 
         out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
 
-        
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
 
@@ -911,14 +915,17 @@ class Activehdl(Simulator):
             if self.waves:
                 do_script += "log -recursive /*;"
 
+            if self.extra_cmd:
+                do_script += "\n".join(self.extra_cmd) + "\n"
+
             do_script += "run -all \nexit"
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
         do_file.write(do_script.encode())
         do_file.close()
 
-        with open("do_script.do", "w") as f:
-            f.write(do_script)
+        # with open("do_script.do", "w") as f:
+        #     f.write(do_script)
 
         return [["vsimsa"] + ["-do"] + [do_file.name]]
 
