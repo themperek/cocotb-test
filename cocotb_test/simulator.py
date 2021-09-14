@@ -897,7 +897,7 @@ class Activehdl(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
                 )
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
@@ -924,8 +924,6 @@ class Activehdl(Simulator):
         do_file.write(do_script.encode())
         do_file.close()
 
-        # with open("do_script.do", "w") as f:
-        #     f.write(do_script)
 
         return [["vsimsa"] + ["-do"] + [do_file.name]]
 
