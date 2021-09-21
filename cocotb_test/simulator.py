@@ -164,11 +164,6 @@ class Simulator(object):
 
         self.gui = gui
 
-        if extra_cmd is None:
-            self.extra_cmd = []
-        else:
-            self.extra_cmd = extra_cmd
-
         # Catch SIGINT and SIGTERM
         self.old_sigint_h = signal.getsignal(signal.SIGINT)
         self.old_sigterm_h = signal.getsignal(signal.SIGTERM)
@@ -774,12 +769,9 @@ class Riviera(Simulator):
 
         return parameters_cmd
 
-    def build_command(self):
-
-        self.rtl_library = self.toplevel
-
-        do_script = "\nonerror {\n quit -code 1 \n} \n"
-
+    def build_command_compile(self):
+        do_script = ""
+        
         out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
@@ -859,14 +851,11 @@ class Activehdl(Simulator):
 
         return parameters_cmd
 
-    def build_command(self):
 
-        self.rtl_library = self.toplevel
-
-        do_script = "\nonerror {\n quit -code 1 \n} \n"
+    def build_command_compile(self):
+        do_script = ""
 
         out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
-
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
 
@@ -890,40 +879,56 @@ class Activehdl(Simulator):
         else:
             self.logger.warning("Skipping compilation:" + out_file)
 
+        return do_script
+
+    def build_command_sim(self):
+
+        do_script = ""
+
+        if self.toplevel_lang == "vhdl":
+            do_script += "set worklib " + as_tcl_value(self.rtl_library) + "\n"
+            do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi \"{EXT_NAME}\" {EXTRA_ARGS} {TOPLEVEL} \n".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                TOPLEVEL=as_tcl_value(self.toplevel),
+                EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"),
+                EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
+            )
+            if self.verilog_sources:
+                self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
+        else:
+            do_script += "asim +access +w -interceptcoutput -O2 -pli \"{EXT_NAME}\" {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                TOPLEVEL=as_tcl_value(self.toplevel),
+                EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "activehdl")),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
+            )
+            if self.vhdl_sources:
+                self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "activehdl") + ":cocotbvpi_entry_point"
+
+        if self.waves:
+            do_script += "log -recursive /*;"
+            
+        return do_script
+
+    def build_command_run(self):
+
+        return "run -all \nexit"
+
+    def build_command(self):
+
+        self.rtl_library = self.toplevel
+
+        do_script = "\nonerror {\n quit -code 1 \n} \n"
+
+        do_script += self.build_command_compile()
         if not self.compile_only:
-            if self.toplevel_lang == "vhdl":
-                do_script += "set worklib " + as_tcl_value(self.rtl_library) + "\n"
-                do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi \"{EXT_NAME}\" {EXTRA_ARGS} {TOPLEVEL} \n".format(
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"),
-                    EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
-                )
-                if self.verilog_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
-            else:
-                do_script += "asim +access +w -interceptcoutput -O2 -pli \"{EXT_NAME}\" {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
-                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "activehdl")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
-                    PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
-                )
-                if self.vhdl_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "activehdl") + ":cocotbvpi_entry_point"
-
-            if self.waves:
-                do_script += "log -recursive /*;"
-
-            if self.extra_cmd:
-                do_script += "\n".join(self.extra_cmd) + "\n"
-
-            do_script += "run -all \nexit"
+            do_script += self.build_command_sim()
+            do_script += self.build_command_run()
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
         do_file.write(do_script.encode())
         do_file.close()
-
 
         return [["vsimsa"] + ["-do"] + [do_file.name]]
 
