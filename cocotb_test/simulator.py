@@ -56,7 +56,6 @@ class Simulator(object):
         compile_only=False,
         waves=None,
         gui=False,
-        extra_cmd=None,
         simulation_args=None,
         **kwargs
     ):
