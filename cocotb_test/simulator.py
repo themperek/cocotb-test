@@ -56,7 +56,6 @@ class Simulator(object):
         compile_only=False,
         waves=None,
         gui=False,
-
         simulation_args=None,
         **kwargs
     ):
@@ -832,6 +831,110 @@ class Riviera(Simulator):
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 
 
+class Activehdl(Simulator):
+    def get_include_commands(self, includes):
+        include_cmd = []
+        for dir in includes:
+            include_cmd.append("+incdir+" + as_tcl_value(dir))
+
+        return include_cmd
+
+    def get_define_commands(self, defines):
+        defines_cmd = []
+        for define in defines:
+            defines_cmd.append("+define+" + as_tcl_value(define))
+
+        return defines_cmd
+
+    def get_parameter_commands(self, parameters):
+        parameters_cmd = []
+        for name, value in parameters.items():
+            parameters_cmd.append("-g" + name + "=" + str(value))
+
+        return parameters_cmd
+
+
+    def build_script_compile(self):
+        do_script = ""
+
+        out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
+
+        if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
+
+            do_script += "alib {RTL_LIBRARY} \n".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
+
+            if self.vhdl_sources:
+                do_script += "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                )
+
+            if self.verilog_sources:
+                do_script += "alog {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
+                    DEFINES=" ".join(self.get_define_commands(self.defines)),
+                    INCDIR=" ".join(self.get_include_commands(self.includes)),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                )
+        else:
+            self.logger.warning("Skipping compilation:" + out_file)
+
+        return do_script
+
+    def build_script_sim(self):
+
+        do_script = ""
+
+        if self.toplevel_lang == "vhdl":
+            do_script += "set worklib " + as_tcl_value(self.rtl_library) + "\n"
+            do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi \"{EXT_NAME}\" {EXTRA_ARGS} {TOPLEVEL} \n".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                TOPLEVEL=as_tcl_value(self.toplevel),
+                EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"),
+                EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
+            )
+            if self.verilog_sources:
+                self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
+        else:
+            do_script += "asim +access +w -interceptcoutput -O2 -pli \"{EXT_NAME}\" {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
+                RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                TOPLEVEL=as_tcl_value(self.toplevel),
+                EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "activehdl")),
+                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
+            )
+            if self.vhdl_sources:
+                self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "activehdl") + ":cocotbvpi_entry_point"
+
+        if self.waves:
+            do_script += "log -recursive /*;"
+            
+        return do_script
+
+    def build_script_run(self):
+
+        return "run -all \nexit"
+
+    def build_command(self):
+
+        self.rtl_library = self.toplevel
+
+        do_script = "\nonerror {\n quit -code 1 \n} \n"
+
+        do_script += self.build_script_compile()
+        if not self.compile_only:
+            do_script += self.build_script_sim()
+            do_script += self.build_script_run()
+
+        do_file = tempfile.NamedTemporaryFile(delete=False)
+        do_file.write(do_script.encode())
+        do_file.close()
+
+        return [["vsimsa"] + ["-do"] + [do_file.name]]
+
+
 class Verilator(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Verilator, self).__init__(*argv, **kwargs)
@@ -917,7 +1020,7 @@ def run(**kwargs):
 
     sim_env = os.getenv("SIM", "icarus")
 
-    supported_sim = ["icarus", "questa", "ius", "xcelium", "vcs", "ghdl", "riviera", "verilator"]
+    supported_sim = ["icarus", "questa", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "verilator"]
     if sim_env not in supported_sim:
         raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
 
@@ -935,6 +1038,8 @@ def run(**kwargs):
         sim = Ghdl(**kwargs)
     elif sim_env == "riviera":
         sim = Riviera(**kwargs)
+    elif sim_env == "activehdl":
+        sim = Activehdl(**kwargs)
     elif sim_env == "verilator":
         sim = Verilator(**kwargs)
 
