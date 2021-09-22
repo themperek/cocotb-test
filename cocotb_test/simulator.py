@@ -56,7 +56,6 @@ class Simulator(object):
         compile_only=False,
         waves=None,
         gui=False,
-        extra_cmd=None,
         simulation_args=None,
         **kwargs
     ):
@@ -769,9 +768,12 @@ class Riviera(Simulator):
 
         return parameters_cmd
 
-    def build_command_compile(self):
-        do_script = ""
-        
+    def build_command(self):
+
+        self.rtl_library = self.toplevel
+
+        do_script = "\nonerror {\n quit -code 1 \n} \n"
+
         out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
 
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
