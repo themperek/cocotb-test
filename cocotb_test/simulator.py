@@ -852,7 +852,7 @@ class Activehdl(Simulator):
         return parameters_cmd
 
 
-    def build_command_compile(self):
+    def build_script_compile(self):
         do_script = ""
 
         out_file = os.path.join(self.sim_dir, self.rtl_library, self.rtl_library + ".lib")
@@ -881,7 +881,7 @@ class Activehdl(Simulator):
 
         return do_script
 
-    def build_command_sim(self):
+    def build_script_sim(self):
 
         do_script = ""
 
@@ -911,7 +911,7 @@ class Activehdl(Simulator):
             
         return do_script
 
-    def build_command_run(self):
+    def build_script_run(self):
 
         return "run -all \nexit"
 
@@ -921,10 +921,10 @@ class Activehdl(Simulator):
 
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
-        do_script += self.build_command_compile()
+        do_script += self.build_script_compile()
         if not self.compile_only:
-            do_script += self.build_command_sim()
-            do_script += self.build_command_run()
+            do_script += self.build_script_sim()
+            do_script += self.build_script_run()
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
         do_file.write(do_script.encode())
