@@ -13,7 +13,6 @@ import warnings
 import cocotb._vendor.find_libpython as find_libpython
 import cocotb.config
 
-from collections import OrderedDict
 from distutils.spawn import find_executable
 from distutils.sysconfig import get_config_var
 
@@ -252,13 +251,13 @@ class Simulator(object):
                 paths_abs.append(self.normalize_path(path))
             return paths_abs
         else:
-            dict_items = []
-            for lib, sources in paths.items():
-                sources_abs = []
-                for path in sources:
-                    sources_abs.append(self.normalize_path(path))
-                dict_items.append((lib, sources_abs))
-            return OrderedDict(dict_items)
+            libs = dict()
+            for lib, paths in paths.items():
+                paths_abs = []
+                for path in paths:
+                    paths_abs.append(self.normalize_path(path))
+                libs[lib] = paths_abs
+            return libs
 
     def normalize_path(self, path):
         if os.path.isabs(path):
@@ -421,9 +420,9 @@ class Questa(Simulator):
 
     def validate_sources_collection(self):
         if self.vhdl_sources is not None:
-            assert isinstance(self.vhdl_sources, (list, OrderedDict)), "Parameter `vhdl_sources` must be a `list` of strings or an `OrderedDict`."
+            assert isinstance(self.vhdl_sources, (list, dict)), "Parameter `vhdl_sources` must be a `list` or a `dict`."
         if self.verilog_sources is not None:
-            assert isinstance(self.verilog_sources, (list, OrderedDict)), "Parameter `verilog_sources` must be a `list` of strings or an `OrderedDict`."
+            assert isinstance(self.verilog_sources, (list, dict)), "Parameter `verilog_sources` must be a `list` or a `dict`."
 
 
     def get_include_commands(self, includes):
@@ -454,9 +453,7 @@ class Questa(Simulator):
         if self.vhdl_sources:
             if type(self.vhdl_sources) == list:
                 self.toplevel_lib = self.toplevel
-                self.vhdl_sources = OrderedDict([(f"{self.toplevel_lib}", self.vhdl_sources)])
-
-            assert self.toplevel_lib is not None, "Parameter toplevel_lib must be specified when using named libraries."
+                self.vhdl_sources = {f"{self.toplevel_lib}": self.vhdl_sources}
 
             do_script = ""
             for library, sources in self.vhdl_sources.items():
@@ -472,7 +469,7 @@ class Questa(Simulator):
 
         if self.verilog_sources:
             if isinstance(self.verilog_sources, list):
-                self.verilog_sources = OrderedDict([(f"{self.toplevel}", self.verilog_sources)])
+                self.verilog_sources = {f"{self.toplevel}": self.verilog_sources}
                 self.toplevel_lib = self.toplevel
 
             for library, sources in self.verilog_sources.items():
@@ -489,6 +486,8 @@ class Questa(Simulator):
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if not self.compile_only:
+            assert self.toplevel_lib is not None, "Parameter toplevel_lib must be specified when using named libraries."
+
             if self.toplevel_lang == "vhdl":
                 do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
