@@ -13,6 +13,7 @@ import warnings
 import cocotb._vendor.find_libpython as find_libpython
 import cocotb.config
 
+from collections import OrderedDict
 from distutils.spawn import find_executable
 from distutils.sysconfig import get_config_var
 
@@ -22,6 +23,7 @@ _space_re = re.compile(r"([\s])", re.ASCII)
 
 def as_tcl_value(value):
     # add '\' before special characters and spaces
+    print(value)
     value = _magic_re.sub(r"\\\1", value)
     value = value.replace("\n", r"\n")
     value = _space_re.sub(r"\\\1", value)
@@ -39,6 +41,7 @@ class Simulator(object):
         work_dir=None,
         python_search=None,
         toplevel_lang="verilog",
+        toplevel_lib=None,
         verilog_sources=None,
         vhdl_sources=None,
         includes=None,
@@ -91,6 +94,7 @@ class Simulator(object):
 
         self.toplevel = toplevel
         self.toplevel_lang = toplevel_lang
+        self.toplevel_lib = toplevel_lib
 
         if verilog_sources is None:
             verilog_sources = []
@@ -174,6 +178,9 @@ class Simulator(object):
 
         self.process = None
 
+        # Check if vhdl_sources and verilog_sources have the correct type depending each simulator
+        self.validate_sources_collection()
+
     def set_env(self):
 
         for e in os.environ:
@@ -240,14 +247,24 @@ class Simulator(object):
         raise NotImplementedError()
 
     def get_abs_paths(self, paths):
-        paths_abs = []
-        for path in paths:
-            if os.path.isabs(path):
-                paths_abs.append(os.path.abspath(path))
-            else:
-                paths_abs.append(os.path.abspath(os.path.join(os.getcwd(), path)))
+        if isinstance(paths, list):
+            paths_abs = []
+            for path in paths:
+                paths_abs.append(self.normalize_path(path))
+            return paths_abs
+        else:
+            dict_items = []
+            for lib, sources in paths.items():
+                sources_abs = []
+                for path in sources:
+                    sources_abs.append(self.normalize_path(path))
+                dict_items.append((lib, sources_abs))
+            return OrderedDict(dict_items)
 
-        return paths_abs
+    def normalize_path(self, path):
+        if os.path.isabs(path):
+            return os.path.abspath(path)
+        return os.path.abspath(os.path.join(os.getcwd(), path))
 
     def execute(self, cmds):
         self.set_env()
@@ -305,6 +322,14 @@ class Simulator(object):
         signal.signal(signal.SIGINT, self.old_sigint_h)
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
         assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
+
+    def validate_sources_collection(self):
+        """Default implementation, to be overwritten if named libraries are implemented for a specific simulator."""
+
+        if self.vhdl_sources is not None:
+            assert isinstance(self.vhdl_sources, list), "Parameter `vhdl_sources` must be a list of strings."
+        if self.verilog_sources is not None:
+            assert isinstance(self.verilog_sources, list), "Parameter `verilog_sources` must be a list of strings."
 
 
 class Icarus(Simulator):
@@ -394,6 +419,14 @@ class Icarus(Simulator):
 
 
 class Questa(Simulator):
+
+    def validate_sources_collection(self):
+        if self.vhdl_sources is not None:
+            assert isinstance(self.vhdl_sources, (list, OrderedDict)), "Parameter `vhdl_sources` must be a `list` of strings or an `OrderedDict`."
+        if self.verilog_sources is not None:
+            assert isinstance(self.verilog_sources, (list, OrderedDict)), "Parameter `verilog_sources` must be a `list` of strings or an `OrderedDict`."
+
+
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -417,35 +450,51 @@ class Questa(Simulator):
 
     def build_command(self):
 
-        self.rtl_library = self.toplevel
-
         cmd = []
 
         if self.vhdl_sources:
-            do_script = "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                FORCE= "" if self.force_compile else "-incr",
-            )
+            if type(self.vhdl_sources) == list:
+                self.toplevel_lib = self.toplevel
+                self.vhdl_sources = OrderedDict([(f"{self.toplevel_lib}", self.vhdl_sources)])
+
+            assert self.toplevel_lib is not None, "Parameter toplevel_lib must be specified when using named libraries."
+
+            do_script = ""
+            for library, sources in self.vhdl_sources.items():
+                do_script += "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES};".format(
+                    RTL_LIBRARY=as_tcl_value(library),
+                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in sources),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                    FORCE= "" if self.force_compile else "-incr",
+                )
+            do_script += " quit"
+
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if self.verilog_sources:
-            do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
-                DEFINES=" ".join(self.get_define_commands(self.defines)),
-                INCDIR=" ".join(self.get_include_commands(self.includes)),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                FORCE= "" if self.force_compile else "-incr",
-            )
+            if isinstance(self.verilog_sources, list):
+                self.verilog_sources = OrderedDict([(f"{self.toplevel}", self.verilog_sources)])
+                self.toplevel_lib = self.toplevel
+
+            for library, sources in self.verilog_sources.items():
+                print(f"{library}: {sources}")
+                do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES};".format(
+                    RTL_LIBRARY=as_tcl_value(library),
+                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in sources),
+                    DEFINES=" ".join(self.get_define_commands(self.defines)),
+                    INCDIR=" ".join(self.get_include_commands(self.includes)),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                    FORCE= "" if self.force_compile else "-incr",
+                )
+            do_script += " quit"
+
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
                 do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    RTL_LIBRARY=as_tcl_value(self.toplevel_lib),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
@@ -459,7 +508,7 @@ class Questa(Simulator):
             else:
                 do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    RTL_LIBRARY=as_tcl_value(self.toplevel_lib),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
@@ -910,7 +959,7 @@ class Activehdl(Simulator):
 
         if self.waves:
             do_script += "log -recursive /*;"
-            
+
         return do_script
 
     def build_script_run(self):
