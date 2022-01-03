@@ -23,7 +23,6 @@ _space_re = re.compile(r"([\s])", re.ASCII)
 
 def as_tcl_value(value):
     # add '\' before special characters and spaces
-    print(value)
     value = _magic_re.sub(r"\\\1", value)
     value = value.replace("\n", r"\n")
     value = _space_re.sub(r"\\\1", value)
@@ -477,7 +476,6 @@ class Questa(Simulator):
                 self.toplevel_lib = self.toplevel
 
             for library, sources in self.verilog_sources.items():
-                print(f"{library}: {sources}")
                 do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES};".format(
                     RTL_LIBRARY=as_tcl_value(library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in sources),
