@@ -480,8 +480,9 @@ class Questa(Simulator):
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if self.verilog_sources:
+            do_script = ""
             for library, sources in self.verilog_sources.items():
-                do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES};".format(
+                do_script += "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES};".format(
                     RTL_LIBRARY=as_tcl_value(library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in sources),
                     DEFINES=" ".join(self.get_define_commands(self.defines)),
