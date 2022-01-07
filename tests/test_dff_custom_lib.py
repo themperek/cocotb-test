@@ -11,10 +11,9 @@ def test_dff_vhdl():
             "some_lib": [os.path.join(tests_dir, "dff.vhdl")],
             "some_other_lib": [os.path.join(tests_dir, "dff_wrapper.vhdl")],
         },
-        toplevel="dff_wrapper",
+        toplevel="some_other_lib.dff_wrapper",
         module="dff_cocotb",
         toplevel_lang="vhdl",
-        toplevel_lib="some_other_lib",
         force_compile=True,
     )
 
