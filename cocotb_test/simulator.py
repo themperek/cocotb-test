@@ -39,7 +39,6 @@ class Simulator(object):
         work_dir=None,
         python_search=None,
         toplevel_lang="verilog",
-        toplevel_lib=None,
         verilog_sources=None,
         vhdl_sources=None,
         includes=None,
@@ -92,7 +91,6 @@ class Simulator(object):
 
         self.toplevel = toplevel
         self.toplevel_lang = toplevel_lang
-        self.toplevel_lib = toplevel_lib
 
         if verilog_sources is None:
             verilog_sources = []
@@ -176,8 +174,12 @@ class Simulator(object):
 
         self.process = None
 
-        # Check if vhdl_sources and verilog_sources have the correct type depending each simulator
-        self.validate_sources_collection()
+        # Flags specify if simulator supports named libs and if they are used in the current invocation
+        if not hasattr(self, "has_namedlib"):
+            self.has_namedlib = False
+        self.use_namedlib = False
+
+        self.format_input()
 
     def set_env(self):
 
@@ -321,13 +323,36 @@ class Simulator(object):
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
         assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
 
-    def validate_sources_collection(self):
-        """Default implementation, to be overwritten if named libraries are implemented for a specific simulator."""
+    def format_input(self):
+        """
+        If simulator supports named libs, format sources inputs as dict, so that distinction between
+        inputs does not have to be handled within the specific implementation. If sources input is a
+        list, the library name defaults to the toplevel name.
+        """
+        # format sources input
+        if self.has_namedlib:
+            if self.vhdl_sources:
+                if isinstance(self.vhdl_sources, dict):
+                    self.use_namedlib = True
+                else:
+                    self.vhdl_sources = {f"{self.toplevel}": self.vhdl_sources}
 
-        if self.vhdl_sources is not None:
-            assert isinstance(self.vhdl_sources, list), "Parameter `vhdl_sources` must be a list of strings."
-        if self.verilog_sources is not None:
-            assert isinstance(self.verilog_sources, list), "Parameter `verilog_sources` must be a list of strings."
+            if self.verilog_sources:
+                if isinstance(self.verilog_sources, dict):
+                    self.use_namedlib = True
+                else:
+                    self.verilog_sources = {f"{self.toplevel}": self.verilog_sources}
+        else:
+            if self.vhdl_sources is not None:
+                assert isinstance(self.vhdl_sources, list), "Parameter `vhdl_sources` must be a list."
+            if self.verilog_sources is not None:
+                assert isinstance(self.verilog_sources, list), "Parameter `verilog_sources` must be a list."
+
+        # check that every toplevel specifies library when using namedlib
+        if self.use_namedlib:
+            assert "." in self.toplevel, "When using named libraries, toplevels must be specified as '<library>.<module>'."
+        elif self.has_namedlib:
+            self.toplevel = self.toplevel + "." + self.toplevel
 
 
 class Icarus(Simulator):
@@ -417,13 +442,7 @@ class Icarus(Simulator):
 
 
 class Questa(Simulator):
-
-    def validate_sources_collection(self):
-        if self.vhdl_sources is not None:
-            assert isinstance(self.vhdl_sources, (list, dict)), "Parameter `vhdl_sources` must be a `list` or a `dict`."
-        if self.verilog_sources is not None:
-            assert isinstance(self.verilog_sources, (list, dict)), "Parameter `verilog_sources` must be a `list` or a `dict`."
-
+    has_namedlib = True
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -451,10 +470,6 @@ class Questa(Simulator):
         cmd = []
 
         if self.vhdl_sources:
-            if type(self.vhdl_sources) == list:
-                self.toplevel_lib = self.toplevel
-                self.vhdl_sources = {f"{self.toplevel_lib}": self.vhdl_sources}
-
             do_script = ""
             for library, sources in self.vhdl_sources.items():
                 do_script += "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES};".format(
@@ -483,13 +498,11 @@ class Questa(Simulator):
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if not self.compile_only:
-            assert self.toplevel_lib is not None, "Parameter toplevel_lib must be specified when using named libraries."
 
             if self.toplevel_lang == "vhdl":
-                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {LIB_AND_TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.toplevel_lib),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    LIB_AND_TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
                     ),
@@ -500,10 +513,9 @@ class Questa(Simulator):
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa")+":cocotbvpi_entry_point"
 
             else:
-                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {LIB_AND_TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.toplevel_lib),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    LIB_AND_TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
