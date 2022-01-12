@@ -911,21 +911,26 @@ class Riviera(Simulator):
         if self.outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.force_compile:
 
             do_script += "alib {RTL_LIBRARY} \n".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
-
             if self.vhdl_sources:
+                extra_args = self.compile_args.copy()
+                if self.vhdl_compile_args is not None:
+                    extra_args += self.vhdl_compile_args
                 do_script += "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
                 )
 
             if self.verilog_sources:
+                extra_args = self.compile_args.copy()
+                if self.verilog_compile_args is not None:
+                    extra_args += self.verilog_compile_args
                 do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
                     DEFINES=" ".join(self.get_define_commands(self.defines)),
                     INCDIR=" ".join(self.get_include_commands(self.includes)),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
                 )
         else:
             self.logger.warning("Skipping compilation:" + out_file)
@@ -996,19 +1001,25 @@ class Activehdl(Simulator):
             do_script += "alib {RTL_LIBRARY} \n".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
 
             if self.vhdl_sources:
+                extra_args = self.compile_args.copy()
+                if self.vhdl_compile_args is not None:
+                    extra_args += self.vhdl_compile_args
                 do_script += "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
                 )
 
             if self.verilog_sources:
+                extra_args = self.compile_args.copy()
+                if self.verilog_compile_args is not None:
+                    extra_args += self.verilog_compile_args
                 do_script += "alog {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
                     DEFINES=" ".join(self.get_define_commands(self.defines)),
                     INCDIR=" ".join(self.get_include_commands(self.includes)),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
                 )
         else:
             self.logger.warning("Skipping compilation:" + out_file)
