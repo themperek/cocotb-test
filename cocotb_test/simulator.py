@@ -305,6 +305,10 @@ class Simulator(object):
         if not os.path.isfile(output):
             return True
 
+        # format from dict of lists into list
+        if isinstance(dependencies, dict):
+            dependencies = sum(dependencies.values(), [])
+
         output_mtime = os.path.getmtime(output)
 
         dep_mtime = 0
@@ -343,13 +347,13 @@ class Simulator(object):
                 if isinstance(self.vhdl_sources, dict):
                     self.use_namedlib = True
                 else:
-                    self.vhdl_sources = {f"{self.toplevel_first}": self.vhdl_sources}
+                    self.vhdl_sources = {f"{self.toplevel_name}": self.vhdl_sources}
 
             if self.verilog_sources:
                 if isinstance(self.verilog_sources, dict):
                     self.use_namedlib = True
                 else:
-                    self.verilog_sources = {f"{self.toplevel_first}": self.verilog_sources}
+                    self.verilog_sources = {f"{self.toplevel_name}": self.verilog_sources}
         else:
             if self.vhdl_sources is not None:
                 assert isinstance(self.vhdl_sources, list), "Parameter `vhdl_sources` must be a list."
@@ -386,10 +390,16 @@ class Simulator(object):
                     self.toplevel = default_lib + "." + self.toplevel
 
     @property
-    def toplevel_first(self):
+    def toplevel_first(self) -> str:
+        """First toplevel entry."""
         if isinstance(self.toplevel, list):
             return self.toplevel[0]
         return self.toplevel
+
+    @property
+    def toplevel_name(self):
+        """Module name of first toplevel entry."""
+        return self.toplevel_first.rsplit(".", 1)[-1]
 
 
 class Icarus(Simulator):
@@ -401,7 +411,7 @@ class Icarus(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        self.sim_file = os.path.join(self.sim_dir, self.toplevel_first + ".vvp")
+        self.sim_file = os.path.join(self.sim_dir, self.toplevel_name + ".vvp")
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -459,7 +469,7 @@ class Icarus(Simulator):
     def build_command(self):
         if self.waves:
             dump_mod_name = "iverilog_dump"
-            dump_file_name = self.toplevel_first+".fst"
+            dump_file_name = self.toplevel_name+".fst"
             dump_mod_file_name = os.path.join(self.sim_dir, dump_mod_name+".v")
 
             if not os.path.exists(dump_mod_file_name):
@@ -467,7 +477,7 @@ class Icarus(Simulator):
                     f.write("module iverilog_dump();\n")
                     f.write("initial begin\n")
                     f.write("    $dumpfile(\"%s\");\n" % dump_file_name)
-                    f.write("    $dumpvars(0, %s);\n" % self.toplevel_first)
+                    f.write("    $dumpvars(0, %s);\n" % self.toplevel_name)
                     f.write("end\n")
                     f.write("endmodule\n")
 
@@ -518,21 +528,23 @@ class Questa(Simulator):
         cmd = []
 
         if self.vhdl_sources:
-            extra_args = self.compile_args.copy()
-            if self.vhdl_compile_args is not None:
-                extra_args += self.vhdl_compile_args
+            out_files = [os.path.join(self.sim_dir, lib, "_info") for lib in self.vhdl_sources.keys()]
 
-            do_script = ""
-            for library, sources in self.vhdl_sources.items():
-                do_script += "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES};".format(
-                    RTL_LIBRARY=as_tcl_value(library),
-                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in sources),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
-                    FORCE= "" if self.force_compile else "-incr",
-                )
-            do_script += " quit"
+            if self.outdated_list(out_files, self.vhdl_sources) or self.force_compile:
+                extra_args = self.compile_args.copy()
+                if self.vhdl_compile_args is not None:
+                    extra_args += self.vhdl_compile_args
 
-            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
+                do_script = ""
+                for library, sources in self.vhdl_sources.items():
+                    do_script += "vlib {RTL_LIBRARY}; vcom -mixedsvvh -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES};".format(
+                        RTL_LIBRARY=as_tcl_value(library),
+                        VHDL_SOURCES=" ".join(as_tcl_value(v) for v in sources),
+                        EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
+                    )
+                do_script += " quit"
+
+                cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if self.verilog_sources:
             extra_args = self.compile_args.copy()
