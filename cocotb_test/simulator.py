@@ -45,6 +45,8 @@ class Simulator(object):
         defines=None,
         parameters=None,
         compile_args=None,
+        vhdl_compile_args=None,
+        verilog_compile_args=None,
         sim_args=None,
         extra_args=None,
         plus_args=None,
@@ -125,6 +127,9 @@ class Simulator(object):
 
         self.compile_args = compile_args + extra_args
 
+        self.vhdl_compile_args = vhdl_compile_args
+        self.verilog_compile_args = verilog_compile_args
+
         if sim_args is None:
             sim_args = []
 
@@ -174,6 +179,15 @@ class Simulator(object):
 
         self.process = None
 
+        if not hasattr(self, "has_namedlib"):
+            self.has_namedlib = False
+        if not hasattr(self, "has_multitop"):
+            self.has_multitop = False
+        self.use_namedlib = False
+        self.use_multitop = False
+
+        self.format_input()
+
     def set_env(self):
 
         for e in os.environ:
@@ -189,7 +203,7 @@ class Simulator(object):
 
         self.env["PYTHONHOME"] = get_config_var("prefix")
 
-        self.env["TOPLEVEL"] = self.toplevel
+        self.env["TOPLEVEL"] = self.toplevel_first
         self.env["MODULE"] = self.module
 
         if not os.path.exists(self.sim_dir):
@@ -240,14 +254,24 @@ class Simulator(object):
         raise NotImplementedError()
 
     def get_abs_paths(self, paths):
-        paths_abs = []
-        for path in paths:
-            if os.path.isabs(path):
-                paths_abs.append(os.path.abspath(path))
-            else:
-                paths_abs.append(os.path.abspath(os.path.join(os.getcwd(), path)))
+        if isinstance(paths, list):
+            paths_abs = []
+            for path in paths:
+                paths_abs.append(self.normalize_path(path))
+            return paths_abs
+        else:
+            libs = dict()
+            for lib, paths in paths.items():
+                paths_abs = []
+                for path in paths:
+                    paths_abs.append(self.normalize_path(path))
+                libs[lib] = paths_abs
+            return libs
 
-        return paths_abs
+    def normalize_path(self, path):
+        if os.path.isabs(path):
+            return os.path.abspath(path)
+        return os.path.abspath(os.path.join(os.getcwd(), path))
 
     def execute(self, cmds):
         self.set_env()
@@ -294,6 +318,12 @@ class Simulator(object):
 
         return False
 
+    def outdated_list(self, output, dependencies):
+        for o in output:
+            if self.outdated(o, dependencies):
+                return True
+        return False
+
     def exit_gracefully(self, signum, frame):
         pid = None
         if self.process is not None:
@@ -306,15 +336,72 @@ class Simulator(object):
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
         assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
 
+    def format_input(self):
+        # format sources input
+        if self.has_namedlib:
+            if self.vhdl_sources:
+                if isinstance(self.vhdl_sources, dict):
+                    self.use_namedlib = True
+                else:
+                    self.vhdl_sources = {f"{self.toplevel_first}": self.vhdl_sources}
+
+            if self.verilog_sources:
+                if isinstance(self.verilog_sources, dict):
+                    self.use_namedlib = True
+                else:
+                    self.verilog_sources = {f"{self.toplevel_first}": self.verilog_sources}
+        else:
+            if self.vhdl_sources is not None:
+                assert isinstance(self.vhdl_sources, list), "Parameter `vhdl_sources` must be a list."
+            if self.verilog_sources is not None:
+                assert isinstance(self.verilog_sources, list), "Parameter `verilog_sources` must be a list."
+
+        # format toplevel input
+        if self.has_multitop:
+            if isinstance(self.toplevel, list):
+                self.use_multitop = True
+            else:
+                self.toplevel = [self.toplevel]
+        else:
+            assert isinstance(self.toplevel, str), "Parameter `toplevel` must be a string."
+
+        # check that every toplevel specifies library when using namedlib
+        if self.use_namedlib:
+            if self.has_multitop:
+                toplevel = self.toplevel
+            else:
+                toplevel = [self.toplevel]
+            for v in toplevel:
+                assert "." in v, "When using named libraries, toplevels must be specified as '<library>.<module>'."
+
+        # format toplevel inuput when not using namedlib
+        if self.has_namedlib and not self.use_namedlib:
+            default_lib = self.toplevel[0]
+            if self.has_multitop:
+                for j, v in enumerate(self.toplevel):
+                    if not "." in v:
+                        self.toplevel[j] = default_lib + "." + v
+            else:
+                if not "." in self.toplevel:
+                    self.toplevel = default_lib + "." + self.toplevel
+
+    @property
+    def toplevel_first(self):
+        if isinstance(self.toplevel, list):
+            return self.toplevel[0]
+        return self.toplevel
+
 
 class Icarus(Simulator):
+    has_multitop = True
+
     def __init__(self, *argv, **kwargs):
         super(Icarus, self).__init__(*argv, **kwargs)
 
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        self.sim_file = os.path.join(self.sim_dir, self.toplevel + ".vvp")
+        self.sim_file = os.path.join(self.sim_dir, self.toplevel_first + ".vvp")
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -336,14 +423,22 @@ class Icarus(Simulator):
         parameters_cmd = []
         for name, value in parameters.items():
             parameters_cmd.append("-P")
-            parameters_cmd.append(self.toplevel + "." + name + "=" + str(value))
+            # TODO: How should parameters be handled when using multiple top-level designs?
+            parameters_cmd.append(self.toplevel[0] + "." + name + "=" + str(value))
 
         return parameters_cmd
 
     def compile_command(self):
+        if self.verilog_compile_args is not None:
+            self.compile_args += self.verilog_compile_args
+
+        toplevel = []
+        for t in self.toplevel:
+            toplevel += ["-s", t]
 
         cmd_compile = (
-            ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-s", self.toplevel, "-g2012"]
+            ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-g2012"]
+            + toplevel
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.get_parameter_commands(self.parameters)
@@ -364,7 +459,7 @@ class Icarus(Simulator):
     def build_command(self):
         if self.waves:
             dump_mod_name = "iverilog_dump"
-            dump_file_name = self.toplevel+".fst"
+            dump_file_name = self.toplevel_first+".fst"
             dump_mod_file_name = os.path.join(self.sim_dir, dump_mod_name+".v")
 
             if not os.path.exists(dump_mod_file_name):
@@ -372,7 +467,7 @@ class Icarus(Simulator):
                     f.write("module iverilog_dump();\n")
                     f.write("initial begin\n")
                     f.write("    $dumpfile(\"%s\");\n" % dump_file_name)
-                    f.write("    $dumpvars(0, %s);\n" % self.toplevel)
+                    f.write("    $dumpvars(0, %s);\n" % self.toplevel_first)
                     f.write("end\n")
                     f.write("endmodule\n")
 
@@ -394,6 +489,9 @@ class Icarus(Simulator):
 
 
 class Questa(Simulator):
+    has_multitop = True
+    has_namedlib = True
+
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -417,36 +515,49 @@ class Questa(Simulator):
 
     def build_command(self):
 
-        self.rtl_library = self.toplevel
-
         cmd = []
 
         if self.vhdl_sources:
-            do_script = "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                FORCE= "" if self.force_compile else "-incr",
-            )
+            extra_args = self.compile_args.copy()
+            if self.vhdl_compile_args is not None:
+                extra_args += self.vhdl_compile_args
+
+            do_script = ""
+            for library, sources in self.vhdl_sources.items():
+                do_script += "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES};".format(
+                    RTL_LIBRARY=as_tcl_value(library),
+                    VHDL_SOURCES=" ".join(as_tcl_value(v) for v in sources),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
+                    FORCE= "" if self.force_compile else "-incr",
+                )
+            do_script += " quit"
+
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if self.verilog_sources:
-            do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
-                DEFINES=" ".join(self.get_define_commands(self.defines)),
-                INCDIR=" ".join(self.get_include_commands(self.includes)),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                FORCE= "" if self.force_compile else "-incr",
-            )
+            extra_args = self.compile_args.copy()
+            if self.verilog_compile_args is not None:
+                extra_args += self.verilog_compile_args
+
+            do_script = ""
+            for library, sources in self.verilog_sources.items():
+                do_script += "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES};".format(
+                    RTL_LIBRARY=as_tcl_value(library),
+                    VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in sources),
+                    DEFINES=" ".join(self.get_define_commands(self.defines)),
+                    INCDIR=" ".join(self.get_include_commands(self.includes)),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
+                    FORCE= "" if self.force_compile else "-incr",
+                )
+            do_script += " quit"
+
             cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
-                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    TOPLEVEL=" ".join(as_tcl_value(t) for t in self.toplevel),
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
                     ),
@@ -457,10 +568,9 @@ class Questa(Simulator):
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa")+":cocotbvpi_entry_point"
 
             else:
-                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    TOPLEVEL=" ".join(as_tcl_value(t) for t in self.toplevel),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
@@ -515,6 +625,8 @@ class Ius(Simulator):
         return parameters_cmd
 
     def build_command(self):
+
+        assert self.vhdl_compile_args is None and self.verilog_compile_args is None, "HDL specific compile arguments not implemented for IUS."
 
         out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
 
@@ -592,6 +704,8 @@ class Xcelium(Simulator):
 
     def build_command(self):
 
+        assert self.vhdl_compile_args is None and self.verilog_compile_args is None, "HDL specific compile arguments not implemented for Xcelium."
+
         out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
 
         cmd = []
@@ -656,6 +770,9 @@ class Vcs(Simulator):
 
     def build_command(self):
 
+        if self.verilog_compile_args is not None:
+            self.compile_args += self.verilog_compile_args
+
         pli_cmd = "acc+=rw,wn:*"
 
         cmd = []
@@ -718,6 +835,9 @@ class Ghdl(Simulator):
         return parameters_cmd
 
     def build_command(self):
+
+        if self.vhdl_compile_args is not None:
+            self.compile_args += self.vhdl_compile_args
 
         cmd = []
 
@@ -910,7 +1030,7 @@ class Activehdl(Simulator):
 
         if self.waves:
             do_script += "log -recursive /*;"
-            
+
         return do_script
 
     def build_script_run(self):
@@ -933,7 +1053,6 @@ class Activehdl(Simulator):
         do_file.close()
 
         return [["vsimsa"] + ["-do"] + [do_file.name]]
-
 
 class Verilator(Simulator):
     def __init__(self, *argv, **kwargs):
@@ -966,6 +1085,9 @@ class Verilator(Simulator):
         return parameters_cmd
 
     def build_command(self):
+
+        if self.verilog_compile_args is not None:
+            self.compile_args += self.verilog_compile_args
 
         cmd = []
 
@@ -1018,7 +1140,10 @@ class Verilator(Simulator):
 
 def run(**kwargs):
 
-    sim_env = os.getenv("SIM", "icarus")
+    if "simulator" in kwargs:
+        sim_env = kwargs["simulator"]
+    else:
+        sim_env = os.getenv("SIM", "icarus")
 
     supported_sim = ["icarus", "questa", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "verilator"]
     if sim_env not in supported_sim:
