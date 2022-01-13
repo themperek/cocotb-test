@@ -305,7 +305,7 @@ class Simulator(object):
         if not os.path.isfile(output):
             return True
 
-        # format from dict of lists into list
+        # convert dict of lists to list
         if isinstance(dependencies, dict):
             dependencies = sum(dependencies.values(), [])
 
@@ -369,7 +369,7 @@ class Simulator(object):
         else:
             assert isinstance(self.toplevel, str), "Parameter `toplevel` must be a string."
 
-        # check that every toplevel specifies library when using namedlib
+        # check that every toplevel specifies a library when using namedlib
         if self.use_namedlib:
             if self.has_multitop:
                 toplevel = self.toplevel
@@ -378,7 +378,7 @@ class Simulator(object):
             for v in toplevel:
                 assert "." in v, "When using named libraries, toplevels must be specified as '<library>.<module>'."
 
-        # format toplevel inuput when not using namedlib
+        # format toplevel input when not using namedlib
         if self.has_namedlib and not self.use_namedlib:
             default_lib = self.toplevel[0]
             if self.has_multitop:
@@ -391,14 +391,14 @@ class Simulator(object):
 
     @property
     def toplevel_first(self) -> str:
-        """First toplevel entry."""
+        """Return the first toplevel element."""
         if isinstance(self.toplevel, list):
             return self.toplevel[0]
         return self.toplevel
 
     @property
     def toplevel_name(self):
-        """Module name of first toplevel entry."""
+        """Return the module name of the first toplevel element."""
         return self.toplevel_first.rsplit(".", 1)[-1]
 
 
@@ -559,7 +559,7 @@ class Questa(Simulator):
                     DEFINES=" ".join(self.get_define_commands(self.defines)),
                     INCDIR=" ".join(self.get_include_commands(self.includes)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in extra_args),
-                    FORCE= "" if self.force_compile else "-incr",
+                    FORCE="" if self.force_compile else "-incr",
                 )
             do_script += " quit"
 
