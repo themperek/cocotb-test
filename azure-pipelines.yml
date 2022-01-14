@@ -83,7 +83,7 @@ jobs:
         displayName: Compile and Install Verilator on Linux
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'verilator'))
 
-      - script: conda install --yes -c conda-forge iverilog
+      - script: conda install --yes -c conda-forge iverilog=10.3
         displayName: Install Icarus Verilog
         condition: eq(variables['SIM'], 'icarus')
 
