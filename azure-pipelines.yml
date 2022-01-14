@@ -53,11 +53,14 @@ jobs:
         displayName: Take ownership of conda installation
         condition: eq( variables['Agent.OS'], 'Darwin' )
 
+      - script: conda init
+        displayName: Init Conda 
+        
       - script: |
-          conda init
           conda install -y python=$(python.version) pytest
           conda update -q -y conda
-        displayName: Update conda
+        displayName: Update set python version and update
+
       - script: conda install --yes m2w64-gcc libpython
         displayName: Install Windows conda development
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
@@ -82,7 +85,11 @@ jobs:
 
       - script: conda install --yes -c conda-forge iverilog
         displayName: Install Icarus Verilog
-        condition: eq(variables['SIM'], 'icarus')
+        condition:  and( ne( variables['Agent.OS'], 'Windows_NT' ), eq(variables['SIM'], 'icarus'))
+
+      - script: conda install --yes -c conda-forge iverilog==10.3
+        displayName: Install Icarus Verilog
+        condition:  and( eq( variables['Agent.OS'], 'Windows_NT' ), eq(variables['SIM'], 'icarus'))
 
       - script: |
           conda install --yes -c conda-forge tox
@@ -95,7 +102,7 @@ jobs:
         displayName: "Install pytest-parallel"
 
       - script: |
-          conda install --yes pip && git clone -b v1.5.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
+          conda install --yes pip && git clone -b v1.6.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
       - script: |
