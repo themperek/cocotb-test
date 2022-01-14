@@ -48,6 +48,7 @@ def test_missing_vhdl():
     )
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="Missing source is not an error in Icarus?")
 @pytest.mark.xfail(strict=True)
 def test_missing_verilog():
     run(
