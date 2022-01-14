@@ -493,6 +493,10 @@ class Questa(Simulator):
         return cmd
 
 
+class Modelsim(Questa):
+    incr_supported = False
+
+
 class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Ius, self).__init__(*argv, **kwargs)
@@ -1033,7 +1037,7 @@ def run(**kwargs):
 
     sim_env = os.getenv("SIM", "icarus")
 
-    supported_sim = ["icarus", "questa", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "verilator"]
+    supported_sim = ["icarus", "questa", "modelsim", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "verilator"]
     if sim_env not in supported_sim:
         raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
 
@@ -1041,6 +1045,8 @@ def run(**kwargs):
         sim = Icarus(**kwargs)
     elif sim_env == "questa":
         sim = Questa(**kwargs)
+    elif sim_env == "modelsim":
+        sim = Modelsim(**kwargs)
     elif sim_env == "ius":
         sim = Ius(**kwargs)
     elif sim_env == "xcelium":
