@@ -2,6 +2,7 @@
 from cocotb_test.simulator import Icarus, Ius, run
 import pytest
 import os
+import cocotb
 
 hdl_dir = os.path.dirname(__file__)
 
@@ -11,9 +12,13 @@ class IcarusCustom(Icarus):
         super().__init__(*argv, **kwargs)
 
     def run_command(self):
-        return ["vvp", "-v", "-l", self.logfile, "-M", self.lib_dir, "-m", "libcocotbvpi_icarus", self.sim_file]
-
-
+        return (
+            ["vvp", "-v", "-l", self.logfile, "-M", self.lib_dir, "-m", cocotb.config.lib_name("vpi", "icarus")]
+            + self.simulation_args
+            + [self.sim_file]
+            + self.plus_args
+        )
+    
 @pytest.fixture(scope="module", autouse=True)
 def module_run_at_beginning(request):
     print("\n\nIn module_run_at_beginning()\n\n")
