@@ -19,6 +19,8 @@ from distutils.sysconfig import get_config_var
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
 
+class CommandFailedError(Exception):
+    pass
 
 def as_tcl_value(value):
     # add '\' before special characters and spaces
@@ -268,7 +270,7 @@ class Simulator(object):
             self.process = None
             if p.returncode:
                 self.logger.error("Command terminated with error %d" % p.returncode)
-                return
+                raise CommandFailedError()
 
     # def execute(self, cmds):
     #     self.set_env()
