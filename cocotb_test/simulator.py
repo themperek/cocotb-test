@@ -394,6 +394,8 @@ class Icarus(Simulator):
 
 
 class Questa(Simulator):
+    incr_supported = True
+
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -421,25 +423,34 @@ class Questa(Simulator):
 
         cmd = []
 
+        if self.incr_supported and self.force_compile == False:
+            incr_arg = ['-incr']
+        else:
+            incr_arg = []
+
         if self.vhdl_sources:
-            do_script = "vlib {RTL_LIBRARY}; vcom -mixedsvvh {FORCE} -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}; quit".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                FORCE= "" if self.force_compile else "-incr",
+            cmd.append(["vlib", as_tcl_value(self.rtl_library)])
+            cmd.append(
+                ["vcom", "-mixedsvvh"]
+                + incr_arg
+                + ["-work", as_tcl_value(self.rtl_library)]
+                + [as_tcl_value(v) for v in self.compile_args]
+                + [as_tcl_value(v) for v in self.vhdl_sources]
             )
-            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if self.verilog_sources:
-            do_script = "vlib {RTL_LIBRARY}; vlog -mixedsvvh {FORCE} -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}; quit".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources),
-                DEFINES=" ".join(self.get_define_commands(self.defines)),
-                INCDIR=" ".join(self.get_include_commands(self.includes)),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
-                FORCE= "" if self.force_compile else "-incr",
+            cmd.append(["vlib", as_tcl_value(self.rtl_library)])
+            cmd.append(
+                ["vlog", "-mixedsvvh"]
+                + incr_arg
+                + ["-work", as_tcl_value(self.rtl_library)]
+                + ["+define+COCOTB_SIM"]
+                + ["-sv"]
+                + self.get_define_commands(self.defines)
+                + self.get_define_commands(self.includes)
+                + [as_tcl_value(v) for v in self.compile_args]
+                + [as_tcl_value(v) for v in self.verilog_sources]
             )
-            cmd.append(["vsim"] + ["-c"] + ["-do"] + [do_script])
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
