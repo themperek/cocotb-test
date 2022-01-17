@@ -1016,9 +1016,18 @@ class Verilator(Simulator):
         return cmd
 
 
-def run(**kwargs):
+def run(simulator=None, **kwargs):
 
-    sim_env = os.getenv("SIM", "icarus")
+    sim_env = os.getenv("SIM")
+
+    # priority, highest first, is: env, kwarg, "icarus"
+    if sim_env is None:
+        if simulator is None:
+            sim_env = "icarus"
+        else:
+            sim_env = simulator
+    elif simulator is not None:
+        warnings.warn(f"'SIM={sim_env}' overrides kwarg 'simulator={simulator}'")
 
     supported_sim = ["icarus", "questa", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "verilator"]
     if sim_env not in supported_sim:
