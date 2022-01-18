@@ -18,7 +18,8 @@ def test_invalid_vhdl():
         ],
         toplevel="dff_test_vhdl",
         module="dff_cocotb",
-        toplevel_lang="vhdl"
+        toplevel_lang="vhdl",
+        sim_build="sim_build/test_invalid_vhdl"
     )
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
@@ -30,7 +31,8 @@ def test_invalid_verilog():
             os.path.join(tests_dir, "invalid.v"),
         ],
         toplevel="dff_test",
-        module="dff_cocotb"
+        module="dff_cocotb",
+        sim_build="sim_build/test_invalid_verilog"
     )
 
 @pytest.mark.skipif(os.getenv("SIM") == "verilator", reason="VHDL not suported")
@@ -44,7 +46,8 @@ def test_missing_vhdl():
         ],
         toplevel="dff_test_vhdl",
         module="dff_cocotb",
-        toplevel_lang="vhdl"
+        toplevel_lang="vhdl",
+        sim_build="sim_build/test_missing_vhdl"
     )
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
@@ -57,5 +60,6 @@ def test_missing_verilog():
             os.path.join(tests_dir, "missing_file.v"),
         ],
         toplevel="dff_test",
-        module="dff_cocotb"
+        module="dff_cocotb",
+        sim_build="sim_build/test_missing_verilog"
     )
