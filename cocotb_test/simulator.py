@@ -267,8 +267,7 @@ class Simulator(object):
 
             self.process = None
             if p.returncode:
-                self.logger.error("Command terminated with error %d" % p.returncode)
-                return
+                raise SystemExit("Process '%s' termindated with error %d" % (p.args[0], p.returncode))
 
     # def execute(self, cmds):
     #     self.set_env()
