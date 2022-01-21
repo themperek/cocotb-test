@@ -32,6 +32,8 @@ def as_tcl_value(value):
 
 
 class Simulator(object):
+    namedlib_capable = False
+
     def __init__(
         self,
         toplevel,
@@ -175,6 +177,9 @@ class Simulator(object):
 
         self.gui = gui
 
+        # formats sources input as simulator-specific implementation requires
+        self.format_input()
+
         # Catch SIGINT and SIGTERM
         self.old_sigint_h = signal.getsignal(signal.SIGINT)
         self.old_sigterm_h = signal.getsignal(signal.SIGTERM)
@@ -251,15 +256,23 @@ class Simulator(object):
     def get_parameter_commands(self, parameters):
         raise NotImplementedError()
 
-    def get_abs_paths(self, paths):
+    def normalize_paths_list(self, paths):
         paths_abs = []
         for path in paths:
             if os.path.isabs(path):
                 paths_abs.append(os.path.abspath(path))
             else:
                 paths_abs.append(os.path.abspath(os.path.join(os.getcwd(), path)))
-
         return paths_abs
+
+    def get_abs_paths(self, paths):
+        if isinstance(paths, list):
+            return self.normalize_paths_list(paths)
+        else:
+            libs = dict()
+            for lib, src in paths.items():
+                libs[lib] = self.normalize_paths_list(src)
+            return libs
 
     def execute(self, cmds):
         self.set_env()
@@ -316,6 +329,38 @@ class Simulator(object):
         signal.signal(signal.SIGINT, self.old_sigint_h)
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
         assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
+
+    @property
+    def toplevel_module(self):
+        """Returns name of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
+        return self.toplevel.rsplit(".", 1)[-1]
+
+    @property
+    def toplevel_library(self):
+        """Returns library of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
+        return self.toplevel.split(".", 1)[0]
+
+    def format_input(self):
+        """Formats sources and toplevel parameters if simulator supports named library feature."""
+        # format sources input
+        if self.namedlib_capable:
+            if self.vhdl_sources:
+                if isinstance(self.vhdl_sources, list):
+                    # create named library with toplevel module as its name
+                    self.vhdl_sources = {f"{self.toplevel_module}": self.vhdl_sources}
+                    # format toplevel as '<lib>.<module>'
+                    if not "." in self.toplevel:
+                        self.toplevel = ".".join((self.toplevel, self.toplevel))
+
+            if self.verilog_sources:
+                if isinstance(self.verilog_sources, list):
+                    # create named library with toplevel module as its name
+                    self.verilog_sources = {f"{self.toplevel_module}": self.verilog_sources}
+                    # format toplevel as '<lib>.<module>'
+                    if not "." in self.toplevel:
+                        self.toplevel = ".".join((self.toplevel, self.toplevel))
+
+            assert "." in self.toplevel, "When using named libraries, toplevels must be specified as '<library>.<module>'."
 
 
 class Icarus(Simulator):
@@ -407,6 +452,8 @@ class Icarus(Simulator):
 
 
 class Questa(Simulator):
+    namedlib_capable = True
+
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
@@ -430,44 +477,43 @@ class Questa(Simulator):
 
     def build_command(self):
 
-        self.rtl_library = self.toplevel
-
-
         cmd = []
 
         if self.vhdl_sources:
             compile_args = self.compile_args + self.vhdl_compile_args
 
-            cmd.append(["vlib", as_tcl_value(self.rtl_library)])
-            cmd.append(
-                ["vcom", "-mixedsvvh"]
-                + ["-work", as_tcl_value(self.rtl_library)]
-                + [as_tcl_value(v) for v in compile_args]
-                + [as_tcl_value(v) for v in self.vhdl_sources]
-            )
+            for lib, src in self.vhdl_sources.items():
+                cmd.append(["vlib", as_tcl_value(lib)])
+                cmd.append(
+                    ["vcom", "-mixedsvvh"]
+                    + ["-work", as_tcl_value(lib)]
+                    + [as_tcl_value(v) for v in compile_args]
+                    + [as_tcl_value(v) for v in src]
+                )
 
         if self.verilog_sources:
             compile_args = self.compile_args + self.verilog_compile_args
 
-            cmd.append(["vlib", as_tcl_value(self.rtl_library)])
-            cmd.append(
-                ["vlog", "-mixedsvvh"]
-                + ([] if self.force_compile else ['-incr'])
-                + ["-work", as_tcl_value(self.rtl_library)]
-                + ["+define+COCOTB_SIM"]
-                + ["-sv"]
-                + self.get_define_commands(self.defines)
-                + self.get_define_commands(self.includes)
-                + [as_tcl_value(v) for v in compile_args]
-                + [as_tcl_value(v) for v in self.verilog_sources]
-            )
+            for lib, src in self.verilog_sources.items():
+                cmd.append(["vlib", as_tcl_value(lib)])
+                cmd.append(
+                    ["vlog", "-mixedsvvh"]
+                    + ([] if self.force_compile else ['-incr'])
+                    + ["-work", as_tcl_value(lib)]
+                    + ["+define+COCOTB_SIM"]
+                    + ["-sv"]
+                    + self.get_define_commands(self.defines)
+                    + self.get_define_commands(self.includes)
+                    + [as_tcl_value(v) for v in compile_args]
+                    + [as_tcl_value(v) for v in src]
+                )
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
                 do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    RTL_LIBRARY=as_tcl_value(self.toplevel_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
                     ),
@@ -480,8 +526,8 @@ class Questa(Simulator):
             else:
                 do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel),
+                    RTL_LIBRARY=as_tcl_value(self.toplevel_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
