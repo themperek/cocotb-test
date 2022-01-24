@@ -256,7 +256,7 @@ class Simulator(object):
     def get_parameter_commands(self, parameters):
         raise NotImplementedError()
 
-    def normalize_paths_list(self, paths):
+    def normalize_paths(self, paths):
         paths_abs = []
         for path in paths:
             if os.path.isabs(path):
@@ -267,11 +267,11 @@ class Simulator(object):
 
     def get_abs_paths(self, paths):
         if isinstance(paths, list):
-            return self.normalize_paths_list(paths)
+            return self.normalize_paths(paths)
         else:
             libs = dict()
             for lib, src in paths.items():
-                libs[lib] = self.normalize_paths_list(src)
+                libs[lib] = self.normalize_paths(src)
             return libs
 
     def execute(self, cmds):
@@ -332,16 +332,16 @@ class Simulator(object):
 
     @property
     def toplevel_module(self):
-        """Returns name of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
+        """Return name of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
         return self.toplevel.rsplit(".", 1)[-1]
 
     @property
     def toplevel_library(self):
-        """Returns library of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
+        """Return library of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
         return self.toplevel.split(".", 1)[0]
 
     def format_input(self):
-        """Formats sources and toplevel parameters if simulator supports named library feature."""
+        """Format sources and toplevel parameters if simulator supports named library feature."""
         # format sources input
         if self.namedlib_capable:
             if self.vhdl_sources:
