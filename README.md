@@ -41,12 +41,12 @@ def test_dff():
     )
 ```
 
-- Run [pytest](https://docs.pytest.org/en/latest/contents.html) (need `dff.v` and `dff_cocotb.py` in same directory where running `pytest`): 
+- Run [pytest](https://docs.pytest.org/en/latest/contents.html) (need `dff.v` and `dff_cocotb.py` in same directory where running `pytest`):
 ```bash
 SIM=icarus pytest -o log_cli=True test_dff.py
 ```
 
-- To clean (remove all `sim_build` folders): 
+- To clean (remove all `sim_build` folders):
 ```bash
 cocotb-clean -r
 ```
@@ -56,13 +56,15 @@ cocotb-clean -r
 * `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
 
 * `python_search` : List of additional directoreis to search for python/cocotb modules.
-* `verilog_sources`: A list of the Verilog source files to include. 
-* `vhdl_sources`: A list of the VHDL source files to include. 
+* `verilog_sources`: A list of the Verilog source files to include.
+* `vhdl_sources`: A list of the VHDL source files to include.
 * `toplevel_lang`: see [TOPLEVEL_LANG](https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG). (default: `verilog`)
-* `includes`: A list of directories to search for includes. 
-* `defines`: A list of the defines. 
-* `parameters`: A dictionary of top-level parameters/generics. 
+* `includes`: A list of directories to search for includes.
+* `defines`: A list of the defines.
+* `parameters`: A dictionary of top-level parameters/generics.
 * `compile_args`: Any arguments or flags to pass to the compile stage of the simulation.
+  * `vhdl_compile_args`: Additional arguments or flags passed only when compiling VHDL sources.
+  * `verilog_compile_args`: Additional arguments or flags passed only when compiling Verilog sources.
 * `sim_args`: Any arguments or flags to pass to the execution of the compiled simulation.
 * `extra_args`: Passed to both the compile and execute phases of simulators.
 * `plus_args`: plusargs arguments passed to simulator.
@@ -116,7 +118,7 @@ pytest -n NUMCPUS
 ```
 
 # Running (some) tests and examples from cocotb
-For cocotb tests/examples install cocotb in editable mode  
+For cocotb tests/examples install cocotb in editable mode
 ```bash
 git clone https://github.com/potentialventures/cocotb.git
 pip install -e cocotb
@@ -124,7 +126,7 @@ SIM=icarus pytest -o log_cli=True --junitxml=test-results.xml --cocotbxml=test-c
 ```
 
 # Related resources
-- [pytest logging](https://docs.pytest.org/en/stable/logging.html) - pytest logging documentation 
+- [pytest logging](https://docs.pytest.org/en/stable/logging.html) - pytest logging documentation
 - [pytest-xdist](https://pypi.org/project/pytest-xdist/) - test run parallelization (see [test_parallel](https://github.com/themperek/cocotb-test/blob/master/tests/test_parallel.py))
 - [pytest-parallel](https://github.com/browsertron/pytest-parallel) - parallel and concurrent testing  (see [test_parallel](https://github.com/themperek/cocotb-test/blob/master/tests/test_parallel.py))
 - [pytest-html](https://github.com/pytest-dev/pytest-html) - generates a HTML report for the test results
