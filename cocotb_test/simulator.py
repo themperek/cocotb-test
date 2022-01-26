@@ -332,10 +332,10 @@ class Simulator(object):
             return self.outdated_list(output, dependencies)
 
         for sources in dependencies.values():
-            if not self.outdated_list(output, sources):
-                return False
+            if self.outdated_list(output, sources):
+                return True
         
-        return True
+        return False
 
     def exit_gracefully(self, signum, frame):
         pid = None
