@@ -406,7 +406,7 @@ class Icarus(Simulator):
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.get_parameter_commands(self.parameters)
-            + self.compile_args
+            + compile_args
             + self.verilog_sources_flat
         )
 
@@ -759,7 +759,7 @@ class Vcs(Simulator):
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.get_parameter_commands(self.parameters)
-            + self.compile_args
+            + compile_args
             + self.verilog_sources_flat
         )
         cmd.append(cmd_build)
