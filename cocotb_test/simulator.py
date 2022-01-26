@@ -309,7 +309,7 @@ class Simulator(object):
     #         print(" ".join(cmd))
     #         process = subprocess.check_call(cmd, cwd=self.work_dir, env=self.env)
 
-    def outdated(self, output, dependencies):
+    def outdated_list(self, output, dependencies):
 
         if not os.path.isfile(output):
             return True
@@ -326,6 +326,16 @@ class Simulator(object):
             return True
 
         return False
+
+    def outdated(self, output, dependencies):
+        if isinstance(dependencies, list):
+            return self.outdated_list(output, dependencies)
+
+        for sources in dependencies.values():
+            if not self.outdated_list(output, sources):
+                return False
+        
+        return True
 
     def exit_gracefully(self, signum, frame):
         pid = None
@@ -803,18 +813,18 @@ class Ghdl(Simulator):
         out_file = os.path.join(self.sim_dir, self.toplevel_module)
         compile_args = self.compile_args + self.vhdl_compile_args
 
-        if self.outdated(out_file, self.vhdl_sources_flat) or self.force_compile:
-            for source_file in self.vhdl_sources_flat:
-                cmd.append(["ghdl", "-i"] + compile_args + [source_file])
+        if self.outdated(out_file, self.vhdl_sources) or self.force_compile:
+            for lib, src in self.vhdl_sources.items():
+                cmd.append(["ghdl", "-i"] + compile_args + [f"--work={lib}"] + src)
 
-            cmd_elaborate = ["ghdl", "-m"] + compile_args + [self.toplevel_module]
+            cmd_elaborate = ["ghdl", "-m", f"--work={self.toplevel_library}"] + compile_args + [self.toplevel_module]
             cmd.append(cmd_elaborate)
 
         if self.waves:
             self.simulation_args.append("--wave=" + self.toplevel_module + ".ghw")
 
         cmd_run = (
-            ["ghdl", "-r"] + compile_args + [self.toplevel]
+            ["ghdl", "-r", f"--work={self.toplevel_library}"] + compile_args + [self.toplevel_module]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.simulation_args
             + self.get_parameter_commands(self.parameters)
