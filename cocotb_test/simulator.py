@@ -442,7 +442,7 @@ class Questa(Simulator):
             cmd.append(
                 ["vcom", "-mixedsvvh"]
                 + ["-work", as_tcl_value(self.rtl_library)]
-                + [as_tcl_value(v) for v in compile_args]
+                + compile_args
                 + [as_tcl_value(v) for v in self.vhdl_sources]
             )
 
@@ -458,32 +458,34 @@ class Questa(Simulator):
                 + ["-sv"]
                 + self.get_define_commands(self.defines)
                 + self.get_include_commands(self.includes)
-                + [as_tcl_value(v) for v in compile_args]
+                + compile_args
                 + [as_tcl_value(v) for v in self.verilog_sources]
             )
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
-                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {SIM_ARGS} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
                     ),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    SIM_ARGS=" ".join(self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
                 )
 
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa")+":cocotbvpi_entry_point"
 
             else:
-                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {SIM_ARGS} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    SIM_ARGS=" ".join(self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
 
