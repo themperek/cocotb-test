@@ -457,7 +457,7 @@ class Questa(Simulator):
                 + ["+define+COCOTB_SIM"]
                 + ["-sv"]
                 + self.get_define_commands(self.defines)
-                + self.get_define_commands(self.includes)
+                + self.get_include_commands(self.includes)
                 + [as_tcl_value(v) for v in compile_args]
                 + [as_tcl_value(v) for v in self.verilog_sources]
             )
