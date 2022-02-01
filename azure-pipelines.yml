@@ -7,24 +7,24 @@ jobs:
   - job:
     strategy:
       matrix:
-        Linux-Icarus-py37:
-          python.version: "3.7"
+        Linux-Icarus-py38:
+          python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "icarus"
-        Linux-GHDL-py37:
-          python.version: "3.7"
+        Linux-GHDL-py38:
+          python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "ghdl"
-        Windows-Icarus-py37:
-          python.version: "3.7"
+        Windows-Icarus-py38:
+          python.version: "3.8"
           imageName: "windows-latest"
           SIM: "icarus"
-        Mac-Icarus-py37:
+        Mac-Icarus-py38:
           imageName: "macOS-latest"
-          python.version: "3.7"
+          python.version: "3.8"
           SIM: "icarus"
-        Linux-Verilator-py37:
-          python.version: "3.7"
+        Linux-Verilator-py38:
+          python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "verilator"
 
@@ -124,7 +124,7 @@ jobs:
           cd tests; make
         displayName: "Test Makefile flow (Linux only)"
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'icarus'))
-
+ 
       - task: PublishTestResults@2
         condition: succeededOrFailed()
         inputs:
