@@ -124,12 +124,6 @@ jobs:
           cd tests; make
         displayName: "Test Makefile flow (Linux only)"
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'icarus'))
-
-      - script: |
-          cat /home/vsts/work/1/s/.tox/py/log/py-0.log
-        displayName: "CAT"
-        condition: always()
-       
  
       - task: PublishTestResults@2
         condition: succeededOrFailed()
