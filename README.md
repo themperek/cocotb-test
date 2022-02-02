@@ -56,8 +56,8 @@ cocotb-clean -r
 * `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
 
 * `python_search` : List of additional directoreis to search for python/cocotb modules.
-* `verilog_sources`: A list of the Verilog source files to include.
-* `vhdl_sources`: A list of the VHDL source files to include.
+* `verilog_sources`: Verilog source files to include. Can be specified as a `list` or as a `dict` of `list`s with the library name as key, if the simulator supports named libraries.
+* `vhdl_sources`: VHDL source files to include. Can be specified as a `list` or as a `dict` of `list`s with the library name as key, if the simulator supports named libraries.
 * `toplevel_lang`: see [TOPLEVEL_LANG](https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG). (default: `verilog`)
 * `includes`: A list of directories to search for includes.
 * `defines`: A list of the defines.
