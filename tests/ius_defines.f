@@ -1,3 +1,3 @@
 -64
-dff.v
+dff.sv
 -top dff

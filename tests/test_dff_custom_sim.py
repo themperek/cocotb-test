@@ -32,7 +32,7 @@ def module_run_at_beginning(request):
 @pytest.mark.skipif(os.getenv("SIM") != "icarus", reason="Custom for Icarus")
 def test_dff_custom_icarus():
     IcarusCustom(
-        verilog_sources=[os.path.join(hdl_dir, "dff.v")],
+        verilog_sources=[os.path.join(hdl_dir, "dff.sv")],
         toplevel="dff_test",
         python_search=[hdl_dir],
         module="dff_cocotb",
@@ -63,9 +63,9 @@ class IusCustom(Ius):
 @pytest.mark.skipif(os.getenv("SIM") != "ius", reason="Custom for IUS")
 def test_dff_custom_ius():
     IusCustom(
-        verilog_sources=[os.path.join(hdl_dir, "dff.v")],
+        verilog_sources=[os.path.join(hdl_dir, "dff.sv")],
         toplevel="dff_test",
         python_search=[hdl_dir],
         module="dff_cocotb",
         defsfile="ius_defines.f"
-    ) 
+    )

@@ -22,7 +22,7 @@ def test_adder_verilog():
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Errors in compilation cocotb example")
-@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ["icarus", "verilator"], reason="VHDL not supported")
 def test_adder_vhdl():
     run(
         vhdl_sources=[os.path.join(example_dir, "adder", "hdl", "adder.vhdl")],

@@ -35,13 +35,13 @@ pip install -v -e cocotb-test
 from cocotb_test.simulator import run
 def test_dff():
     run(
-        verilog_sources=["dff.v"], # sources
+        verilog_sources=["dff.sv"], # sources
         toplevel="dff",            # top level HDL
         module="dff_cocotb"        # name of cocotb test module
     )
 ```
 
-- Run [pytest](https://docs.pytest.org/en/latest/contents.html) (need `dff.v` and `dff_cocotb.py` in same directory where running `pytest`):
+- Run [pytest](https://docs.pytest.org/en/latest/contents.html) (need `dff.sv` and `dff_cocotb.py` in same directory where running `pytest`):
 ```bash
 SIM=icarus pytest -o log_cli=True test_dff.py
 ```

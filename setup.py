@@ -21,6 +21,7 @@ setup(
     author="Tomasz Hemperek",
     author_email="hemperek@uni-bonn.de",
     packages=find_packages(),
+    python_requires=">=3.7",
     install_requires=["cocotb>=1.5", "pytest"],
     entry_points={
         "console_scripts": [
@@ -35,5 +36,6 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+        "Framework :: cocotb",
     ],
 )

@@ -8,14 +8,14 @@ tests_dir = os.path.dirname(__file__)
 # Pre-compile:
 # pytest -m compile test_parallel.py
 # Run:
-# pytest --workers 2 test_parallel.py
+# pytest -m 'not compile' --workers 2 test_parallel.py
 # There are possibly better ways to do this
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.compile
 def test_complile():
     run(
-        verilog_sources=[os.path.join(tests_dir, "dff.v")],
+        verilog_sources=[os.path.join(tests_dir, "dff.sv")],
         toplevel="dff_test",
         module="dff_cocotb",
         compile_only=True,
@@ -26,7 +26,7 @@ def test_complile():
 @pytest.mark.parametrize("seed", range(6))
 def test_dff_verilog_param(seed):
     run(
-        verilog_sources=[os.path.join(tests_dir, "dff.v")],
+        verilog_sources=[os.path.join(tests_dir, "dff.sv")],
         toplevel="dff_test",
         module="dff_cocotb",
         seed=seed,
@@ -37,7 +37,7 @@ def test_dff_verilog_param(seed):
 @pytest.mark.parametrize("seed", range(2))
 def test_dff_verilog_testcase(seed):
     run(
-        verilog_sources=[os.path.join(tests_dir, "dff.v")],
+        verilog_sources=[os.path.join(tests_dir, "dff.sv")],
         toplevel="dff_test",
         module="dff_cocotb",
         seed=seed
@@ -55,5 +55,5 @@ def test_dff_vhdl_param(seed):
         module="dff_cocotb",
         toplevel_lang="vhdl",
         seed=seed,
-        sim_build="sim_build/"+str(seed)
+        sim_build="sim_build/" + str(seed)
     )

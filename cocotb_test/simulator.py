@@ -31,35 +31,35 @@ def as_tcl_value(value):
     return value
 
 
-class Simulator(object):
+class Simulator:
     def __init__(
-            self,
-            toplevel,
-            module,
-            work_dir=None,
-            python_search=None,
-            toplevel_lang="verilog",
-            verilog_sources=None,
-            vhdl_sources=None,
-            includes=None,
-            defines=None,
-            parameters=None,
-            compile_args=None,
-            vhdl_compile_args=None,
-            verilog_compile_args=None,
-            sim_args=None,
-            extra_args=None,
-            plus_args=None,
-            force_compile=False,
-            testcase=None,
-            sim_build="sim_build",
-            seed=None,
-            extra_env=None,
-            compile_only=False,
-            waves=None,
-            gui=False,
-            simulation_args=None,
-            **kwargs
+        self,
+        toplevel,
+        module,
+        work_dir=None,
+        python_search=None,
+        toplevel_lang="verilog",
+        verilog_sources=None,
+        vhdl_sources=None,
+        includes=None,
+        defines=None,
+        parameters=None,
+        compile_args=None,
+        vhdl_compile_args=None,
+        verilog_compile_args=None,
+        sim_args=None,
+        extra_args=None,
+        plus_args=None,
+        force_compile=False,
+        testcase=None,
+        sim_build="sim_build",
+        seed=None,
+        extra_env=None,
+        compile_only=False,
+        waves=None,
+        gui=False,
+        simulation_args=None,
+        **kwargs,
     ):
 
         self.sim_dir = os.path.abspath(sim_build)
@@ -69,7 +69,7 @@ class Simulator(object):
         self.logger.setLevel(logging.INFO)
         logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
 
-        warnings.simplefilter('always', DeprecationWarning)
+        warnings.simplefilter("always", DeprecationWarning)
 
         self.lib_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs")
 
@@ -140,8 +140,11 @@ class Simulator(object):
 
         if simulation_args is not None:
             sim_args += simulation_args
-            warnings.warn("Using simulation_args is deprecated. Please use sim_args instead.", DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(
+                "Using simulation_args is deprecated. Please use sim_args instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         self.simulation_args = sim_args + extra_args
 
@@ -153,8 +156,11 @@ class Simulator(object):
         self.compile_only = compile_only
 
         if kwargs:
-            warnings.warn("Using kwargs is deprecated. Please explicitly declare or arguments instead.",
-                          DeprecationWarning, stacklevel=2)
+            warnings.warn(
+                "Using kwargs is deprecated. Please explicitly declare or arguments instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
@@ -215,7 +221,7 @@ class Simulator(object):
 
     def run(self):
 
-        sys.tracebacklimit = 0  # remove not needed traceback from assert
+        __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         # use temporary results file
         if not os.getenv("COCOTB_RESULTS_FILE"):
@@ -230,17 +236,21 @@ class Simulator(object):
         self.set_env()
         self.execute(cmds)
 
+        failed = 0
+
         if not self.compile_only:
             results_file_exist = os.path.isfile(results_xml_file)
-            assert results_file_exist, "Simulation terminated abnormally. Results file not found."
+            if not results_file_exist:
+                raise SystemExit("ERROR: Simulation terminated abnormally. Cocotb results file not found.")
 
             tree = ET.parse(results_xml_file)
             for ts in tree.iter("testsuite"):
                 for tc in ts.iter("testcase"):
-                    for failure in tc.iter("failure"):
-                        assert False, '{} class="{}" test="{}" error={}'.format(
-                            failure.get("message"), tc.get("classname"), tc.get("name"), failure.get("stdout"),
-                        )
+                    for _ in tc.iter("failure"):
+                        failed += 1
+
+        if failed:
+            raise SystemExit(f"ERROR: Failed {failed} tests.")
 
         print("Results file: %s" % results_xml_file)
         return results_xml_file
@@ -273,16 +283,19 @@ class Simulator(object):
             return libs
 
     def execute(self, cmds):
+
+        __tracebackhide__ = True  # Hide the traceback when using PyTest.
+
         self.set_env()
         for cmd in cmds:
             self.logger.info("Running command: " + " ".join(cmd))
 
             with subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    cwd=self.work_dir,
-                    env=self.env
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=self.work_dir,
+                env=self.env,
             ) as p:
                 self.process = p
                 for line in p.stdout:
@@ -336,7 +349,7 @@ class Simulator(object):
         # Restore previous handlers
         signal.signal(signal.SIGINT, self.old_sigint_h)
         signal.signal(signal.SIGTERM, self.old_sigterm_h)
-        assert False, "Exiting pid: {} with signum: {}".format(str(pid), str(signum))
+        assert False, f"Exiting pid: {str(pid)} with signum: {str(signum)}"
 
     @property
     def toplevel_module(self):
@@ -371,7 +384,7 @@ class Simulator(object):
                 # create named library with toplevel module as its name
                 self.vhdl_sources = {f"{self.toplevel_module}": self.vhdl_sources}
                 # format toplevel as '<lib>.<module>'
-                if not "." in self.toplevel:
+                if "." not in self.toplevel:
                     self.toplevel = ".".join((self.toplevel, self.toplevel))
 
         if self.verilog_sources:
@@ -379,7 +392,7 @@ class Simulator(object):
                 # create named library with toplevel module as its name
                 self.verilog_sources = {f"{self.toplevel_module}": self.verilog_sources}
                 # format toplevel as '<lib>.<module>'
-                if not "." in self.toplevel:
+                if "." not in self.toplevel:
                     self.toplevel = ".".join((self.toplevel, self.toplevel))
 
         assert "." in self.toplevel, "When using named libraries, toplevels must be specified as '<library>.<module>'."
@@ -387,7 +400,7 @@ class Simulator(object):
 
 class Icarus(Simulator):
     def __init__(self, *argv, **kwargs):
-        super(Icarus, self).__init__(*argv, **kwargs)
+        super().__init__(*argv, **kwargs)
 
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
@@ -395,35 +408,29 @@ class Icarus(Simulator):
         self.sim_file = os.path.join(self.sim_dir, self.toplevel_module + ".vvp")
 
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("-I")
-            include_cmd.append(dir)
-
-        return include_cmd
+        return ["-I" + dir for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("-D")
-            defines_cmd.append(define)
-
-        return defines_cmd
+        return ["-D" + define for define in defines]
 
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-P")
-            parameters_cmd.append(self.toplevel_module + "." + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-P" + self.toplevel_module + "." + name + "=" + str(value) for name, value in parameters.items()]
 
     def compile_command(self):
 
         compile_args = self.compile_args + self.verilog_compile_args
 
         cmd_compile = (
-            ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-s", self.toplevel_module, "-g2012"]
+            [
+                "iverilog",
+                "-o",
+                self.sim_file,
+                "-D",
+                "COCOTB_SIM=1",
+                "-s",
+                self.toplevel_module,
+                "-g2012",
+            ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.get_parameter_commands(self.parameters)
@@ -435,10 +442,10 @@ class Icarus(Simulator):
 
     def run_command(self):
         return (
-                ["vvp", "-M", self.lib_dir, "-m", cocotb.config.lib_name("vpi", "icarus")]
-                + self.simulation_args
-                + [self.sim_file]
-                + self.plus_args
+            ["vvp", "-M", self.lib_dir, "-m", cocotb.config.lib_name("vpi", "icarus")]
+            + self.simulation_args
+            + [self.sim_file]
+            + self.plus_args
         )
 
     def build_command(self):
@@ -449,10 +456,10 @@ class Icarus(Simulator):
             dump_mod_file_name = os.path.join(self.sim_dir, dump_mod_name + ".v")
 
             if not os.path.exists(dump_mod_file_name):
-                with open(dump_mod_file_name, 'w') as f:
+                with open(dump_mod_file_name, "w") as f:
                     f.write("module iverilog_dump();\n")
                     f.write("initial begin\n")
-                    f.write("    $dumpfile(\"%s\");\n" % dump_file_name)
+                    f.write('    $dumpfile("%s");\n' % dump_file_name)
                     f.write("    $dumpvars(0, %s);\n" % self.toplevel_module)
                     f.write("end\n")
                     f.write("endmodule\n")
@@ -475,27 +482,14 @@ class Icarus(Simulator):
 
 
 class Questa(Simulator):
-
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + as_tcl_value(dir))
-
-        return include_cmd
+        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + as_tcl_value(define))
-
-        return defines_cmd
+        return ["+define+" + as_tcl_value(define) for define in defines]
 
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-g" + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self):
 
@@ -520,7 +514,7 @@ class Questa(Simulator):
                 cmd.append(["vlib", as_tcl_value(lib)])
                 cmd.append(
                     ["vlog", "-mixedsvvh"]
-                    + ([] if self.force_compile else ['-incr'])
+                    + ([] if self.force_compile else ["-incr"])
                     + ["-work", as_tcl_value(lib)]
                     + ["+define+COCOTB_SIM"]
                     + ["-sv"]
@@ -536,9 +530,7 @@ class Questa(Simulator):
                     ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.toplevel_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
-                    EXT_NAME=as_tcl_value(
-                        "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
-                    ),
+                    EXT_NAME=as_tcl_value("cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))),
                     SIM_ARGS=" ".join(self.simulation_args),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
                 )
@@ -578,23 +570,21 @@ class Modelsim(Questa):
 
 class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
-        super(Ius, self).__init__(*argv, **kwargs)
+        super().__init__(*argv, **kwargs)
 
         self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "ius") + ":cocotbvhpi_entry_point"
 
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
-            include_cmd.append("-incdir")
-            include_cmd.append(dir)
+            include_cmd += ["-incdir", dir]
 
         return include_cmd
 
     def get_define_commands(self, defines):
         defines_cmd = []
         for define in defines:
-            defines_cmd.append("-define")
-            defines_cmd.append(define)
+            defines_cmd += ["-define", define]
 
         return defines_cmd
 
@@ -603,16 +593,18 @@ class Ius(Simulator):
         for name, value in parameters.items():
             if self.toplevel_lang == "vhdl":
                 parameters_cmd.append("-generic")
-                parameters_cmd.append("\"" + self.toplevel_module + "." + name + "=>" + str(value) + "\"")
+                parameters_cmd.append('"' + self.toplevel_module + "." + name + "=>" + str(value) + '"')
             else:
                 parameters_cmd.append("-defparam")
-                parameters_cmd.append("\"" + self.toplevel_module + "." + name + "=" + str(value) + "\"")
+                parameters_cmd.append('"' + self.toplevel_module + "." + name + "=" + str(value) + '"')
 
         return parameters_cmd
 
     def build_command(self):
 
-        assert not self.verilog_compile_args and not self.vhdl_compile_args, "'Ius' simulator does not allow HDL specific compile arguments."
+        assert (
+            not self.verilog_compile_args and not self.vhdl_compile_args
+        ), "'Ius' simulator does not allow HDL specific compile arguments."
 
         out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
 
@@ -624,7 +616,6 @@ class Ius(Simulator):
                     "irun",
                     "-64",
                     "-elaborate",
-                    "-v93",
                     "-define",
                     "COCOTB_SIM=1",
                     "-loadvpi",
@@ -648,9 +639,12 @@ class Ius(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["irun", "-64", "-R",
-                       ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(
-                self.parameters) + self.plus_args
+            cmd_run = (
+                ["irun", "-64", "-R", ("-gui" if self.gui else "")]
+                + self.simulation_args
+                + self.get_parameter_commands(self.parameters)
+                + self.plus_args
+            )
             cmd.append(cmd_run)
 
         return cmd
@@ -658,23 +652,21 @@ class Ius(Simulator):
 
 class Xcelium(Simulator):
     def __init__(self, *argv, **kwargs):
-        super(Xcelium, self).__init__(*argv, **kwargs)
+        super().__init__(*argv, **kwargs)
 
-        self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "ius") + ":cocotbvhpi_entry_point"
+        self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "xcelium") + ":cocotbvhpi_entry_point"
 
     def get_include_commands(self, includes):
         include_cmd = []
         for dir in includes:
-            include_cmd.append("-incdir")
-            include_cmd.append(dir)
+            include_cmd += ["-incdir", dir]
 
         return include_cmd
 
     def get_define_commands(self, defines):
         defines_cmd = []
         for define in defines:
-            defines_cmd.append("-define")
-            defines_cmd.append(define)
+            defines_cmd += ["-define", define]
 
         return defines_cmd
 
@@ -683,32 +675,34 @@ class Xcelium(Simulator):
         for name, value in parameters.items():
             if self.toplevel_lang == "vhdl":
                 parameters_cmd.append("-generic")
-                parameters_cmd.append("\"" + self.toplevel_module + "." + name + "=>" + str(value) + "\"")
+                parameters_cmd.append('"' + self.toplevel_module + "." + name + "=>" + str(value) + '"')
             else:
                 parameters_cmd.append("-defparam")
-                parameters_cmd.append("\"" + self.toplevel_module + "." + name + "=" + str(value) + "\"")
+                parameters_cmd.append('"' + self.toplevel_module + "." + name + "=" + str(value) + '"')
 
         return parameters_cmd
 
     def build_command(self):
 
-        assert not self.verilog_compile_args and not self.vhdl_compile_args, "'Xcelium' simulator does not allow HDL specific compile arguments."
+        assert (
+            not self.verilog_compile_args and not self.vhdl_compile_args
+        ), "'Xcelium' simulator does not allow HDL specific compile arguments."
 
         out_file = os.path.join(self.sim_dir, "INCA_libs", "history")
 
         cmd = []
 
         if self.outdated(out_file, self.verilog_sources_flat + self.vhdl_sources_flat) or self.force_compile:
+
             cmd_elab = (
                 [
                     "xrun",
                     "-64",
-                    "-v93",
                     "-elaborate",
                     "-define",
                     "COCOTB_SIM=1",
                     "-loadvpi",
-                    cocotb.config.lib_name_path("vpi", "ius") + ":vlog_startup_routines_bootstrap",
+                    cocotb.config.lib_name_path("vpi", "xcelium") + ":vlog_startup_routines_bootstrap",
                     "-plinowarn",
                     "-access",
                     "+rwc",
@@ -722,15 +716,19 @@ class Xcelium(Simulator):
                 + self.verilog_sources_flat
                 + self.vhdl_sources_flat
             )
+
             cmd.append(cmd_elab)
 
         else:
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["xrun", "-64", "-R",
-                       ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(
-                self.parameters) + self.plus_args
+            cmd_run = (
+                ["xrun", "-64", "-R", ("-gui" if self.gui else "")]
+                + self.simulation_args
+                + self.get_parameter_commands(self.parameters)
+                + self.plus_args
+            )
             cmd.append(cmd_run)
 
         return cmd
@@ -738,25 +736,13 @@ class Xcelium(Simulator):
 
 class Vcs(Simulator):
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + dir)
-
-        return include_cmd
+        return ["+incdir+" + dir for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + define)
-
-        return defines_cmd
+        return ["+define+" + define for define in defines]
 
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-pvalue+" + self.toplevel_module + "/" + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-pvalue+" + self.toplevel_module + "/" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self):
 
@@ -792,7 +778,10 @@ class Vcs(Simulator):
         cmd.append(cmd_build)
 
         if not self.compile_only:
-            cmd_run = [os.path.join(self.sim_dir, "simv"), "+define+COCOTB_SIM=1"] + self.simulation_args
+            cmd_run = [
+                os.path.join(self.sim_dir, "simv"),
+                "+define+COCOTB_SIM=1",
+            ] + self.simulation_args
             cmd.append(cmd_run)
 
         if self.gui:
@@ -802,26 +791,8 @@ class Vcs(Simulator):
 
 
 class Ghdl(Simulator):
-    def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("-I")
-            include_cmd.append(dir)
-
-        return include_cmd
-
-    def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("-D")
-            defines_cmd.append(define)
-
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-g" + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self):
 
@@ -841,7 +812,9 @@ class Ghdl(Simulator):
             self.simulation_args.append("--wave=" + self.toplevel_module + ".ghw")
 
         cmd_run = (
-            ["ghdl", "-r", f"--work={self.toplevel_library}"] + compile_args + [self.toplevel_module]
+            ["ghdl", "-r", f"--work={self.toplevel_library}"]
+            + compile_args
+            + [self.toplevel_module]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.simulation_args
             + self.get_parameter_commands(self.parameters)
@@ -855,25 +828,13 @@ class Ghdl(Simulator):
 
 class Riviera(Simulator):
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + as_tcl_value(dir))
-
-        return include_cmd
+        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + as_tcl_value(define))
-
-        return defines_cmd
+        return ["+define+" + as_tcl_value(define) for define in defines]
 
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-g" + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self):
 
@@ -885,7 +846,7 @@ class Riviera(Simulator):
 
         if self.outdated(out_file, self.verilog_sources_flat + self.vhdl_sources_flat) or self.force_compile:
 
-            do_script += "alib {RTL_LIBRARY} \n".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
+            do_script += f"alib {as_tcl_value(self.rtl_library)} \n"
 
             if self.vhdl_sources:
                 compile_args = self.compile_args + self.vhdl_compile_args
@@ -914,7 +875,8 @@ class Riviera(Simulator):
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera")),
                     EXTRA_ARGS=" ".join(
-                        as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                        as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
+                    ),
                 )
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "riviera") + "cocotbvpi_entry_point"
@@ -924,7 +886,8 @@ class Riviera(Simulator):
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "riviera")),
                     EXTRA_ARGS=" ".join(
-                        as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                        as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
+                    ),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
                 if self.vhdl_sources:
@@ -944,25 +907,13 @@ class Riviera(Simulator):
 
 class Activehdl(Simulator):
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("+incdir+" + as_tcl_value(dir))
-
-        return include_cmd
+        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("+define+" + as_tcl_value(define))
-
-        return defines_cmd
+        return ["+define+" + as_tcl_value(define) for define in defines]
 
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-g" + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_script_compile(self):
         do_script = ""
@@ -971,7 +922,7 @@ class Activehdl(Simulator):
 
         if self.outdated(out_file, self.verilog_sources_flat + self.vhdl_sources_flat) or self.force_compile:
 
-            do_script += "alib {RTL_LIBRARY} \n".format(RTL_LIBRARY=as_tcl_value(self.rtl_library))
+            do_script += f"alib {as_tcl_value(self.rtl_library)} \n"
 
             if self.vhdl_sources:
                 compile_args = self.compile_args + self.vhdl_compile_args
@@ -1001,21 +952,26 @@ class Activehdl(Simulator):
 
         if self.toplevel_lang == "vhdl":
             do_script += "set worklib " + as_tcl_value(self.rtl_library) + "\n"
-            do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi \"{EXT_NAME}\" {EXTRA_ARGS} {TOPLEVEL} \n".format(
-                RTL_LIBRARY=as_tcl_value(self.rtl_library),
-                TOPLEVEL=as_tcl_value(self.toplevel_module),
-                EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"),
-                EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
+            do_script += (
+                'asim +access +w -interceptcoutput -O2 -loadvhpi "{EXT_NAME}" {EXTRA_ARGS} {TOPLEVEL} \n'.format(
+                    RTL_LIBRARY=as_tcl_value(self.rtl_library),
+                    TOPLEVEL=as_tcl_value(self.toplevel_module),
+                    EXT_NAME=as_tcl_value(
+                        cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"
+                    ),
+                    EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
+                )
             )
             if self.verilog_sources:
                 self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
         else:
-            do_script += "asim +access +w -interceptcoutput -O2 -pli \"{EXT_NAME}\" {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
+            do_script += 'asim +access +w -interceptcoutput -O2 -pli "{EXT_NAME}" {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n'.format(
                 RTL_LIBRARY=as_tcl_value(self.rtl_library),
                 TOPLEVEL=as_tcl_value(self.toplevel_module),
                 EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "activehdl")),
                 EXTRA_ARGS=" ".join(
-                    as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
+                ),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
             if self.vhdl_sources:
@@ -1050,41 +1006,34 @@ class Activehdl(Simulator):
 
 class Verilator(Simulator):
     def __init__(self, *argv, **kwargs):
-        super(Verilator, self).__init__(*argv, **kwargs)
+        super().__init__(*argv, **kwargs)
 
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        self.env['CXXFLAGS'] = self.env.get('CXXFLAGS', "") + " -std=c++11"
+        self.env["CXXFLAGS"] = self.env.get("CXXFLAGS", "") + " -std=c++11"
 
     def get_include_commands(self, includes):
-        include_cmd = []
-        for dir in includes:
-            include_cmd.append("-I" + dir)
-
-        return include_cmd
+        return ["-I" + dir for dir in includes]
 
     def get_define_commands(self, defines):
-        defines_cmd = []
-        for define in defines:
-            defines_cmd.append("-D" + define)
-
-        return defines_cmd
+        return ["-D" + define for define in defines]
 
     def get_parameter_commands(self, parameters):
-        parameters_cmd = []
-        for name, value in parameters.items():
-            parameters_cmd.append("-G" + name + "=" + str(value))
-
-        return parameters_cmd
+        return ["-G" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self):
 
         cmd = []
 
         out_file = os.path.join(self.sim_dir, self.toplevel_module)
-        verilator_cpp = os.path.join(os.path.dirname(os.path.dirname(self.lib_dir)), "share", "verilator.cpp")
-        verilator_cpp = os.path.join(os.path.dirname(cocotb.__file__), "share", "lib", "verilator", "verilator.cpp")
+        verilator_cpp = os.path.join(
+            os.path.dirname(cocotb.__file__),
+            "share",
+            "lib",
+            "verilator",
+            "verilator.cpp",
+        )
 
         verilator_exec = find_executable("verilator")
         if verilator_exec is None:
@@ -1132,19 +1081,30 @@ class Verilator(Simulator):
 
 
 def run(simulator=None, **kwargs):
+
+    __tracebackhide__ = True  # Hide the traceback when using PyTest.
+
     sim_env = os.getenv("SIM")
 
     # priority, highest first, is: env, kwarg, "icarus"
     if sim_env is None:
-        if simulator is None:
-            sim_env = "icarus"
-        else:
-            sim_env = simulator
+        sim_env = "icarus" if simulator is None else simulator
     elif simulator is not None:
-        warnings.warn(f"'SIM={sim_env}' overrides kwarg 'simulator={simulator}'")
+        logging.warning(f"'SIM={sim_env}' overrides kwarg 'simulator={simulator}'")
 
-    supported_sim = ["icarus", "questa", "modelsim", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl",
-                     "verilator"]
+    supported_sim = [
+        "icarus",
+        "questa",
+        "modelsim",
+        "ius",
+        "xcelium",
+        "vcs",
+        "ghdl",
+        "riviera",
+        "activehdl",
+        "verilator",
+    ]
+
     if sim_env not in supported_sim:
         raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
 
