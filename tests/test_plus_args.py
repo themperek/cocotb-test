@@ -1,6 +1,5 @@
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 
 import pytest
 from cocotb_test.simulator import run
@@ -15,17 +14,13 @@ def run_test(dut):
 
     user_mode = int(dut.user_mode)
 
-    if user_mode != 1:
-        raise TestFailure(
-            "user_mode mismatch detected : got %d, exp %d!" % (dut.user_mode, 1)
-        )
+    assert user_mode == 1, "user_mode mismatch detected : got %d, exp %d!" % (dut.user_mode, 1)
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 def test_plus_args():
     run(
         verilog_sources=[os.path.join(hdl_dir, "plus_args.sv")],
-        #verilog_sources=["plus_args.v"],
         module="test_plus_args",
         toplevel="plus_args",
         plus_args=["+USER_MODE", "+TEST=ARB_TEST"],

@@ -4,7 +4,6 @@ import os
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 
 tests_dir = os.path.dirname(__file__)
 

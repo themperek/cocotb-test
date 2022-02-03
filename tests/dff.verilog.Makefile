@@ -3,7 +3,7 @@
 CWD=$(shell pwd)
 
 TOPLEVEL_LANG=verilog
-VERILOG_SOURCES =$(CWD)/dff.v
+VERILOG_SOURCES =$(CWD)/dff.sv
 
 TOPLEVEL=dff_test
 MODULE=dff_cocotb

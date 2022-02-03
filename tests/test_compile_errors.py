@@ -22,18 +22,20 @@ def test_invalid_vhdl():
         sim_build="sim_build/test_invalid_vhdl"
     )
 
+
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.xfail(strict=True, raises=SystemExit)
 def test_invalid_verilog():
     run(
         verilog_sources=[
-            os.path.join(tests_dir, "dff.v"),
+            os.path.join(tests_dir, "dff.sv"),
             os.path.join(tests_dir, "invalid.v"),
         ],
         toplevel="dff_test",
         module="dff_cocotb",
         sim_build="sim_build/test_invalid_verilog"
     )
+
 
 @pytest.mark.skipif(os.getenv("SIM") == "verilator", reason="VHDL not suported")
 @pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
@@ -50,13 +52,14 @@ def test_missing_vhdl():
         sim_build="sim_build/test_missing_vhdl"
     )
 
+
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
 @pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="Missing source is not an error in Icarus?")
 @pytest.mark.xfail(strict=True)
 def test_missing_verilog():
     run(
         verilog_sources=[
-            os.path.join(tests_dir, "dff.v"),
+            os.path.join(tests_dir, "dff.sv"),
             os.path.join(tests_dir, "missing_file.v"),
         ],
         toplevel="dff_test",

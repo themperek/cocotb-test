@@ -1,6 +1,7 @@
 
 import cocotb_test.simulator
 
+
 # For partial back compatibility
 def run(simulator=None, **kwargs):
 

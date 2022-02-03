@@ -14,7 +14,7 @@ if os.path.isdir(tests_dir) == False:
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
-@pytest.mark.skipif(os.getenv("SIM") == "icarus", reason="VHDL not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ["icarus", "verilator"] , reason="VHDL not supported")
 def test_verilog_access():
     run(
         verilog_sources=[
