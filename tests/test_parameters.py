@@ -30,6 +30,8 @@ def test_dff_verilog_testcase(parameters):
         toplevel="test_parameters",
         module="test_parameters",
         parameters=parameters,
+        includes=[os.path.join(tests_dir, "includes")],
+        defines= ["DEFINE=1"],
         extra_env=parameters,
         sim_build="sim_build/"
         + "_".join(("{}={}".format(*i) for i in parameters.items())),
