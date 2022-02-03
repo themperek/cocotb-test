@@ -33,33 +33,33 @@ def as_tcl_value(value):
 
 class Simulator(object):
     def __init__(
-        self,
-        toplevel,
-        module,
-        work_dir=None,
-        python_search=None,
-        toplevel_lang="verilog",
-        verilog_sources=None,
-        vhdl_sources=None,
-        includes=None,
-        defines=None,
-        parameters=None,
-        compile_args=None,
-        vhdl_compile_args=None,
-        verilog_compile_args=None,
-        sim_args=None,
-        extra_args=None,
-        plus_args=None,
-        force_compile=False,
-        testcase=None,
-        sim_build="sim_build",
-        seed=None,
-        extra_env=None,
-        compile_only=False,
-        waves=None,
-        gui=False,
-        simulation_args=None,
-        **kwargs
+            self,
+            toplevel,
+            module,
+            work_dir=None,
+            python_search=None,
+            toplevel_lang="verilog",
+            verilog_sources=None,
+            vhdl_sources=None,
+            includes=None,
+            defines=None,
+            parameters=None,
+            compile_args=None,
+            vhdl_compile_args=None,
+            verilog_compile_args=None,
+            sim_args=None,
+            extra_args=None,
+            plus_args=None,
+            force_compile=False,
+            testcase=None,
+            sim_build="sim_build",
+            seed=None,
+            extra_env=None,
+            compile_only=False,
+            waves=None,
+            gui=False,
+            simulation_args=None,
+            **kwargs
     ):
 
         self.sim_dir = os.path.abspath(sim_build)
@@ -140,7 +140,8 @@ class Simulator(object):
 
         if simulation_args is not None:
             sim_args += simulation_args
-            warnings.warn("Using simulation_args is deprecated. Please use sim_args instead.", DeprecationWarning, stacklevel=2)
+            warnings.warn("Using simulation_args is deprecated. Please use sim_args instead.", DeprecationWarning,
+                          stacklevel=2)
 
         self.simulation_args = sim_args + extra_args
 
@@ -152,7 +153,8 @@ class Simulator(object):
         self.compile_only = compile_only
 
         if kwargs:
-            warnings.warn("Using kwargs is deprecated. Please explicitly declare or arguments instead.", DeprecationWarning, stacklevel=2)
+            warnings.warn("Using kwargs is deprecated. Please explicitly declare or arguments instead.",
+                          DeprecationWarning, stacklevel=2)
 
         for arg in kwargs:
             setattr(self, arg, kwargs[arg])
@@ -276,11 +278,11 @@ class Simulator(object):
             self.logger.info("Running command: " + " ".join(cmd))
 
             with subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.work_dir,
-                env=self.env
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=self.work_dir,
+                    env=self.env
             ) as p:
                 self.process = p
                 for line in p.stdout:
@@ -433,10 +435,10 @@ class Icarus(Simulator):
 
     def run_command(self):
         return (
-            ["vvp", "-M", self.lib_dir, "-m", cocotb.config.lib_name("vpi", "icarus")]
-            + self.simulation_args
-            + [self.sim_file]
-            + self.plus_args
+                ["vvp", "-M", self.lib_dir, "-m", cocotb.config.lib_name("vpi", "icarus")]
+                + self.simulation_args
+                + [self.sim_file]
+                + self.plus_args
         )
 
     def build_command(self):
@@ -507,7 +509,7 @@ class Questa(Simulator):
                 cmd.append(
                     ["vcom", "-mixedsvvh"]
                     + ["-work", as_tcl_value(lib)]
-                    + [as_tcl_value(v) for v in compile_args]
+                    + compile_args
                     + [as_tcl_value(v) for v in src]
                 )
 
@@ -523,38 +525,40 @@ class Questa(Simulator):
                     + ["+define+COCOTB_SIM"]
                     + ["-sv"]
                     + self.get_define_commands(self.defines)
-                    + self.get_define_commands(self.includes)
-                    + [as_tcl_value(v) for v in compile_args]
+                    + self.get_include_commands(self.includes)
+                    + compile_args
                     + [as_tcl_value(v) for v in src]
                 )
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
-                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
+                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {SIM_ARGS} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
                     ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.toplevel_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(
                         "cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))
                     ),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    SIM_ARGS=" ".join(self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
                 )
 
                 if self.verilog_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa")+":cocotbvpi_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa") + ":cocotbvpi_entry_point"
 
             else:
-                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
+                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {SIM_ARGS} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
                     ONFINISH="stop" if self.gui else "exit",
                     RTL_LIBRARY=as_tcl_value(self.toplevel_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    SIM_ARGS=" ".join(self.simulation_args),
+                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
 
                 if self.vhdl_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("fli", "questa")+":cocotbfli_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("fli", "questa") + ":cocotbfli_entry_point"
 
             if self.waves:
                 do_script += "log -recursive /*;"
@@ -576,7 +580,7 @@ class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
         super(Ius, self).__init__(*argv, **kwargs)
 
-        self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "ius")+":cocotbvhpi_entry_point"
+        self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "ius") + ":cocotbvhpi_entry_point"
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -644,7 +648,9 @@ class Ius(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["irun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(self.parameters) + self.plus_args
+            cmd_run = ["irun", "-64", "-R",
+                       ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(
+                self.parameters) + self.plus_args
             cmd.append(cmd_run)
 
         return cmd
@@ -722,7 +728,9 @@ class Xcelium(Simulator):
             self.logger.warning("Skipping compilation:" + out_file)
 
         if not self.compile_only:
-            cmd_run = ["xrun", "-64", "-R", ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(self.parameters) + self.plus_args
+            cmd_run = ["xrun", "-64", "-R",
+                       ("-gui" if self.gui else "")] + self.simulation_args + self.get_parameter_commands(
+                self.parameters) + self.plus_args
             cmd.append(cmd_run)
 
         return cmd
@@ -905,7 +913,8 @@ class Riviera(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    EXTRA_ARGS=" ".join(
+                        as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                 )
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "riviera") + "cocotbvpi_entry_point"
@@ -914,7 +923,8 @@ class Riviera(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "riviera")),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                    EXTRA_ARGS=" ".join(
+                        as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
                 if self.vhdl_sources:
@@ -953,7 +963,6 @@ class Activehdl(Simulator):
             parameters_cmd.append("-g" + name + "=" + str(value))
 
         return parameters_cmd
-
 
     def build_script_compile(self):
         do_script = ""
@@ -1005,7 +1014,8 @@ class Activehdl(Simulator):
                 RTL_LIBRARY=as_tcl_value(self.rtl_library),
                 TOPLEVEL=as_tcl_value(self.toplevel_module),
                 EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "activehdl")),
-                EXTRA_ARGS=" ".join(as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
+                EXTRA_ARGS=" ".join(
+                    as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
             if self.vhdl_sources:
@@ -1045,7 +1055,7 @@ class Verilator(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        self.env['CXXFLAGS'] =  self.env.get('CXXFLAGS', "") + " -std=c++11"
+        self.env['CXXFLAGS'] = self.env.get('CXXFLAGS', "") + " -std=c++11"
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -1122,7 +1132,6 @@ class Verilator(Simulator):
 
 
 def run(simulator=None, **kwargs):
-
     sim_env = os.getenv("SIM")
 
     # priority, highest first, is: env, kwarg, "icarus"
@@ -1134,7 +1143,8 @@ def run(simulator=None, **kwargs):
     elif simulator is not None:
         warnings.warn(f"'SIM={sim_env}' overrides kwarg 'simulator={simulator}'")
 
-    supported_sim = ["icarus", "questa", "modelsim", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "verilator"]
+    supported_sim = ["icarus", "questa", "modelsim", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl",
+                     "verilator"]
     if sim_env not in supported_sim:
         raise NotImplementedError("Set SIM variable. Supported: " + ", ".join(supported_sim))
 
