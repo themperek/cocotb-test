@@ -102,6 +102,10 @@ jobs:
         displayName: "Install pytest-parallel"
 
       - script: |
+          pip install pytest-xdist
+        displayName: "Install pytest-xdist"
+
+      - script: |
           conda install --yes pip && git clone -b v1.6.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
@@ -116,8 +120,14 @@ jobs:
 
       - script: |
           pytest -m compile tests/test_parallel.py
-          pytest --workers 2 tests/test_parallel.py
+          pytest -m "not compile" --workers 2 tests/test_parallel.py
         displayName: "Test with pytest-parallel"
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+
+      - script: |
+          pytest -m compile tests/test_parallel.py
+          pytest -m "not compile" -n 2 tests/test_parallel.py
+        displayName: "Test with pytest-xdidt"
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
       - script: |

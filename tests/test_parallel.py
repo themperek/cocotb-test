@@ -8,7 +8,7 @@ tests_dir = os.path.dirname(__file__)
 # Pre-compile:
 # pytest -m compile test_parallel.py
 # Run:
-# pytest -m 'not compile' --workers 2 test_parallel.py
+# pytest -m 'not compile' -n 2 test_parallel.py
 # There are possibly better ways to do this
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
