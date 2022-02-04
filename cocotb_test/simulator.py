@@ -557,7 +557,7 @@ class Questa(Simulator):
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
                 if self.verilog_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa")+":cocotbvpi_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa") + ":cocotbvpi_entry_point"
             else:
                 if self.vhdl_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("fli", "questa") + ":cocotbfli_entry_point"
