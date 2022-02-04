@@ -491,9 +491,19 @@ class Questa(Simulator):
     def get_parameter_commands(self, parameters):
         return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
+    def do_script(self):
+        do_script = ""
+        if self.waves:
+            do_script += "log -recursive /*;"
+        if not self.gui:
+            do_script += "run -all; quit"
+        return do_script
+
     def build_command(self):
 
         cmd = []
+
+        do_script = self.do_script()
 
         if self.vhdl_sources:
             compile_args = self.compile_args + self.vhdl_compile_args
@@ -526,39 +536,30 @@ class Questa(Simulator):
 
         if not self.compile_only:
             if self.toplevel_lang == "vhdl":
-                do_script = "vsim -onfinish {ONFINISH} -foreign {EXT_NAME} {SIM_ARGS} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL};".format(
-                    ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.toplevel_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel_module),
-                    EXT_NAME=as_tcl_value("cocotb_init {}".format(cocotb.config.lib_name_path("fli", "questa"))),
-                    SIM_ARGS=" ".join(self.simulation_args),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
+                cmd.append(["vsim"]
+                    + ["-gui" if self.gui else "-c"]
+                    + ["-onfinish", "stop" if self.gui else "exit"]
+                    + ["-foreign", "cocotb_init " + as_tcl_value(cocotb.config.lib_name_path("fli", "questa"))]
+                    + self.simulation_args
+                    + [as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)]
+                    + [self.toplevel]
+                    + ["-do", do_script]
                 )
-
                 if self.verilog_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa") + ":cocotbvpi_entry_point"
-
             else:
-                do_script = "vsim -onfinish {ONFINISH} -pli {EXT_NAME} {SIM_ARGS} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS};".format(
-                    ONFINISH="stop" if self.gui else "exit",
-                    RTL_LIBRARY=as_tcl_value(self.toplevel_library),
-                    TOPLEVEL=as_tcl_value(self.toplevel_module),
-                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
-                    SIM_ARGS=" ".join(self.simulation_args),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)),
-                    PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
+                cmd.append(["vsim"]
+                    + ["-gui" if self.gui else "-c"]
+                    + ["-onfinish", "stop" if self.gui else "exit"]
+                    + ["-pli", as_tcl_value(cocotb.config.lib_name_path("vpi", "questa"))]
+                    + self.simulation_args
+                    + [as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)]
+                    + [self.toplevel]
+                    + [as_tcl_value(v) for v in self.plus_args]
+                    + ["-do", do_script]
                 )
-
                 if self.vhdl_sources:
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("fli", "questa") + ":cocotbfli_entry_point"
-
-            if self.waves:
-                do_script += "log -recursive /*;"
-
-            if not self.gui:
-                do_script += "run -all; quit"
-
-            cmd.append(["vsim"] + (["-gui"] if self.gui else ["-c"]) + ["-do"] + [do_script])
 
         return cmd
 
