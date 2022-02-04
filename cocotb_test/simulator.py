@@ -1,4 +1,3 @@
-import subprocess
 import os
 import sys
 import tempfile
@@ -12,6 +11,7 @@ import signal
 import warnings
 import cocotb._vendor.find_libpython as find_libpython
 import cocotb.config
+import asyncio
 
 from distutils.spawn import find_executable
 from distutils.sysconfig import get_config_var
@@ -247,12 +247,14 @@ class Simulator:
             for ts in tree.iter("testsuite"):
                 for tc in ts.iter("testcase"):
                     for _ in tc.iter("failure"):
+                        self.logger.error(f'Failed: {tc.get("classname")}::{tc.get("name")}')
                         failed += 1
 
         if failed:
-            raise SystemExit(f"ERROR: Failed {failed} tests.")
+            raise SystemExit(f"FAILED {failed} tests.")
 
-        print("Results file: %s" % results_xml_file)
+        self.logger.info(f"Results file: {results_xml_file}")
+
         return results_xml_file
 
     def get_include_commands(self, includes):
@@ -282,6 +284,29 @@ class Simulator:
                 libs[lib] = self.normalize_paths(src)
             return libs
 
+    async def _log_pipe(self, level, stream):
+        while not stream.at_eof():
+            line = await stream.readline()
+            if line:
+                self.logger.log(level, line.decode('utf-8').rstrip())
+
+    async def _exec(self, cmds):
+
+        p = await asyncio.create_subprocess_exec(
+                    *cmds,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=self.work_dir,
+                    env=self.env
+                )
+
+        self.process = p
+
+        await asyncio.wait([
+            asyncio.create_task(self._log_pipe(logging.INFO, p.stdout)),
+            asyncio.create_task(self._log_pipe(logging.ERROR, p.stderr))
+        ])
+
     def execute(self, cmds):
 
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
@@ -290,26 +315,12 @@ class Simulator:
         for cmd in cmds:
             self.logger.info("Running command: " + " ".join(cmd))
 
-            with subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.work_dir,
-                env=self.env,
-            ) as p:
-                self.process = p
-                for line in p.stdout:
-                    self.logger.info(line.decode("utf-8").rstrip())
+            asyncio.run(self._exec(cmd))
+
+            if self.process.returncode:
+                raise SystemExit(f"Process {cmd[0]} termindated with error {self.process.returncode}") #% (self.process.args[0], self.process.returncode))
 
             self.process = None
-            if p.returncode:
-                raise SystemExit("Process '%s' termindated with error %d" % (p.args[0], p.returncode))
-
-    # def execute(self, cmds):
-    #     self.set_env()
-    #     for cmd in cmds:
-    #         print(" ".join(cmd))
-    #         process = subprocess.check_call(cmd, cwd=self.work_dir, env=self.env)
 
     def outdated_list(self, output, dependencies):
 
