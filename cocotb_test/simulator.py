@@ -517,6 +517,10 @@ class Questa(Simulator):
 
         return sim_script
 
+    def build_script_run(self):
+
+        return "run -all; quit"
+
     def build_command(self):
 
         cmd = []
@@ -560,7 +564,7 @@ class Questa(Simulator):
 
             do_script = self.build_script_sim()
             if not self.gui:
-                do_script += "run -all; quit"
+                do_script += self.build_script_run()
 
             cmd.append(["vsim"] + (["-gui"] if self.gui else ["-c"]) + ["-do"] + [do_script])
 
