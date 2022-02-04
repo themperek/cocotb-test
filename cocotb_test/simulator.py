@@ -495,6 +495,8 @@ class Questa(Simulator):
         do_script = ""
         if self.waves:
             do_script += "log -recursive /*;"
+        if not self.gui:
+            do_script += "run -all; quit"
         return do_script
 
     def build_command(self):
@@ -502,8 +504,6 @@ class Questa(Simulator):
         cmd = []
 
         do_script = self.do_script()
-        if not self.gui:
-            do_script += "run -all; quit"
 
         if self.vhdl_sources:
             compile_args = self.compile_args + self.vhdl_compile_args
