@@ -830,14 +830,14 @@ class Ghdl(Simulator):
             for lib, src in self.vhdl_sources.items():
                 cmd.append(["ghdl", "-i"] + compile_args + [f"--work={lib}"] + src)
 
-            cmd_elaborate = ["ghdl", "-m", f"--work={self.toplevel_library[0]}"] + compile_args + [self.toplevel_module]
+            cmd_elaborate = ["ghdl", "-m", f"--work={self.toplevel_library}"] + compile_args + [self.toplevel_module]
             cmd.append(cmd_elaborate)
 
         if self.waves:
             self.simulation_args.append("--wave=" + self.toplevel_module + ".ghw")
 
         cmd_run = (
-            ["ghdl", "-r", f"--work={self.toplevel_library[0]}"]
+            ["ghdl", "-r", f"--work={self.toplevel_library}"]
             + compile_args
             + [self.toplevel_module]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
