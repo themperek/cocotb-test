@@ -181,7 +181,7 @@ class Simulator:
 
         self.gui = gui
 
-        # format sources and toplevel string
+        # format sources and toplevel
         self.format_input()
 
         # Catch SIGINT and SIGTERM
@@ -210,7 +210,7 @@ class Simulator:
 
         self.env["PYTHONHOME"] = get_config_var("prefix")
 
-        self.env["TOPLEVEL"] = self.toplevel
+        self.env["TOPLEVEL"] = self.toplevel_module
         self.env["MODULE"] = self.module
 
         if not os.path.exists(self.sim_dir):
@@ -363,15 +363,25 @@ class Simulator:
         assert False, f"Exiting pid: {str(pid)} with signum: {str(signum)}"
 
     @property
+    def toplevel_module_list(self):
+        """Return list of toplevel module names"""
+        return [top.rsplit(".", 1)[-1] for top in self.toplevel]
+
+    @property
+    def toplevel_library_list(self):
+        """Return list of library names of toplevel modules"""
+        assert all(["." in top for top in self.toplevel]), "`self.toplevel` does not yet contain library information."
+        return [top.split(".", 1)[0] for top in self.toplevel]
+
+    @property
     def toplevel_module(self):
-        """Return name of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
-        return self.toplevel.rsplit(".", 1)[-1]
+        """Return name of first toplevel module"""
+        return self.toplevel_module_list[0]
 
     @property
     def toplevel_library(self):
-        """Return library of toplevel module if toplevel is formatted either '<module>' or '<library>.<module>'"""
-        assert "." in self.toplevel, "`self.toplevel` does not yet contain library information."
-        return self.toplevel.split(".", 1)[0]
+        """Return name of library of first toplevel"""
+        return self.toplevel_library_list[0]
 
     @property
     def vhdl_sources_flat(self):
@@ -388,25 +398,25 @@ class Simulator:
         return list(self.verilog_sources.values())[0]
 
     def format_input(self):
-        """Format sources and toplevel string."""
+        """Format sources and toplevel strings."""
+
+        if not isinstance(self.toplevel, list):
+            self.toplevel = [self.toplevel]
 
         if self.vhdl_sources:
             if isinstance(self.vhdl_sources, list):
-                # create named library with toplevel module as its name
+                # create named library with first toplevel module as its name
                 self.vhdl_sources = {f"{self.toplevel_module}": self.vhdl_sources}
-                # format toplevel as '<lib>.<module>'
-                if "." not in self.toplevel:
-                    self.toplevel = ".".join((self.toplevel, self.toplevel))
 
         if self.verilog_sources:
             if isinstance(self.verilog_sources, list):
                 # create named library with toplevel module as its name
                 self.verilog_sources = {f"{self.toplevel_module}": self.verilog_sources}
-                # format toplevel as '<lib>.<module>'
-                if "." not in self.toplevel:
-                    self.toplevel = ".".join((self.toplevel, self.toplevel))
 
-        assert "." in self.toplevel, "When using named libraries, toplevels must be specified as '<library>.<module>'."
+        # format toplevel as `<lib>.<module>`, if lib was not given
+        for i, top in enumerate(self.toplevel):
+            if not "." in top:
+                self.toplevel[i] = ".".join((self.toplevel_module, top))
 
 
 class Icarus(Simulator):
@@ -431,6 +441,10 @@ class Icarus(Simulator):
 
         compile_args = self.compile_args + self.verilog_compile_args
 
+        toplevel = []
+        for t in self.toplevel_module_list:
+            toplevel += ["-s", t]
+
         cmd_compile = (
             [
                 "iverilog",
@@ -438,10 +452,9 @@ class Icarus(Simulator):
                 self.sim_file,
                 "-D",
                 "COCOTB_SIM=1",
-                "-s",
-                self.toplevel_module,
                 "-g2012",
             ]
+            + toplevel
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
             + self.get_parameter_commands(self.parameters)
@@ -553,7 +566,7 @@ class Questa(Simulator):
                     + ["-foreign", "cocotb_init " + as_tcl_value(cocotb.config.lib_name_path("fli", "questa"))]
                     + self.simulation_args
                     + [as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)]
-                    + [self.toplevel]
+                    + self.toplevel
                     + ["-do", do_script]
                 )
                 if self.verilog_sources:
@@ -565,7 +578,7 @@ class Questa(Simulator):
                     + ["-pli", as_tcl_value(cocotb.config.lib_name_path("vpi", "questa"))]
                     + self.simulation_args
                     + [as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)]
-                    + [self.toplevel]
+                    + self.toplevel
                     + [as_tcl_value(v) for v in self.plus_args]
                     + ["-do", do_script]
                 )
