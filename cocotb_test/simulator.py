@@ -210,7 +210,7 @@ class Simulator:
 
         self.env["PYTHONHOME"] = get_config_var("prefix")
 
-        self.env["TOPLEVEL"] = self.toplevel[0]   # What is the purpose of this? Does multi toplevel break it?
+        self.env["TOPLEVEL"] = self.toplevel_module
         self.env["MODULE"] = self.module
 
         if not os.path.exists(self.sim_dir):
