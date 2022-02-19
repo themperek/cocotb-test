@@ -52,7 +52,7 @@ cocotb-clean -r
 ```
 ### Arguments for `simulator.run`:
 
-* `toplevel`: Use this to indicate the instance in the hierarchy to use as the DUT. Multiple top levels can be specified as a list, if the simulator supports it.
+* `toplevel`: Top level module name to indicate the instance in the hierarchy to use as the DUT. Multiple top levels can be specified as a list, if the simulator supports it.
 * `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
 
 * `python_search` : List of additional directoreis to search for python/cocotb modules.
