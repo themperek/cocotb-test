@@ -232,8 +232,8 @@ class Simulator:
         else:
             results_xml_file = os.getenv("COCOTB_RESULTS_FILE")
 
-        cmds = self.build_command()
         self.set_env()
+        cmds = self.build_command()
         self.execute(cmds)
 
         failed = 0
@@ -311,7 +311,6 @@ class Simulator:
 
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
-        self.set_env()
         for cmd in cmds:
             self.logger.info("Running command: " + " ".join(cmd))
 
@@ -821,6 +820,11 @@ class Ghdl(Simulator):
 
     def build_command(self):
 
+
+        ghdl_exec = shutil.which("ghdl")
+        if ghdl_exec is None:
+            raise ValueError("GHDL executable not found.")
+
         cmd = []
 
         out_file = os.path.join(self.sim_dir, self.toplevel_module)
@@ -835,6 +839,8 @@ class Ghdl(Simulator):
 
         if self.waves:
             self.simulation_args.append("--wave=" + self.toplevel_module + ".ghw")
+
+        self.env["PATH"] += os.pathsep + os.path.join(os.path.dirname(os.path.dirname(ghdl_exec)), "lib")
 
         cmd_run = (
             ["ghdl", "-r", f"--work={self.toplevel_library}"]
