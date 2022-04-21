@@ -59,6 +59,7 @@ class Simulator:
         waves=None,
         gui=False,
         simulation_args=None,
+        more_compile_args=None,
         **kwargs,
     ):
 
@@ -134,6 +135,11 @@ class Simulator:
             extra_args = []
 
         self.compile_args = compile_args + extra_args
+
+        if more_compile_args is None:
+            self.more_compile_args = []
+        else:
+            self.more_compile_args = more_compile_args
 
         if sim_args is None:
             sim_args = []
@@ -1103,7 +1109,7 @@ class Verilator(Simulator):
             + self.verilog_sources_flat
         )
 
-        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
+        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"] + self.more_compile_args)
 
         if not self.compile_only:
             cmd.append([out_file] + self.plus_args)
