@@ -779,7 +779,10 @@ class Vcs(Simulator):
             pli_file.write(pli_cmd)
 
         compile_args = self.compile_args + self.verilog_compile_args
+        if self.waves:
+            compile_args += ["-kdb", "-debug_access"]
 
+        simv_path = os.path.join(self.sim_dir, self.module)
         cmd_build = (
             [
                 "vcs",
@@ -798,14 +801,20 @@ class Vcs(Simulator):
             + self.get_parameter_commands(self.parameters)
             + compile_args
             + self.verilog_sources_flat
+            + ["-o", simv_path]
         )
         cmd.append(cmd_build)
 
         if not self.compile_only:
             cmd_run = [
-                os.path.join(self.sim_dir, "simv"),
+                simv_path,
                 "+define+COCOTB_SIM=1",
             ] + self.simulation_args
+            if self.waves:
+                ucli_do = os.path.join(self.sim_dir, f"{self.module}_ucli.do")
+                with open(ucli_do, "w") as f:
+                    f.write(f"fsdbDumpfile {simv_path}.fsdb; fsdbDumpvars 0 {self.toplevel_module}; run; quit;")
+                cmd_run += ["-ucli", "-do", ucli_do]
             cmd.append(cmd_run)
 
         if self.gui:
