@@ -780,18 +780,17 @@ class Vcs(Simulator):
 
         compile_args = self.compile_args + self.verilog_compile_args
         if self.waves:
-            compile_args += ["-kdb", "-debug_access"]
+            compile_args += ["-kdb", "-debug_access+all"]
 
         simv_path = os.path.join(self.sim_dir, self.module)
         cmd_build = (
             [
                 "vcs",
                 "-full64",
-                "-debug",
+                "-sverilog",
                 "+vpi",
                 "-P",
                 "pli.tab",
-                "-sverilog",
                 "+define+COCOTB_SIM=1",
                 "-load",
                 cocotb.config.lib_name_path("vpi", "vcs"),
@@ -814,7 +813,7 @@ class Vcs(Simulator):
                 ucli_do = os.path.join(self.sim_dir, f"{self.module}_ucli.do")
                 with open(ucli_do, "w") as f:
                     f.write(f"fsdbDumpfile {simv_path}.fsdb; fsdbDumpvars 0 {self.toplevel_module}; run; quit;")
-                cmd_run += ["-ucli", "-do", ucli_do]
+                cmd_run += ["+fsdb+all=on", "-ucli", "-do", ucli_do]
             cmd.append(cmd_run)
 
         if self.gui:
