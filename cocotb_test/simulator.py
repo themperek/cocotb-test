@@ -779,8 +779,10 @@ class Vcs(Simulator):
             pli_file.write(pli_cmd)
 
         compile_args = self.compile_args + self.verilog_compile_args
+        debug_access = "-debug_access"
         if self.waves:
-            compile_args += ["-kdb", "-debug_access+all"]
+            debug_access += "+all+dmptf"
+            compile_args += ["-kdb", "-debug_region+cell"]
 
         simv_path = os.path.join(self.sim_dir, self.module)
         cmd_build = (
@@ -788,7 +790,7 @@ class Vcs(Simulator):
                 "vcs",
                 "-full64",
                 "-sverilog",
-                "+vpi",
+                debug_access,
                 "-P",
                 "pli.tab",
                 "+define+COCOTB_SIM=1",
