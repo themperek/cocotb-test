@@ -225,7 +225,7 @@ class Simulator:
 
         # use temporary results file
         if not os.getenv("COCOTB_RESULTS_FILE"):
-            tmp_results_file = tempfile.NamedTemporaryFile(prefix=self.sim_dir + os.path.sep, suffix="_results.xml")
+            tmp_results_file = tempfile.NamedTemporaryFile(prefix=self.sim_dir + os.path.sep, suffix="_results.xml", delete=False)
             results_xml_file = tmp_results_file.name
             tmp_results_file.close()
             self.env["COCOTB_RESULTS_FILE"] = results_xml_file
