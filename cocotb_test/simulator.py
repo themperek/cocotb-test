@@ -935,7 +935,7 @@ class Riviera(Simulator):
                     self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "riviera") + ":cocotbvhpi_entry_point"
 
             if self.waves:
-                do_script += "log -recursive /*;"
+                do_script += "trace -recursive /*;"
 
             do_script += "run -all \nexit"
 
@@ -1019,7 +1019,7 @@ class Activehdl(Simulator):
                 self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "activehdl") + ":cocotbvpi_entry_point"
 
         if self.waves:
-            do_script += "log -recursive /*;"
+            do_script += "trace -recursive /*;"
 
         return do_script
 
