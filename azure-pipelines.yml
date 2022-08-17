@@ -110,7 +110,7 @@ jobs:
         displayName: "Install cocotb from source"
 
       - script: |
-          pip install -e .
+          pip install .
         displayName: "Install cocotb-test"
 
       - script: |
