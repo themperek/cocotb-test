@@ -110,8 +110,8 @@ jobs:
         displayName: "Install cocotb from source"
 
       - script: |
-         pip install .
-       displayName: "Install cocotb-test"
+          pip install .
+        displayName: "Install cocotb-test"
 
       - script: |
           pytest --junitxml=test-results.xml --cocotbxml=test-cocotb.xml tests
