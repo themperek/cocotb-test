@@ -1057,13 +1057,14 @@ class Verilator(Simulator):
         self.env["CXXFLAGS"] = self.env.get("CXXFLAGS", "") + " -std=c++11"
 
     def get_include_commands(self, includes):
-        return ["-I" + dir for dir in includes]
+        return [f"-I{dir}" for dir in includes]
 
     def get_define_commands(self, defines):
-        return ["-D" + define for define in defines]
+        return [f"-D{define}" for define in defines]
 
     def get_parameter_commands(self, parameters):
-        return ["-G" + name + "=" + str(value) for name, value in parameters.items()]
+        quote = '\"'
+        return [f"-G{name}=\"{str(value).strip(quote)}\"" for name, value in parameters.items()]
 
     def build_command(self):
 
