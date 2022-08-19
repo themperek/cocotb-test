@@ -487,7 +487,9 @@ class Icarus(Simulator):
                     f.write("end\n")
                     f.write("endmodule\n")
 
-            verilog_sources += [dump_mod_file_name]
+            first_lib_src = next(iter(self.verilog_sources.items()))[1]
+            first_lib_src += [dump_mod_file_name]
+
             self.compile_args.extend(["-s", dump_mod_name])
             self.plus_args.append("-fst")
 
