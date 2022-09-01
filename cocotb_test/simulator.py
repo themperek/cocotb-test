@@ -317,7 +317,7 @@ class Simulator:
             asyncio.run(self._exec(cmd))
 
             if self.process.returncode:
-                raise SystemExit(f"Process {cmd[0]} termindated with error {self.process.returncode}") #% (self.process.args[0], self.process.returncode))
+                raise SystemExit(f"Process {cmd[0]} terminated with error {self.process.returncode}") #% (self.process.args[0], self.process.returncode))
 
             self.process = None
 
