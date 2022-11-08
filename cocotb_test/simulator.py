@@ -1105,7 +1105,7 @@ class Verilator(Simulator):
                 "-o",
                 self.toplevel_module,
                 "-LDFLAGS",
-                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lcocotbvpi_verilator".format(LIB_DIR=self.lib_dir),
+                '"-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lcocotbvpi_verilator"'.format(LIB_DIR=self.lib_dir),
             ]
             + compile_args
             + self.get_define_commands(self.defines)
