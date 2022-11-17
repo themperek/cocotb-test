@@ -9,7 +9,7 @@ from xml.etree import cElementTree as ET
 import threading
 import signal
 import warnings
-import cocotb._vendor.find_libpython as find_libpython
+import find_libpython
 import cocotb.config
 import asyncio
 

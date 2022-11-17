@@ -23,7 +23,7 @@ setup(
     packages=find_packages(),
     include_package_data = True,
     python_requires=">=3.7",
-    install_requires=["cocotb>=1.5", "pytest"],
+    install_requires=["cocotb>=1.5", "pytest", "find_libpython"],
     entry_points={
         "console_scripts": [
             "cocotb=cocotb_test.cli:config",
