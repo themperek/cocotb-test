@@ -500,9 +500,10 @@ class Icarus(Simulator):
             self.plus_args.append("-fst")
 
         if self.timescale:
-            with open(self.sim_dir + "/timescale.f", "w") as f:
+            timescale_cmd_file = os.path.join(self.sim_dir, "timescale.f")
+            with open(timescale_cmd_file, "w") as f:
                 f.write("+timescale+{}\n".format(self.timescale))
-            self.compile_args.extend(["-f", self.sim_dir + "/timescale.f"])
+            self.compile_args.extend(["-f", timescale_cmd_file])
 
         cmd = []
         if self.outdated(self.sim_file, verilog_sources) or self.force_compile:
