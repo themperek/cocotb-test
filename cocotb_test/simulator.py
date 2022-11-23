@@ -180,7 +180,7 @@ class Simulator:
         else:
             self.waves = bool(waves)
 
-        if timescale is None or re.fullmatch("\\d+[npu]s/\\d+[npu]s", timescale):
+        if timescale is None or re.fullmatch("\\d+[npu]?s/\\d+[npu]?s", timescale):
             self.timescale = timescale
         else:
             raise ValueError("Invalid timescale: {}".format(timescale))

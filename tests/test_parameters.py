@@ -54,3 +54,26 @@ def test_dff_vhdl_testcase(parameters):
         sim_build="sim_build/"
         + "_".join(("{}={}".format(*i) for i in parameters.items())),
     )
+
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+def test_bad_timescales():
+
+    kwargs = {
+         'verilog_sources': [
+                os.path.join(tests_dir, "dff.sv"),
+            ],
+        'module': "dff_cocotb",
+        'toplevel': "dff_test",
+        'sim_build': "sim_build/test_missing_verilog",
+    }
+
+    with pytest.raises(ValueError, match='Invalid timescale: 1ns'):
+        run(timescale="1ns", **kwargs)
+
+    with pytest.raises(ValueError, match='Invalid timescale: 1qs/1s'):
+        run(timescale="1qs/1s", **kwargs)
+
+    run(timescale="100ns/100ns", **kwargs)
+    run(timescale="1ns/1ns", **kwargs)
+    run(timescale=None, **kwargs)
+
