@@ -57,7 +57,7 @@ class Simulator:
         extra_env=None,
         compile_only=False,
         waves=None,
-        timescale="1ns/1ps",
+        timescale=None,
         gui=False,
         simulation_args=None,
         **kwargs,
