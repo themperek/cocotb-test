@@ -17,7 +17,9 @@ def test_dff_verilog():
             os.path.join(tests_dir, "glbl_sink.v"),
         ],
         toplevel=["glbl_sink", "glbl"],
-        module="test_multitop"
+        module="test_multitop",
+        # time unit and precision set the same
+        timescale="1ns/1ns",
     )
 
 
@@ -26,6 +28,9 @@ async def glbl(dut):
     await ReadOnly()
     if dut.rst.value == 0:
         raise TestFailure()
+    # BEWARE: Timer(10) is equal to Timer(10, 'step') which is ten simulator *precision* steps.
+    # Only the same as Verilog delay '#10' (ten *time units*) when timescale directive sets
+    # the time unit same as precision ie. with timescale="1ns/1ns" or "1ps/1ps"
     await Timer(10)
     await ReadOnly()
     if dut.rst.value == 1:

@@ -1,0 +1,12 @@
+diff --git a/include/verilated.cpp b/include/verilated.cpp
+index 1010544..2b2fd3c 100644
+--- a/include/verilated.cpp
++++ b/include/verilated.cpp
+@@ -33,6 +33,7 @@
+ #include <sys/stat.h>  // mkdir
+ #include <list>
+ #include <utility>
++#include <limits>
+ 
+ // clang-format off
+ #if defined(_WIN32) || defined(__MINGW32__)

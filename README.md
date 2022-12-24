@@ -76,6 +76,7 @@ cocotb-clean -r
 * `seed`: Seed the Python random module to recreate a previous test stimulus (see [RANDOM_SEED](https://docs.cocotb.org/en/stable/building.html?#envvar-RANDOM_SEED) ).
 * `extra_env`: A dictionary of extra environment variables set in simulator process.
 * `waves`: Enable wave dumps (not all simulators supported).
+* `timescale`: Set simulator time unit/precision (default: `None`)
 * `gui`: Starts in gui mode (not all simulators supported).
 
 

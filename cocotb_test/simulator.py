@@ -57,6 +57,7 @@ class Simulator:
         extra_env=None,
         compile_only=False,
         waves=None,
+        timescale=None,
         gui=False,
         simulation_args=None,
         **kwargs,
@@ -178,6 +179,11 @@ class Simulator:
             self.waves = bool(int(os.getenv("WAVES", 0)))
         else:
             self.waves = bool(waves)
+
+        if timescale is None or re.fullmatch("\\d+[npu]?s/\\d+[npu]?s", timescale):
+            self.timescale = timescale
+        else:
+            raise ValueError("Invalid timescale: {}".format(timescale))
 
         self.gui = gui
 
@@ -493,6 +499,12 @@ class Icarus(Simulator):
             self.compile_args.extend(["-s", dump_mod_name])
             self.plus_args.append("-fst")
 
+        if self.timescale:
+            timescale_cmd_file = os.path.join(self.sim_dir, "timescale.f")
+            with open(timescale_cmd_file, "w") as f:
+                f.write("+timescale+{}\n".format(self.timescale))
+            self.compile_args.extend(["-f", timescale_cmd_file])
+
         cmd = []
         if self.outdated(self.sim_file, verilog_sources) or self.force_compile:
             cmd.append(self.compile_command())
@@ -544,6 +556,8 @@ class Questa(Simulator):
 
         if self.verilog_sources:
             compile_args = self.compile_args + self.verilog_compile_args
+            if self.timescale:
+                compile_args += ["-timescale", self.timescale]
 
             for lib, src in self.verilog_sources.items():
                 cmd.append(["vlib", as_tcl_value(lib)])
@@ -742,6 +756,8 @@ class Xcelium(Simulator):
                 + self.verilog_sources_flat
                 + self.vhdl_sources_flat
             )
+            if self.timescale:
+                cmd_elab += ["-timescale", self.timescale]
 
             cmd.append(cmd_elab)
 
@@ -806,6 +822,9 @@ class Vcs(Simulator):
             + self.verilog_sources_flat
             + ["-o", simv_path]
         )
+        if self.timescale:
+            cmd += ["-timescale", self.timescale]
+
         cmd.append(cmd_build)
 
         if not self.compile_only:
@@ -1086,6 +1105,9 @@ class Verilator(Simulator):
 
         if self.waves:
             compile_args += ["--trace-fst", "--trace-structs"]
+
+        if self.timescale:
+            compile_args += ["--timescale", self.timescale]
 
         cmd.append(
             [
