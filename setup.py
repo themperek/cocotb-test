@@ -26,7 +26,7 @@ setup(
     install_requires=["cocotb>=1.5", "pytest", "find_libpython"],
     entry_points={
         "console_scripts": [
-            "cocotb=cocotb_test.cli:config",
+            "cocotb-test=cocotb_test.cli:config",
             "cocotb-run=cocotb_test.cli:run",
             "cocotb-clean=cocotb_test.cli:clean",
         ],
