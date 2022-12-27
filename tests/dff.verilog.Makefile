@@ -12,5 +12,5 @@ ifeq ($(SIM),questa)
 SIM_ARGS=-t 1ps
 endif
 
-include $(shell cocotb --inc-makefile)
+include $(shell cocotb-test --inc-makefile)
 
