@@ -7,8 +7,20 @@ jobs:
   - job:
     strategy:
       matrix:
+        Linux-Icarus-py37:
+          python.version: "3.7"
+          imageName: "ubuntu-latest"
+          SIM: "icarus"
         Linux-Icarus-py38:
           python.version: "3.8"
+          imageName: "ubuntu-latest"
+          SIM: "icarus"
+        Linux-Icarus-py39:
+          python.version: "3.9"
+          imageName: "ubuntu-latest"
+          SIM: "icarus"
+        Linux-Icarus-py310:
+          python.version: "3.10"
           imageName: "ubuntu-latest"
           SIM: "icarus"
         Linux-GHDL-py38:
@@ -57,7 +69,7 @@ jobs:
         displayName: Init Conda 
         
       - script: |
-          conda install -y python=$(python.version) pytest
+          conda install -y python=$(python.version)
           conda update -q -y conda
         displayName: Update set python version and update
 
@@ -98,8 +110,9 @@ jobs:
         displayName: "Package Test with Tox"
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
+      # AttributeError: module 'py' has no attribute 'log' for pytest 7.2
       - script: |
-          pip install pytest-parallel
+          pip install pytest-parallel pytest==7.1
         displayName: "Install pytest-parallel"
 
       - script: |
@@ -123,7 +136,7 @@ jobs:
           pytest -m compile tests/test_parallel.py
           pytest -m "not compile" --workers 2 tests/test_parallel.py
         displayName: "Test with pytest-parallel"
-        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+        condition: and(ne( variables['Agent.OS'], 'Windows_NT' ), ne(variables['python.version'],3.7))
 
       - script: |
           pytest -m compile tests/test_parallel.py

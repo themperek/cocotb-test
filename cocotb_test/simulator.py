@@ -315,6 +315,8 @@ class Simulator:
             ]
         )
 
+        await p.wait()
+
     def execute(self, cmds):
 
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
