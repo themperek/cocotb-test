@@ -292,7 +292,12 @@ class Simulator:
 
     async def _log_pipe(self, level, stream):
         while not stream.at_eof():
-            line = await stream.readline()
+            try:
+                line = await stream.readline()
+            except ValueError:
+                warnings.warn("Logging limit is reached. Log file will be truncated.", RuntimeWarning, stacklevel=2)
+                continue
+
             if line:
                 self.logger.log(level, line.decode("utf-8").rstrip())
 
