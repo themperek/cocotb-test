@@ -98,11 +98,7 @@ jobs:
 
       - script: conda install --yes -c conda-forge iverilog
         displayName: Install Icarus Verilog
-        condition:  and( ne( variables['Agent.OS'], 'Windows_NT' ), eq(variables['SIM'], 'icarus'))
-
-      - script: conda install --yes -c conda-forge iverilog==10.3
-        displayName: Install Icarus Verilog
-        condition:  and( eq( variables['Agent.OS'], 'Windows_NT' ), eq(variables['SIM'], 'icarus'))
+        condition:  eq(variables['SIM'], 'icarus')
 
       - script: |
           conda install --yes -c conda-forge tox

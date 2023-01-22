@@ -12,9 +12,9 @@
 
 - Install [cocotb](https://docs.cocotb.org/).
 
-- Install simulator (for Icarus Verilog with conda, on widows use 10.3 or devel [steveicarus/iverilog#395](https://github.com/steveicarus/iverilog/issues/395) ):
+- Install simulator (for Icarus Verilog with conda):
 ```bash
-conda install -c conda-forge iverilog==10.3
+conda install -c conda-forge iverilog
 ```
 - Install the package via [pip](https://pip.pypa.io/en/stable/user_guide/):
 ```bash
