@@ -140,7 +140,7 @@ jobs:
 
       - script: |
           pytest -m compile tests/test_parallel.py
-          pytest -m "not compile" -n 2 tests/test_parallel.py
+          pytest -m "not compile" -n 2 --cocotbxml=test-cocotb.xml tests/test_parallel.py
         displayName: "Test with pytest-xdidt"
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
 
