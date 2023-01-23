@@ -17,13 +17,13 @@ class ResultsCocotb(object):
             self.names.append(report.nodeid)
 
     def pytest_sessionstart(self, session):
-
-        if os.path.exists(self.results_xml_dir):
-            shutil.rmtree(self.results_xml_dir)
-
-        os.makedirs(self.results_xml_dir)
+        os.makedirs(self.results_xml_dir, exist_ok=True)
 
     def pytest_runtest_setup(self, item):
+
+        cocotb_result_file = self.get_results_xml_file(item._nodeid)
+        if os.path.exists(cocotb_result_file):
+            os.remove(cocotb_result_file)
 
         os.environ["COCOTB_RESULTS_FILE"] = self.get_results_xml_file(item._nodeid)
         os.environ["RESULT_TESTPACKAGE"] = item._nodeid
