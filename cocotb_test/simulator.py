@@ -291,15 +291,19 @@ class Simulator:
             return libs
 
     async def _log_pipe(self, level, stream):
+        line = bytearray()
         while not stream.at_eof():
             try:
-                line = await stream.readline()
-            except ValueError:
-                warnings.warn("Logging limit is reached. Log file will be truncated.", RuntimeWarning, stacklevel=2)
+                line.extend(await stream.readuntil())
+            except asyncio.IncompleteReadError as e:
+                line.extend(e.partial)
+            except asyncio.LimitOverrunError as e:
+                line.extend(await stream.read(e.consumed))
                 continue
 
             if line:
                 self.logger.log(level, line.decode("utf-8").rstrip())
+            line.clear()
 
     async def _exec(self, cmds):
 
