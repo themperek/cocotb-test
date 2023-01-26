@@ -954,7 +954,7 @@ class Riviera(Simulator):
                 do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
-                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera")),
+                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera") + ":vhpi_startup_routines_bootstrap"),
                     EXTRA_ARGS=" ".join(
                         as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
                     ),
