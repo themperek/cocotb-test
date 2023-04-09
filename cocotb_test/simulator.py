@@ -217,7 +217,7 @@ class Simulator:
         self.env["TOPLEVEL"] = self.toplevel_module
         self.env["MODULE"] = self.module
 
-        # Force color output, if stdout is a terminals
+        # Force color output, if stdout is a terminal
         if not os.getenv("COCOTB_ANSI_OUTPUT") and sys.stdout.isatty():
             self.env["COCOTB_ANSI_OUTPUT"] = "1"
 
