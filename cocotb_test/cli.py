@@ -97,6 +97,7 @@ def run():
         kwargs["compile_args"] = os.getenv("COMPILE_ARGS", "").split()
         kwargs["extra_args"] = os.getenv("EXTRA_ARGS", "").split()
         kwargs["plus_args"] = os.getenv("PLUS_ARGS", "").split()
+        kwargs["timescale"] = os.getenv("TIMESCALE", "1ns/1ps")
         kwargs["python_search"] = (
             os.getenv("PYTHONPATH", "").replace(";", " ").replace(":", " ").split()
         )
