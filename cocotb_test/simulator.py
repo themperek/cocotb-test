@@ -217,11 +217,6 @@ class Simulator:
         self.env["TOPLEVEL"] = self.toplevel_module
         self.env["MODULE"] = self.module
 
-        # Force color output, if stdout and stderr are terminals
-        output_isatty = sys.stdout.isatty() and sys.stderr.isatty()
-        if not os.getenv("COCOTB_ANSI_OUTPUT") and output_isatty:
-            self.env["COCOTB_ANSI_OUTPUT"] = "1"
-
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
 
