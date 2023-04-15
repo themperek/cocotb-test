@@ -11,7 +11,6 @@ import signal
 import warnings
 import find_libpython
 import cocotb.config
-import cocotb.utils
 import asyncio
 import sysconfig
 
@@ -218,9 +217,9 @@ class Simulator:
         self.env["TOPLEVEL"] = self.toplevel_module
         self.env["MODULE"] = self.module
 
-        # Use color output, if possible or requested
-        want_color = cocotb.utils.want_color_output()
-        self.env["COCOTB_ANSI_OUTPUT"] = "1" if want_color else "0" 
+        # Force color output, if stdout is a terminal
+        if not os.getenv("COCOTB_ANSI_OUTPUT") and sys.stdout.isatty():
+            self.env["COCOTB_ANSI_OUTPUT"] = "1"
 
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
