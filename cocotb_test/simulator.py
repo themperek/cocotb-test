@@ -11,7 +11,6 @@ import signal
 import warnings
 import find_libpython
 import cocotb.config
-import cocotb.utils
 import asyncio
 import sysconfig
 
@@ -217,17 +216,6 @@ class Simulator:
 
         self.env["TOPLEVEL"] = self.toplevel_module
         self.env["MODULE"] = self.module
-
-        # Use color output, if possible or requested. This is needed because
-        # cocotb is run in a subprocess with `stdout` and `stderr` attached to
-        # pipes. These pipes break cocotb's automatic color output as pipes
-        # return `False` for `isatty()`, causing color output to never be
-        # used, even when run in a terminal. `want_color_output()` checks
-        # *our* `stdout` for a terminal and enables or disables color in the
-        # subprocess, as appropriate, while still honoring any environment
-        # variable overrides, to preserve cocotb's color output behavior.
-        want_color = cocotb.utils.want_color_output()
-        self.env["COCOTB_ANSI_OUTPUT"] = "1" if want_color else "0"
 
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
