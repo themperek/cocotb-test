@@ -58,6 +58,7 @@ class Simulator:
         timescale=None,
         gui=False,
         simulation_args=None,
+        make_args=None,
         **kwargs,
     ):
 
@@ -153,6 +154,11 @@ class Simulator:
         self.plus_args = plus_args
         self.force_compile = force_compile
         self.compile_only = compile_only
+
+        if make_args is None:
+            make_args = []
+
+        self.make_args = make_args
 
         if kwargs:
             warnings.warn(
@@ -1156,7 +1162,7 @@ class Verilator(Simulator):
             + self.verilog_sources_flat
         )
 
-        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
+        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"] + self.make_args)
 
         if not self.compile_only:
             cmd.append([out_file] + self.plus_args)
