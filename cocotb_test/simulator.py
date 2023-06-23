@@ -1086,8 +1086,13 @@ class Activehdl(Simulator):
 
 
 class Verilator(Simulator):
-    def __init__(self, *argv, **kwargs):
+    def __init__(self, make_args=None, *argv, **kwargs):
         super().__init__(*argv, **kwargs)
+
+        if make_args is None:
+            make_args = []
+
+        self.make_args = make_args
 
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
@@ -1156,7 +1161,7 @@ class Verilator(Simulator):
             + self.verilog_sources_flat
         )
 
-        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"])
+        cmd.append(["make", "-C", self.sim_dir, "-f", "Vtop.mk"] + self.make_args)
 
         if not self.compile_only:
             cmd.append([out_file] + self.plus_args)

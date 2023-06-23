@@ -78,6 +78,7 @@ cocotb-clean -r
 * `waves`: Enable wave dumps (not all simulators supported).
 * `timescale`: Set simulator time unit/precision (default: `None`)
 * `gui`: Starts in gui mode (not all simulators supported).
+* `make_args`: Arguments passed to make phase (`Verilator` only).
 
 
 ### Environmental variables:
