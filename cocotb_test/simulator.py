@@ -834,6 +834,8 @@ class Vcs(Simulator):
                 "+define+COCOTB_SIM=1",
                 "-load",
                 cocotb.config.lib_name_path("vpi", "vcs"),
+                "-top",
+                self.toplevel_module,
             ]
             + self.get_define_commands(self.defines)
             + self.get_include_commands(self.includes)
@@ -843,8 +845,9 @@ class Vcs(Simulator):
             + ["-o", simv_path]
         )
         if self.timescale:
-            cmd += ["-timescale", self.timescale]
-
+            cmd_build += [f"-timescale={self.timescale}"]
+        else:
+            cmd_build += [f"-timescale=1ns/1ps"]
         cmd.append(cmd_build)
 
         if not self.compile_only:
