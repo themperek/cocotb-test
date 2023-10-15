@@ -11,7 +11,7 @@ tests_dir = os.path.dirname(__file__)
 # pytest -m 'not compile' -n 2 test_parallel.py
 # There are possibly better ways to do this
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.compile
 def test_complile():
     run(
@@ -22,7 +22,7 @@ def test_complile():
     )
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.parametrize("seed", range(6))
 def test_dff_verilog_param(seed):
     run(
@@ -33,7 +33,7 @@ def test_dff_verilog_param(seed):
     )
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.parametrize("seed", range(2))
 def test_dff_verilog_testcase(seed):
     run(
