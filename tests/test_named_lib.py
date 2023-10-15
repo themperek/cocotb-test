@@ -4,7 +4,7 @@ import os
 
 tests_dir = os.path.dirname(__file__)
 
-@pytest.mark.skipif(os.getenv("SIM") not in ("questa", "ghdl"), reason="Named libraries only supported for Questa, GHDL.")
+@pytest.mark.skipif(os.getenv("SIM") not in ("questa", "ghdl", "nvc"), reason="Named libraries only supported for Questa, GHDL, and NVC.")
 def test_dff_vhdl():
     run(
         vhdl_sources = {

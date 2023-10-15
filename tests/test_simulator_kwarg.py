@@ -9,7 +9,7 @@ tests_dir = os.path.dirname(__file__)
 
 
 # Check that SIM= environment variable takes priority over kwarg
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.xfail(os.getenv("SIM") is None,
                    reason="Bad simulator name should be used when SIM is unset",
                    strict=True,

@@ -17,7 +17,7 @@ def run_test(dut):
     assert user_mode == 1, "user_mode mismatch detected : got %d, exp %d!" % (dut.user_mode, 1)
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 def test_plus_args():
     run(
         verilog_sources=[os.path.join(hdl_dir, "plus_args.sv")],
@@ -27,13 +27,13 @@ def test_plus_args():
     )
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_fail():
     run(verilog_sources=[os.path.join(hdl_dir,"plus_args.sv")], toplevel="plus_args")
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.xfail
 def test_plus_args_test_wrong():
     run(

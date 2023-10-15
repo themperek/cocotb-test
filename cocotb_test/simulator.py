@@ -909,6 +909,51 @@ class Ghdl(Simulator):
         return cmd
 
 
+class Nvc(Simulator):
+    def get_parameter_commands(self, parameters):
+        args = []
+        for name, value in parameters.items():
+            args += ["-g", f"{name}={str(value)}"]
+        return args
+
+    def build_command(self):
+
+        nvc_exec = shutil.which("nvc")
+        if nvc_exec is None:
+            raise ValueError("NVC executable not found.")
+
+        cmd = []
+
+        out_file = os.path.join(self.sim_dir, self.toplevel_module)
+
+        if self.outdated(out_file, self.vhdl_sources) or self.force_compile:
+            for lib, src in self.vhdl_sources.items():
+                cmd.append(["nvc"] + self.compile_args + [f"--work={lib}", "-L", self.sim_dir, "-a"] + self.vhdl_compile_args + src)
+
+            cmd_elaborate = ["nvc"] + self.compile_args + [f"--work={self.toplevel_library}", "-L", self.sim_dir, "-e"] + self.vhdl_compile_args + self.get_parameter_commands(self.parameters) + [self.toplevel_module]
+            cmd.append(cmd_elaborate)
+
+        if self.waves:
+            self.simulation_args.append(f"--wave={self.toplevel_module}.fst")
+
+        self.env["PATH"] += os.pathsep + os.path.join(os.path.dirname(os.path.dirname(nvc_exec)), "lib")
+
+        cmd_run = (
+            ["nvc", f"--work={self.toplevel_library}"]
+            + self.compile_args
+            + ["-L", self.sim_dir, "--stderr=error"]
+            + ["-r"]
+            + [self.toplevel_module]
+            + ["--load", cocotb.config.lib_name_path("vhpi", "nvc")]
+            + self.simulation_args
+        )
+
+        if not self.compile_only:
+            cmd.append(cmd_run)
+
+        return cmd
+
+
 class Riviera(Simulator):
     def get_include_commands(self, includes):
         return ["+incdir+" + as_tcl_value(dir) for dir in includes]
@@ -1191,6 +1236,7 @@ def run(simulator=None, **kwargs):
         "xcelium",
         "vcs",
         "ghdl",
+        "nvc",
         "riviera",
         "activehdl",
         "verilator",
@@ -1213,6 +1259,8 @@ def run(simulator=None, **kwargs):
         sim = Vcs(**kwargs)
     elif sim_env == "ghdl":
         sim = Ghdl(**kwargs)
+    elif sim_env == "nvc":
+        sim = Nvc(**kwargs)
     elif sim_env == "riviera":
         sim = Riviera(**kwargs)
     elif sim_env == "activehdl":
