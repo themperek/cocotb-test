@@ -986,7 +986,8 @@ class Riviera(Simulator):
         do_file.write(do_script.encode())
         do_file.close()
 
-        return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
+        command = "riviera" if self.gui else "vsimsa"
+        return [[command] + ["-do"] + ["do"] + [do_file.name]]
 
 
 class Activehdl(Simulator):
