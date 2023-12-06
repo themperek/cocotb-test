@@ -980,9 +980,7 @@ class Riviera(Simulator):
             if self.waves:
                 do_script += "trace -recursive /*;"
 
-            if self.gui:
-                do_script += "wave -rec *\n"
-            else:
+            if not self.gui:
                 do_script += "run -all \nexit"
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
