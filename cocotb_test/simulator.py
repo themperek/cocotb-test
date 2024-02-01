@@ -860,10 +860,9 @@ class Vcs(Simulator):
                 with open(ucli_do, "w") as f:
                     f.write(f"fsdbDumpfile {simv_path}.fsdb; fsdbDumpvars 0 {self.toplevel_module}; run; quit;")
                 cmd_run += ["+fsdb+all=on", "-ucli", "-do", ucli_do]
+            if self.gui:
+                cmd_run.append("-gui")
             cmd.append(cmd_run)
-
-        if self.gui:
-            cmd.append("-gui")  # not tested!
 
         return cmd
 
