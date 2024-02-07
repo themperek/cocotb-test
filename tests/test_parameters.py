@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
 from cocotb_test.simulator import run
+from cocotb_test.testbench import Testbench
 import pytest
 import os
+import subprocess
 
 import cocotb
 from cocotb.triggers import Timer
@@ -14,10 +17,60 @@ def run_test_paramters(dut):
     yield Timer(1)
 
     WIDTH_IN = int(os.environ.get("WIDTH_IN", "8"))
-    WIDTH_OUT = int(os.environ.get("WIDTH_OUT", "8"))
+    WIDTH_OUT = int(os.environ.get("WIDTH_OUT", WIDTH_IN))
 
     assert WIDTH_IN == len(dut.data_in)
     assert WIDTH_OUT == len(dut.data_out)
+
+
+tb = Testbench()
+
+dut = "test_parameters"
+tb.toplevel = dut
+tb.module = os.path.splitext(os.path.basename(__file__))[0]
+
+tb.verilog_sources = [
+    os.path.join(tests_dir, dut+".v"),
+]
+
+tb.add_template_parameter('WIDTH_IN', 8)
+tb.add_template_parameter('WIDTH_OUT', 'WIDTH_IN')
+
+tb.python_search = [tests_dir]
+tb.includes = [os.path.join(tests_dir, "includes")]
+tb.defines = ["DEFINE=1"]
+
+tb.force_compile = True
+
+if __name__ == '__main__':
+    tb.main()
+
+
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not supported")
+@pytest.mark.parametrize(
+    "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
+)
+def test_testbench_pytest(request, parameters):
+    tb.sim_build = os.path.join(tests_dir, "sim_build",
+        request.node.name.replace('[', '-').replace(']', ''))
+    tb.extra_env = parameters
+    tb.run(parameters=parameters)
+
+
+@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not supported")
+@pytest.mark.parametrize(
+    "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
+)
+def test_testbench_cli(request, parameters):
+    env = {}
+    for name, val in os.environ.items():
+        env[name] = val
+    args = [__file__]
+    for name, val in parameters.items():
+        args.append(f"--param_{name.lower()}={val}")
+        env[name] = val
+    c = subprocess.run(args, env=env)
+    assert c.returncode == 0
 
 
 @pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
