@@ -5,7 +5,7 @@ import os
 tests_dir = os.path.dirname(__file__)
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 # @pytest.mark.parametrize("seed", range(10))
 def test_dff_verilog():
     run(verilog_sources=[os.path.join(tests_dir, "dff.sv")], toplevel="dff_test", module="dff_cocotb", waves=True)  # sources  # top level HDL  # name of cocotb test module

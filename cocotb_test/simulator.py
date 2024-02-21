@@ -28,6 +28,12 @@ def as_tcl_value(value):
 
     return value
 
+# Return `variable` if not None, else return `default`
+def some_or(variable, default):
+    if variable is None:
+        return default
+    else:
+        return variable
 
 class Simulator:
     def __init__(
@@ -85,84 +91,25 @@ class Simulator:
             if os.path.isdir(absworkdir):
                 self.work_dir = absworkdir
 
-        if python_search is None:
-            python_search = []
-
-        self.python_search = python_search
-
+        # Initialize from arguments
+        self.python_search = some_or(python_search, [])
         self.toplevel = toplevel
         self.toplevel_lang = toplevel_lang
 
-        if verilog_sources is None:
-            verilog_sources = []
-        self.verilog_sources = self.get_abs_paths(verilog_sources)
-
-        if vhdl_sources is None:
-            vhdl_sources = []
-        self.vhdl_sources = self.get_abs_paths(vhdl_sources)
-
-        if includes is None:
-            includes = []
-
-        self.includes = self.get_abs_paths(includes)
-
-        if defines is None:
-            defines = []
-
-        self.defines = defines
-
-        if parameters is None:
-            parameters = {}
-
-        self.parameters = parameters
-
-        if compile_args is None:
-            compile_args = []
-
-        if vhdl_compile_args is None:
-            self.vhdl_compile_args = []
-        else:
-            self.vhdl_compile_args = vhdl_compile_args
-
-        if verilog_compile_args is None:
-            self.verilog_compile_args = []
-        else:
-            self.verilog_compile_args = verilog_compile_args
-
-        if extra_args is None:
-            extra_args = []
-
-        self.compile_args = compile_args + extra_args
-
-        if sim_args is None:
-            sim_args = []
-
-        if simulation_args is not None:
-            sim_args += simulation_args
-            warnings.warn(
-                "Using simulation_args is deprecated. Please use sim_args instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        self.simulation_args = sim_args + extra_args
-
-        if plus_args is None:
-            plus_args = []
-
-        self.plus_args = plus_args
+        self.verilog_sources = self.get_abs_paths(some_or(verilog_sources, []))
+        self.vhdl_sources = self.get_abs_paths(some_or(vhdl_sources, []))
+        self.includes = self.get_abs_paths(some_or(includes, []))
+        self.defines = some_or(defines, [])
+        self.parameters = some_or(parameters, {})
+        self.compile_args = some_or(compile_args, [])
+        self.vhdl_compile_args = some_or(vhdl_compile_args, [])
+        self.verilog_compile_args = some_or(verilog_compile_args, [])
+        self.extra_args = some_or(extra_args, [])
+        self.simulation_args = some_or(sim_args, [])
+        self.plus_args = some_or(plus_args, [])
         self.force_compile = force_compile
         self.compile_only = compile_only
-
-        if kwargs:
-            warnings.warn(
-                "Using kwargs is deprecated. Please explicitly declare or arguments instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        for arg in kwargs:
-            setattr(self, arg, kwargs[arg])
+        self.waves = bool(some_or(waves, int(os.getenv("WAVES", 0))))
 
         # by copy since we modify
         self.env = dict(extra_env) if extra_env is not None else {}
@@ -173,15 +120,28 @@ class Simulator:
         if seed is not None:
             self.env["RANDOM_SEED"] = str(seed)
 
-        if waves is None:
-            self.waves = bool(int(os.getenv("WAVES", 0)))
-        else:
-            self.waves = bool(waves)
-
         if timescale is None or re.fullmatch("\\d+[npu]?s/\\d+[npu]?s", timescale):
             self.timescale = timescale
         else:
             raise ValueError("Invalid timescale: {}".format(timescale))
+
+        # Backwards compatibility
+        if simulation_args is not None:
+            self.simulation_args += simulation_args
+            warnings.warn(
+                "Using simulation_args is deprecated. Please use sim_args instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if kwargs:
+            warnings.warn(
+                "Using kwargs is deprecated. Please explicitly declare or arguments instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            for arg in kwargs:
+                setattr(self, arg, kwargs[arg])
 
         self.gui = gui
 
@@ -457,7 +417,7 @@ class Icarus(Simulator):
 
     def compile_command(self):
 
-        compile_args = self.compile_args + self.verilog_compile_args
+        compile_args = self.compile_args + self.extra_args + self.verilog_compile_args
 
         toplevel = []
         for t in self.toplevel_module_list:
@@ -556,7 +516,7 @@ class Questa(Simulator):
         do_script = self.do_script()
 
         if self.vhdl_sources:
-            compile_args = self.compile_args + self.vhdl_compile_args
+            compile_args = self.compile_args + self.extra_args + self.vhdl_compile_args
 
             for lib, src in self.vhdl_sources.items():
                 cmd.append(["vlib", as_tcl_value(lib)])
@@ -568,7 +528,7 @@ class Questa(Simulator):
                 )
 
         if self.verilog_sources:
-            compile_args = self.compile_args + self.verilog_compile_args
+            compile_args = self.compile_args + self.extra_args + self.verilog_compile_args
             if self.timescale:
                 compile_args += ["-timescale", self.timescale]
 
@@ -690,7 +650,7 @@ class Ius(Simulator):
                 + self.get_define_commands(self.defines)
                 + self.get_include_commands(self.includes)
                 + self.get_parameter_commands(self.parameters)
-                + self.compile_args
+                + self.compile_args + self.extra_args
                 + self.verilog_sources_flat
                 + self.vhdl_sources_flat
             )
@@ -772,7 +732,7 @@ class Xcelium(Simulator):
                 + self.get_define_commands(self.defines)
                 + self.get_include_commands(self.includes)
                 + self.get_parameter_commands(self.parameters)
-                + self.compile_args
+                + self.compile_args + self.extra_args
                 + self.verilog_sources_flat
                 + self.vhdl_sources_flat
             )
@@ -816,7 +776,7 @@ class Vcs(Simulator):
         with open(do_file_path, "w") as pli_file:
             pli_file.write(pli_cmd)
 
-        compile_args = self.compile_args + self.verilog_compile_args
+        compile_args = self.compile_args + self.extra_args + self.verilog_compile_args
         debug_access = "-debug_access"
         if self.waves:
             debug_access += "+all+dmptf"
@@ -880,7 +840,7 @@ class Ghdl(Simulator):
         cmd = []
 
         out_file = os.path.join(self.sim_dir, self.toplevel_module)
-        compile_args = self.compile_args + self.vhdl_compile_args
+        compile_args = self.compile_args + self.extra_args + self.vhdl_compile_args
 
         if self.outdated(out_file, self.vhdl_sources) or self.force_compile:
             for lib, src in self.vhdl_sources.items():
@@ -899,6 +859,49 @@ class Ghdl(Simulator):
             + compile_args
             + [self.toplevel_module]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
+            + self.simulation_args
+            + self.get_parameter_commands(self.parameters)
+        )
+
+        if not self.compile_only:
+            cmd.append(cmd_run)
+
+        return cmd
+
+
+class Nvc(Simulator):
+    def get_parameter_commands(self, parameters):
+        return [f"-g{name}={str(value)}" for name, value in parameters.items()]
+
+    def build_command(self):
+
+        nvc_exec = shutil.which("nvc")
+        if nvc_exec is None:
+            raise ValueError("NVC executable not found.")
+
+        cmd = []
+
+        out_file = os.path.join(self.sim_dir, self.toplevel_module)
+        compile_args = self.compile_args + self.vhdl_compile_args
+        if self.outdated(out_file, self.vhdl_sources) or self.force_compile:
+            for lib, src in self.vhdl_sources.items():
+                cmd.append(["nvc"] + self.extra_args + [f"--work={lib}", "-L", self.sim_dir, "-a"] + compile_args + src)
+
+            cmd_elaborate = ["nvc"] + self.extra_args + [f"--work={self.toplevel_library}", "-L", self.sim_dir, "-e"] + compile_args + [self.toplevel_module]
+            cmd.append(cmd_elaborate)
+
+        if self.waves:
+            self.simulation_args.append(f"--wave={self.toplevel_module}.fst")
+
+        self.env["PATH"] += os.pathsep + os.path.join(os.path.dirname(os.path.dirname(nvc_exec)), "lib")
+
+        cmd_run = (
+            ["nvc", f"--work={self.toplevel_library}"]
+            + self.extra_args
+            + ["-L", self.sim_dir, "--stderr=error"]
+            + ["-r"]
+            + [self.toplevel_module]
+            + ["--load", cocotb.config.lib_name_path("vhpi", "nvc")]
             + self.simulation_args
             + self.get_parameter_commands(self.parameters)
         )
@@ -932,7 +935,7 @@ class Riviera(Simulator):
             do_script += f"alib {as_tcl_value(self.rtl_library)} \n"
 
             if self.vhdl_sources:
-                compile_args = self.compile_args + self.vhdl_compile_args
+                compile_args = self.compile_args + self.extra_args + self.vhdl_compile_args
                 do_script += "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources_flat),
@@ -940,7 +943,7 @@ class Riviera(Simulator):
                 )
 
             if self.verilog_sources:
-                compile_args = self.compile_args + self.verilog_compile_args
+                compile_args = self.compile_args + self.extra_args + self.verilog_compile_args
                 do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources_flat),
@@ -1010,7 +1013,7 @@ class Activehdl(Simulator):
             do_script += f"alib {as_tcl_value(self.rtl_library)} \n"
 
             if self.vhdl_sources:
-                compile_args = self.compile_args + self.vhdl_compile_args
+                compile_args = self.compile_args + self.extra_args + self.vhdl_compile_args
                 do_script += "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VHDL_SOURCES=" ".join(as_tcl_value(v) for v in self.vhdl_sources_flat),
@@ -1018,7 +1021,7 @@ class Activehdl(Simulator):
                 )
 
             if self.verilog_sources:
-                compile_args = self.compile_args + self.verilog_compile_args
+                compile_args = self.compile_args + self.extra_args + self.verilog_compile_args
                 do_script += "alog {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     VERILOG_SOURCES=" ".join(as_tcl_value(v) for v in self.verilog_sources_flat),
@@ -1127,7 +1130,7 @@ class Verilator(Simulator):
         if verilator_exec is None:
             raise ValueError("Verilator executable not found.")
 
-        compile_args = self.compile_args + self.verilog_compile_args
+        compile_args = self.compile_args + self.extra_args + self.verilog_compile_args
 
         if self.waves:
             compile_args += ["--trace-fst", "--trace-structs"]
@@ -1191,6 +1194,7 @@ def run(simulator=None, **kwargs):
         "xcelium",
         "vcs",
         "ghdl",
+        "nvc",
         "riviera",
         "activehdl",
         "verilator",
@@ -1213,6 +1217,8 @@ def run(simulator=None, **kwargs):
         sim = Vcs(**kwargs)
     elif sim_env == "ghdl":
         sim = Ghdl(**kwargs)
+    elif sim_env == "nvc":
+        sim = Nvc(**kwargs)
     elif sim_env == "riviera":
         sim = Riviera(**kwargs)
     elif sim_env == "activehdl":

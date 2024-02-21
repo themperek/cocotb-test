@@ -20,7 +20,7 @@ def run_test_paramters(dut):
     assert WIDTH_OUT == len(dut.data_out)
 
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 @pytest.mark.parametrize(
     "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
 )
@@ -55,7 +55,7 @@ def test_dff_vhdl_testcase(parameters):
         + "_".join(("{}={}".format(*i) for i in parameters.items())),
     )
 
-@pytest.mark.skipif(os.getenv("SIM") == "ghdl", reason="Verilog not suported")
+@pytest.mark.skipif(os.getenv("SIM") in ("ghdl", "nvc"), reason="Verilog not suported")
 def test_bad_timescales():
 
     kwargs = {
