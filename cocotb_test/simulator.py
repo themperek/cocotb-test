@@ -104,7 +104,7 @@ class Simulator:
 
         if external_libraries is None:
             external_libraries = []
-        self.vhdl_sources = self.get_abs_paths(external_libraries)
+        self.external_libraries = self.get_abs_paths(external_libraries)
 
         if includes is None:
             includes = []
