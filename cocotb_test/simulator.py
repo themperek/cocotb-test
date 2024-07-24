@@ -58,6 +58,7 @@ class Simulator:
         timescale=None,
         gui=False,
         simulation_args=None,
+        external_libraries=None,
         **kwargs,
     ):
 
@@ -100,6 +101,10 @@ class Simulator:
         if vhdl_sources is None:
             vhdl_sources = []
         self.vhdl_sources = self.get_abs_paths(vhdl_sources)
+
+        if external_libraries is None:
+            external_libraries = []
+        self.external_libraries = self.get_abs_paths(external_libraries)
 
         if includes is None:
             includes = []
@@ -930,6 +935,9 @@ class Riviera(Simulator):
         if self.outdated(out_file, self.verilog_sources_flat + self.vhdl_sources_flat) or self.force_compile:
 
             do_script += f"alib {as_tcl_value(self.rtl_library)} \n"
+
+            for path in self.external_libraries:
+                do_script += f"alib {as_tcl_value(path)} \n"
 
             if self.vhdl_sources:
                 compile_args = self.compile_args + self.vhdl_compile_args
