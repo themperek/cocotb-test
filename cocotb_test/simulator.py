@@ -860,10 +860,9 @@ class Vcs(Simulator):
                 with open(ucli_do, "w") as f:
                     f.write(f"fsdbDumpfile {simv_path}.fsdb; fsdbDumpvars 0 {self.toplevel_module}; run; quit;")
                 cmd_run += ["+fsdb+all=on", "-ucli", "-do", ucli_do]
+            if self.gui:
+                cmd_run.append("-gui")
             cmd.append(cmd_run)
-
-        if self.gui:
-            cmd.append("-gui")  # not tested!
 
         return cmd
 
@@ -1101,8 +1100,6 @@ class Verilator(Simulator):
 
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
-
-        self.env["CXXFLAGS"] = self.env.get("CXXFLAGS", "") + " -std=c++11"
 
     def get_include_commands(self, includes):
         return [f"-I{dir}" for dir in includes]
