@@ -39,7 +39,6 @@ class Simulator:
         toplevel_lang="verilog",
         verilog_sources=None,
         vhdl_sources=None,
-        external_libraries=None,
         includes=None,
         defines=None,
         parameters=None,
@@ -59,6 +58,7 @@ class Simulator:
         timescale=None,
         gui=False,
         simulation_args=None,
+        external_libraries=None,
         **kwargs,
     ):
 
