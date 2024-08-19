@@ -332,7 +332,6 @@ class Simulator:
         pid = None
         if self.process is not None:
             pid = self.process.pid
-            self.process.stdout.flush()
             self.process.kill()
             self.process.wait()
         # Restore previous handlers
