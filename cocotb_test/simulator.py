@@ -520,7 +520,7 @@ class Questa(Simulator):
             for lib, src in self.vhdl_sources.items():
                 cmd.append(["vlib", as_tcl_value(lib)])
                 cmd.append(
-                    ["vcom", "-mixedsvvh"]
+                    ["vcom"]
                     + ["-work", as_tcl_value(lib)]
                     + compile_args
                     + [as_tcl_value(v) for v in src]
@@ -534,7 +534,7 @@ class Questa(Simulator):
             for lib, src in self.verilog_sources.items():
                 cmd.append(["vlib", as_tcl_value(lib)])
                 cmd.append(
-                    ["vlog", "-mixedsvvh"]
+                    ["vlog"]
                     + ([] if self.force_compile else ["-incr"])
                     + ["-work", as_tcl_value(lib)]
                     + ["+define+COCOTB_SIM"]
