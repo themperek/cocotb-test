@@ -1,4 +1,3 @@
-from cocotb.regression import TestFactory
 from cocotb_test.simulator import run
 import pytest
 import os
