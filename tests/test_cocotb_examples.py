@@ -2,9 +2,15 @@ import os
 import cocotb
 import pytest
 
+from cocotb_test.compat import cocotb_2x_or_newer
 from cocotb_test.simulator import run
 
-example_dir = os.path.join(os.path.dirname(os.path.dirname(cocotb.__file__)), "examples")
+if cocotb_2x_or_newer:
+    cocotb_repo_root = os.path.dirname(os.path.dirname(os.path.dirname(cocotb.__file__)))
+else:
+    cocotb_repo_root = os.path.dirname(os.path.dirname(cocotb.__file__))
+
+example_dir = os.path.join(cocotb_repo_root, "examples")
 
 if os.path.isdir(example_dir) == False:
     raise IOError("Cocotb example directory not found. Please clone with git and install with `pip -e`")
