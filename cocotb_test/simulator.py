@@ -12,7 +12,7 @@ import warnings
 import find_libpython
 import asyncio
 import sysconfig
-from cocotb_test.compat import cocotb_config
+from cocotb_test.compat import cocotb_2x_or_newer, cocotb_config
 
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
@@ -174,8 +174,8 @@ class Simulator:
 
         self.env["PYTHONHOME"] = sysconfig.get_config_var("prefix")
 
-        self.env["TOPLEVEL"] = self.toplevel_module
-        self.env["MODULE"] = self.module
+        self.env["COCOTB_TOPLEVEL" if cocotb_2x_or_newer else "TOPLEVEL"] = self.toplevel_module
+        self.env["COCOTB_TEST_MODULES" if cocotb_2x_or_newer else "MODULE"] = self.module
 
         if not os.path.exists(self.sim_dir):
             os.makedirs(self.sim_dir)
