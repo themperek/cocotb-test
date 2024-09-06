@@ -10,9 +10,9 @@ import threading
 import signal
 import warnings
 import find_libpython
-import cocotb.config
 import asyncio
 import sysconfig
+from cocotb_test.compat import cocotb_config
 
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
@@ -443,7 +443,7 @@ class Icarus(Simulator):
 
     def run_command(self):
         return (
-            ["vvp", "-M", self.lib_dir, "-m", cocotb.config.lib_name("vpi", "icarus")]
+            ["vvp", "-M", self.lib_dir, "-m", cocotb_config.lib_name("vpi", "icarus")]
             + self.simulation_args
             + [self.sim_file]
             + self.plus_args
@@ -553,7 +553,7 @@ class Questa(Simulator):
                     + ["-onfinish", "stop" if self.gui else "exit"]
                     + [
                         "-foreign",
-                        "cocotb_init " + as_tcl_value(cocotb.config.lib_name_path("fli", "questa")),
+                        "cocotb_init " + as_tcl_value(cocotb_config.lib_name_path("fli", "questa")),
                     ]
                     + self.simulation_args
                     + [as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)]
@@ -561,7 +561,7 @@ class Questa(Simulator):
                     + ["-do", do_script]
                 )
                 if self.verilog_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "questa") + ":cocotbvpi_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vpi", "questa") + ":cocotbvpi_entry_point"
             else:
                 cmd.append(
                     ["vsim"]
@@ -569,7 +569,7 @@ class Questa(Simulator):
                     + ["-onfinish", "stop" if self.gui else "exit"]
                     + [
                         "-pli",
-                        as_tcl_value(cocotb.config.lib_name_path("vpi", "questa")),
+                        as_tcl_value(cocotb_config.lib_name_path("vpi", "questa")),
                     ]
                     + self.simulation_args
                     + [as_tcl_value(v) for v in self.get_parameter_commands(self.parameters)]
@@ -578,7 +578,7 @@ class Questa(Simulator):
                     + ["-do", do_script]
                 )
                 if self.vhdl_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("fli", "questa") + ":cocotbfli_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("fli", "questa") + ":cocotbfli_entry_point"
 
         return cmd
 
@@ -592,7 +592,7 @@ class Ius(Simulator):
     def __init__(self, *argv, **kwargs):
         super().__init__(*argv, **kwargs)
 
-        self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "ius") + ":cocotbvhpi_entry_point"
+        self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vhpi", "ius") + ":cocotbvhpi_entry_point"
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -639,7 +639,7 @@ class Ius(Simulator):
                     "-define",
                     "COCOTB_SIM=1",
                     "-loadvpi",
-                    cocotb.config.lib_name_path("vpi", "ius") + ":vlog_startup_routines_bootstrap",
+                    cocotb_config.lib_name_path("vpi", "ius") + ":vlog_startup_routines_bootstrap",
                     "-plinowarn",
                     "-access",
                     "+rwc",
@@ -674,7 +674,7 @@ class Xcelium(Simulator):
     def __init__(self, *argv, **kwargs):
         super().__init__(*argv, **kwargs)
 
-        self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "xcelium") + ":cocotbvhpi_entry_point"
+        self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vhpi", "xcelium") + ":cocotbvhpi_entry_point"
 
     def get_include_commands(self, includes):
         include_cmd = []
@@ -721,7 +721,7 @@ class Xcelium(Simulator):
                     "-define",
                     "COCOTB_SIM=1",
                     "-loadvpi",
-                    cocotb.config.lib_name_path("vpi", "xcelium") + ":vlog_startup_routines_bootstrap",
+                    cocotb_config.lib_name_path("vpi", "xcelium") + ":vlog_startup_routines_bootstrap",
                     "-plinowarn",
                     "-access",
                     "+rwc",
@@ -792,7 +792,7 @@ class Vcs(Simulator):
                 "pli.tab",
                 "+define+COCOTB_SIM=1",
                 "-load",
-                cocotb.config.lib_name_path("vpi", "vcs"),
+                cocotb_config.lib_name_path("vpi", "vcs"),
                 "-top",
                 self.toplevel_module,
             ]
@@ -857,7 +857,7 @@ class Ghdl(Simulator):
             ["ghdl", "-r", f"--work={self.toplevel_library}"]
             + compile_args
             + [self.toplevel_module]
-            + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
+            + ["--vpi=" + str(cocotb_config.lib_name_path("vpi", "ghdl"))]
             + self.simulation_args
             + self.get_parameter_commands(self.parameters)
         )
@@ -903,7 +903,7 @@ class Nvc(Simulator):
             + ["-L", self.sim_dir, "--stderr=error"]
             + ["-r"]
             + [self.toplevel_module]
-            + ["--load", cocotb.config.lib_name_path("vhpi", "nvc")]
+            + ["--load", cocotb_config.lib_name_path("vhpi", "nvc")]
             + self.simulation_args
         )
 
@@ -960,25 +960,25 @@ class Riviera(Simulator):
                 do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
-                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera") + ":vhpi_startup_routines_bootstrap"),
+                    EXT_NAME=as_tcl_value(cocotb_config.lib_name_path("vhpi", "riviera") + ":vhpi_startup_routines_bootstrap"),
                     EXTRA_ARGS=" ".join(
                         as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
                     ),
                 )
                 if self.verilog_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "riviera") + "cocotbvpi_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vpi", "riviera") + "cocotbvpi_entry_point"
             else:
                 do_script += "asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
-                    EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "riviera")),
+                    EXT_NAME=as_tcl_value(cocotb_config.lib_name_path("vpi", "riviera")),
                     EXTRA_ARGS=" ".join(
                         as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
                     ),
                     PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
                 )
                 if self.vhdl_sources:
-                    self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "riviera") + ":cocotbvhpi_entry_point"
+                    self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vhpi", "riviera") + ":cocotbvhpi_entry_point"
 
             if self.waves:
                 do_script += "trace -recursive /*;"
@@ -1046,25 +1046,25 @@ class Activehdl(Simulator):
                     RTL_LIBRARY=as_tcl_value(self.rtl_library),
                     TOPLEVEL=as_tcl_value(self.toplevel_module),
                     EXT_NAME=as_tcl_value(
-                        cocotb.config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"
+                        cocotb_config.lib_name_path("vhpi", "activehdl") + ":vhpi_startup_routines_bootstrap"
                     ),
                     EXTRA_ARGS=" ".join(self.simulation_args + self.get_parameter_commands(self.parameters)),
                 )
             )
             if self.verilog_sources:
-                self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
+                self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vpi", "activehdl") + "cocotbvpi_entry_point"
         else:
             do_script += 'asim +access +w -interceptcoutput -O2 -pli "{EXT_NAME}" {EXTRA_ARGS} {RTL_LIBRARY}.{TOPLEVEL} {PLUS_ARGS} \n'.format(
                 RTL_LIBRARY=as_tcl_value(self.rtl_library),
                 TOPLEVEL=as_tcl_value(self.toplevel_module),
-                EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "activehdl")),
+                EXT_NAME=as_tcl_value(cocotb_config.lib_name_path("vpi", "activehdl")),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v) for v in (self.simulation_args + self.get_parameter_commands(self.parameters))
                 ),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
             if self.vhdl_sources:
-                self.env["GPI_EXTRA"] = cocotb.config.lib_name_path("vhpi", "activehdl") + ":cocotbvpi_entry_point"
+                self.env["GPI_EXTRA"] = cocotb_config.lib_name_path("vhpi", "activehdl") + ":cocotbvpi_entry_point"
 
         if self.waves:
             do_script += "trace -recursive /*;"
