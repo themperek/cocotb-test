@@ -68,6 +68,7 @@ cocotb-clean -r
 * `sim_args`: Any arguments or flags to pass to the execution of the compiled simulation.
 * `extra_args`: Passed to both the compile and execute phases of simulators.
 * `plus_args`: plusargs arguments passed to simulator.
+* `pre_cmd`: Commands to run before simulation begins (currently only available for the Questa simulator).
 * `force_compile`: Force compilation even if sources did not change. (default: `False`)
 * `compile_only`: Only compile sources. Do not run simulation. (default: `False`)
 * `testcase`: The name of the test function(s) to run (see [TESTCASE](https://docs.cocotb.org/en/stable/building.html?#envvar-TESTCASE) ).

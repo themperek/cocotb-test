@@ -54,6 +54,7 @@ class Simulator:
         sim_args=None,
         extra_args=None,
         plus_args=None,
+        pre_cmd=None,
         force_compile=False,
         testcase=None,
         sim_build="sim_build",
@@ -107,6 +108,7 @@ class Simulator:
         self.extra_args = some_or(extra_args, [])
         self.simulation_args = some_or(sim_args, [])
         self.plus_args = some_or(plus_args, [])
+        self.pre_cmd = some_or(pre_cmd, [])
         self.force_compile = force_compile
         self.compile_only = compile_only
         self.waves = bool(some_or(waves, int(os.getenv("WAVES", 0))))
@@ -450,6 +452,9 @@ class Icarus(Simulator):
         )
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Icarus Verilog.")
+
         verilog_sources = self.verilog_sources_flat.copy()
         if self.waves:
             dump_mod_name = "iverilog_dump"
@@ -502,6 +507,8 @@ class Questa(Simulator):
 
     def do_script(self):
         do_script = ""
+        if self.pre_cmd:
+            do_script += self.pre_cmd
         if self.waves:
             do_script += "log -recursive /*;"
         if not self.gui:
@@ -621,6 +628,8 @@ class Ius(Simulator):
         return parameters_cmd
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Ius.")
 
         assert (
             not self.verilog_compile_args and not self.vhdl_compile_args
@@ -702,6 +711,8 @@ class Xcelium(Simulator):
         return parameters_cmd
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Xcelium.")
 
         assert (
             not self.verilog_compile_args and not self.vhdl_compile_args
@@ -766,6 +777,8 @@ class Vcs(Simulator):
         return [f"-pvalue+{self.toplevel_module}/{name}={str(value)}" for name, value in parameters.items()]
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Vcs.")
 
         pli_cmd = "acc+=rw,wn:*"
 
@@ -831,6 +844,8 @@ class Ghdl(Simulator):
         return [f"-g{name}={str(value)}" for name, value in parameters.items()]
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for GHDL.")
 
         ghdl_exec = shutil.which("ghdl")
         if ghdl_exec is None:
@@ -924,6 +939,8 @@ class Riviera(Simulator):
         return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Riviera.")
 
         self.rtl_library = self.toplevel_module
 
@@ -1076,6 +1093,8 @@ class Activehdl(Simulator):
         return "run -all \nexit"
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Activehdl.")
 
         self.rtl_library = self.toplevel_module
 
@@ -1115,6 +1134,8 @@ class Verilator(Simulator):
         return [f"-G{name}={str(value)}" for name, value in parameters.items()]
 
     def build_command(self):
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Verilator.")
 
         cmd = []
 
