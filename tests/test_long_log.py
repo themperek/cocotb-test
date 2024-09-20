@@ -9,9 +9,9 @@ hdl_dir = os.path.dirname(__file__)
 
 
 @cocotb.test()
-def run_test_long_log(dut):
+async def run_test_long_log(dut):
 
-    yield Timer(1)
+    await Timer(1)
 
     dut._log.info("BEFORE")
     dut._log.info("LONGLOG" * 100000)

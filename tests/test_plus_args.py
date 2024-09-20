@@ -8,9 +8,9 @@ import os
 hdl_dir = os.path.dirname(__file__)
 
 @cocotb.test(skip=False)
-def run_test(dut):
+async def run_test(dut):
 
-    yield Timer(1)
+    await Timer(1)
 
     user_mode = int(dut.user_mode)
 

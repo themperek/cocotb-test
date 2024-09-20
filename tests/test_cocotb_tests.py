@@ -3,9 +3,15 @@ import cocotb
 import pytest
 import sys
 
+from cocotb_test.compat import cocotb_2x_or_newer
 from cocotb_test.simulator import run
 
-tests_dir = os.path.join(os.path.dirname(os.path.dirname(cocotb.__file__)), "tests")
+if cocotb_2x_or_newer:
+    cocotb_repo_root = os.path.dirname(os.path.dirname(os.path.dirname(cocotb.__file__)))
+else:
+    cocotb_repo_root = os.path.dirname(os.path.dirname(cocotb.__file__))
+
+tests_dir = os.path.join(cocotb_repo_root, "tests")
 
 if os.path.isdir(tests_dir) == False:
     raise IOError(
