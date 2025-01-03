@@ -103,7 +103,7 @@ jobs:
           sudo apt-get install libfl2
           sudo apt-get install libfl-dev
           sudo apt-get install help2man
-          git clone http://git.veripool.org/git/verilator --depth=1
+          git clone https://github.com/verilator/verilator --depth=1
           cd verilator && autoconf && ./configure && make -j2 && sudo make install && cd ..
         displayName: Compile and Install Verilator on Linux
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'verilator'))
