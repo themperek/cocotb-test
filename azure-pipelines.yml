@@ -11,46 +11,68 @@ jobs:
           python.version: "3.7"
           imageName: "ubuntu-latest"
           SIM: "icarus"
+          cocotb_version: "v1.9.0"
         Linux-Icarus-py38:
           python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "icarus"
+          cocotb_version: "v1.9.0"
         Linux-Icarus-py39:
           python.version: "3.9"
           imageName: "ubuntu-latest"
           SIM: "icarus"
+          cocotb_version: "v1.9.0"
         Linux-Icarus-py310:
           python.version: "3.10"
           imageName: "ubuntu-latest"
           SIM: "icarus"
+          cocotb_version: "v1.9.0"
+        Linux-Icarus-py310-cocotb20:
+          python.version: "3.10"
+          imageName: "ubuntu-latest"
+          SIM: "icarus"
+          # master as of 2025-01-03
+          cocotb_version: "5237f9de3620aaf64e36d2e76960b9f7121bea96"
         Linux-GHDL-py38:
           python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "ghdl"
+          cocotb_version: "v1.9.0"
         Linux-NVC-py38:
           python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "nvc"
+          cocotb_version: "v1.9.0"
         Windows-Icarus-py310:
           python.version: "3.10"
           imageName: "windows-latest"
           SIM: "icarus"
+          cocotb_version: "v1.9.0"
         Mac-Icarus-py38:
           imageName: "macOS-latest"
           python.version: "3.8"
           SIM: "icarus"
+          cocotb_version: "v1.9.0"
         Linux-Verilator-py38:
           python.version: "3.8"
           imageName: "ubuntu-latest"
           SIM: "verilator"
+          cocotb_version: "v1.9.0"
+        Linux-Verilator-py38-cocotb20:
+          python.version: "3.8"
+          imageName: "ubuntu-latest"
+          SIM: "verilator"
+          # master as of 2025-01-03
+          cocotb_version: "5237f9de3620aaf64e36d2e76960b9f7121bea96"
 
     pool:
       vmImage: $(imageName)
 
     variables:
       SIM: $(SIM)
+      cocotb_version: $(cocotb_version)
       readonly: true
- 
+
     steps:
       - powershell: |
           Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
@@ -70,8 +92,8 @@ jobs:
         condition: eq( variables['Agent.OS'], 'Darwin' )
 
       - script: conda init
-        displayName: Init Conda 
-        
+        displayName: Init Conda
+
       - script: |
           conda install -y python=$(python.version)
           conda update -q -y conda
@@ -132,7 +154,7 @@ jobs:
         displayName: "Install pytest-xdist"
 
       - script: |
-          conda install --yes pip && git clone -b v1.9.0 https://github.com/cocotb/cocotb.git && cd cocotb && cd .. && pip install -e cocotb
+          conda install --yes pip && git clone https://github.com/cocotb/cocotb.git && cd cocotb && git checkout ${{ variables.cocotb_version }} && cd .. && pip install -e cocotb
         displayName: "Install cocotb from source"
 
       - script: |
@@ -160,7 +182,7 @@ jobs:
           cd tests; make
         displayName: "Test Makefile flow (Linux only)"
         condition: and( eq( variables['Agent.OS'], 'Linux' ), eq(variables['SIM'], 'icarus'))
- 
+
       - task: PublishTestResults@2
         condition: succeededOrFailed()
         inputs:
