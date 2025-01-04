@@ -48,11 +48,11 @@ jobs:
           imageName: "windows-latest"
           SIM: "icarus"
           cocotb_version: "v1.9.0"
-        Mac-Icarus-py38:
-          imageName: "macOS-latest"
-          python.version: "3.8"
-          SIM: "icarus"
-          cocotb_version: "v1.9.0"
+        # Mac-Icarus-py38:
+        #   imageName: "macOS-latest"
+        #   python.version: "3.8"
+        #   SIM: "icarus"
+        #   cocotb_version: "v1.9.0"
         Linux-Verilator-py38:
           python.version: "3.8"
           imageName: "ubuntu-latest"
