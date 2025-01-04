@@ -167,6 +167,7 @@ class Simulator:
         self.env["LIBPYTHON_LOC"] = find_libpython.find_libpython()
 
         self.env["PATH"] += os.pathsep + self.lib_dir
+        self.env["PYGPI_PYTHON_BIN"] = sys.executable
 
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         for path in self.python_search:
