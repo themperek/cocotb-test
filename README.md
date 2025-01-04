@@ -2,6 +2,9 @@
 [![Build Status](https://dev.azure.com/themperek/themperek/_apis/build/status/themperek.cocotb-test?branchName=master)](https://dev.azure.com/themperek/themperek/_build/latest?definitionId=2&branchName=master)
 [![PyPI version](https://badge.fury.io/py/cocotb-test.svg)](https://badge.fury.io/py/cocotb-test)
 
+> [!NOTE]  
+> Since version 1.8 [cocotb](https://github.com/cocotb/cocotb) supports [python based runner](https://docs.cocotb.org/en/stable/runner.html).
+
 ``cocotb-test`` provides standard python unit testing capabilities for [cocotb](https://github.com/cocotb/cocotb)
 - allow the look and feel of Python unit testing
 - remove the need for Makefiles (includes Makefile compatibility mode)
