@@ -77,19 +77,20 @@ jobs:
       - powershell: |
           Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe
           Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait
+          Write-Host "##vso[task.setvariable variable=CONDA;]C:\miniconda3"
           Write-Host "##vso[task.prependpath]C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin"
         displayName: Download and Install Anaconda on Windows
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
-      - script: echo "##vso[task.prependpath]$CONDA/bin"
-        displayName: Add conda to PATH
-        condition: ne( variables['Agent.OS'], 'Windows_NT' )
-
       - script: |
-          sudo chown -R $USER $CONDA
-          gcc --version
-        displayName: Take ownership of conda installation
+          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
+          bash ~/miniconda.sh -b -p $HOME/miniconda
+          echo "##vso[task.setvariable variable=CONDA;]$HOME/miniconda"
+        displayName: Download and Install Anaconda on Darwin
         condition: eq( variables['Agent.OS'], 'Darwin' )
+
+      - bash: echo "##vso[task.prependpath]$CONDA/bin"
+        displayName: Add conda to PATH
 
       - script: conda init
         displayName: Init Conda
