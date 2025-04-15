@@ -9,9 +9,9 @@ tests_dir = os.path.dirname(__file__)
 
 
 @cocotb.test()
-def run_test_paramters(dut):
+async def run_test_parameters(dut):
 
-    yield Timer(1)
+    await Timer(1)
 
     WIDTH_IN = int(os.environ.get("WIDTH_IN", "8"))
     WIDTH_OUT = int(os.environ.get("WIDTH_OUT", "8"))
