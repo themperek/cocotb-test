@@ -31,8 +31,7 @@
 import os
 import sys
 import argparse
-import pkg_resources
-from cocotb_test import simulator
+from cocotb_test import simulator, __version__
 
 
 class PrintAction(argparse.Action):
@@ -48,7 +47,7 @@ class PrintAction(argparse.Action):
 def config():
 
     makefiles_dir = os.path.join(os.path.dirname(__file__), "Makefile.inc")
-    version = pkg_resources.get_distribution("cocotb-test").version
+    version = __version__
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
