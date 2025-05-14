@@ -58,7 +58,7 @@ cocotb-clean -r
 * `toplevel`: Top level module name to indicate the instance in the hierarchy to use as the DUT. Multiple top levels can be specified as a list, if the simulator supports it.
 * `module`: The name of the module(s) to search for test functions (see [MODULE](https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE) ).
 
-* `python_search` : List of additional directoreis to search for python/cocotb modules.
+* `python_search` : List of additional directories to search for python/cocotb modules.
 * `verilog_sources`: Verilog source files to include. Can be specified as a `list` or as a `dict` of `list`s with the library name as key, if the simulator supports named libraries.
 * `vhdl_sources`: VHDL source files to include. Can be specified as a `list` or as a `dict` of `list`s with the library name as key, if the simulator supports named libraries.
 * `toplevel_lang`: see [TOPLEVEL_LANG](https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG). (default: `verilog`)
