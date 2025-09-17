@@ -115,7 +115,7 @@ class Simulator:
         self.env = dict(extra_env) if extra_env is not None else {}
 
         if testcase is not None:
-            self.env["COCOTB_TESTCASE" if cocotb_2x_or_newer else "TESTCASE"] = self.toplevel_module
+            self.env["COCOTB_TESTCASE" if cocotb_2x_or_newer else "TESTCASE"] = testcase
 
         if seed is not None:
             self.env["COCOTB_RANDOM_SEED" if cocotb_2x_or_newer else "RANDOM_SEED"] = str(seed)
