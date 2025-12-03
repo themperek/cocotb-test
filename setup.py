@@ -1,10 +1,10 @@
-from setuptools import setup
-from setuptools import find_packages
+from setuptools import setup, find_packages
 import os
-import cocotb_test
 
-version = cocotb_test.__version__
-
+# Read version from cocotb_test/__init__.py without importing the package
+version = {}
+with open(os.path.join(os.path.dirname(__file__), "cocotb_test", "__init__.py"), "r") as f:
+    exec(f.read(), version)
 
 def read_file(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -12,7 +12,7 @@ def read_file(fname):
 
 setup(
     name="cocotb-test",
-    version=version,
+    version=version["__version__"],
     description="",
     url="",
     license="BSD",
@@ -20,7 +20,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Tomasz Hemperek",
     author_email="hemperek@uni-bonn.de",
-    packages=find_packages(),
+    packages=find_packages(include=["cocotb_test", "cocotb_test.*"]),
     include_package_data = True,
     python_requires=">=3.7",
     install_requires=[
