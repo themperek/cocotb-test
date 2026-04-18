@@ -20,7 +20,7 @@ _space_re = re.compile(r"([\s])", re.ASCII)
 
 def as_tcl_value(value):
     # add '\' before special characters and spaces
-    value = _magic_re.sub(r"\\\1", value)
+    value = _magic_re.sub(r"\\\1", str(value))
     value = value.replace("\n", r"\n")
     value = _space_re.sub(r"\\\1", value)
     if value[0] == '"':
