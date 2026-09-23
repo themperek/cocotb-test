@@ -175,6 +175,10 @@ class Simulator:
 
         self.env["PYTHONHOME"] = sysconfig.get_config_var("prefix")
 
+        # cocotb >= 2.1 loads libpython and the Python GPI entry point from GPI_USERS.
+        if hasattr(cocotb_config, "pygpi_entry_point") and "GPI_USERS" not in self.env:
+            self.env["GPI_USERS"] = self.env["LIBPYTHON_LOC"] + ";" + cocotb_config.pygpi_entry_point()
+
         self.env["COCOTB_TOPLEVEL" if cocotb_2x_or_newer else "TOPLEVEL"] = self.toplevel_module
         self.env["COCOTB_TEST_MODULES" if cocotb_2x_or_newer else "MODULE"] = self.module
 
@@ -443,8 +447,13 @@ class Icarus(Simulator):
         return cmd_compile
 
     def run_command(self):
+        if hasattr(cocotb_config, "lib_name"):
+            vpi_args = ["-M", self.lib_dir, "-m", cocotb_config.lib_name("vpi", "icarus")]
+        else:
+            # cocotb >= 2.1 removed lib_name(); vvp accepts the full module path.
+            vpi_args = ["-m", str(cocotb_config.lib_name_path("vpi", "icarus"))]
         return (
-            ["vvp", "-M", self.lib_dir, "-m", cocotb_config.lib_name("vpi", "icarus")]
+            ["vvp"] + vpi_args
             + self.simulation_args
             + [self.sim_file]
             + self.plus_args
