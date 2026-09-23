@@ -22,7 +22,7 @@ setup(
     author_email="hemperek@uni-bonn.de",
     packages=find_packages(include=["cocotb_test", "cocotb_test.*"]),
     include_package_data = True,
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     install_requires=[
         "cocotb>=1.5",
         "pytest",
