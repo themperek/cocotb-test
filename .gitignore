@@ -158,3 +158,5 @@ waves.shm/
 /cocotb_test/libs
 .cocotb-results
 
+.nox/
+*.fst
