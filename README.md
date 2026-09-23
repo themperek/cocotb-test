@@ -1,5 +1,5 @@
 # cocotb-test
-[![Build Status](https://dev.azure.com/themperek/themperek/_apis/build/status/themperek.cocotb-test?branchName=master)](https://dev.azure.com/themperek/themperek/_build/latest?definitionId=2&branchName=master)
+[![CI](https://github.com/themperek/cocotb-test/actions/workflows/ci.yml/badge.svg)](https://github.com/themperek/cocotb-test/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/cocotb-test.svg)](https://badge.fury.io/py/cocotb-test)
 
 > [!NOTE]  
