@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  VERILATOR_VERSION: "5.052"
+  GHDL_VERSION: 6.0.0
+  NVC_VERSION: 1.23.0
+
+jobs:
+  test:
+    name: ${{ matrix.os }} ${{ matrix.sim }} py${{ matrix.python }} cocotb-${{ matrix.cocotb }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, sim: icarus, python: "3.9", cocotb: v1.9.2 }
+          - { os: ubuntu-24.04, sim: icarus, python: "3.9", cocotb: v2.0.1 }
+          - { os: ubuntu-24.04, sim: icarus, python: "3.9", cocotb: v2.1.0 }
+          - { os: ubuntu-24.04, sim: icarus, python: "3.14", cocotb: v2.1.0 }
+          - { os: ubuntu-24.04, sim: verilator, python: "3.9", cocotb: v1.9.2 }
+          - { os: ubuntu-24.04, sim: verilator, python: "3.9", cocotb: v2.1.0 }
+          - { os: ubuntu-24.04, sim: ghdl, python: "3.9", cocotb: v1.9.2 }
+          - { os: ubuntu-24.04, sim: ghdl, python: "3.9", cocotb: v2.1.0 }
+          - { os: ubuntu-24.04, sim: nvc, python: "3.9", cocotb: v2.1.0 }
+          - { os: windows-latest, sim: icarus, python: "3.9", cocotb: v2.1.0 }
+    env:
+      SIM: ${{ matrix.sim }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        if: runner.os == 'Linux' && matrix.sim != 'verilator'
+        with:
+          python-version: ${{ matrix.python }}
+
+      - uses: conda-incubator/setup-miniconda@v3
+        if: runner.os == 'Windows' || matrix.sim == 'verilator'
+        with:
+          python-version: ${{ matrix.python }}
+          channels: conda-forge
+          conda-remove-defaults: true
+
+      - name: Install Icarus Verilog (Linux)
+        if: runner.os == 'Linux' && matrix.sim == 'icarus'
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+
+      - name: Install Icarus Verilog (Windows)
+        if: runner.os == 'Windows' && matrix.sim == 'icarus'
+        shell: bash -el {0}
+        run: conda install -y iverilog==10.3
+
+      - name: Install Verilator
+        if: matrix.sim == 'verilator'
+        shell: bash -el {0}
+        run: |
+          conda install -y "verilator=${VERILATOR_VERSION}" lz4-c zlib
+          # verilated.mk hard-codes conda's g++, which does not search the conda env by default.
+          echo "CPATH=$CONDA_PREFIX/include" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$CONDA_PREFIX/lib" >> "$GITHUB_ENV"
+
+      - name: Install GHDL
+        if: matrix.sim == 'ghdl'
+        run: |
+          mkdir -p "$HOME/ghdl"
+          curl -sSfL "https://github.com/ghdl/ghdl/releases/download/v${GHDL_VERSION}/ghdl-mcode-${GHDL_VERSION}-ubuntu24.04-x86_64.tar.gz" \
+            | tar xz -C "$HOME/ghdl" --strip-components=1
+          echo "$HOME/ghdl/bin" >> "$GITHUB_PATH"
+
+      - name: Install NVC
+        if: matrix.sim == 'nvc'
+        run: |
+          curl -sSfL -o /tmp/nvc.deb "https://github.com/nickg/nvc/releases/download/r${NVC_VERSION}/nvc_${NVC_VERSION}-1_amd64_ubuntu-24.04.deb"
+          sudo apt-get update && sudo apt-get install -y /tmp/nvc.deb
+
+      - name: Run nox
+        if: runner.os == 'Linux' && matrix.sim != 'verilator'
+        run: |
+          pip install nox
+          nox -s "tests(cocotb='${{ matrix.cocotb }}')"
+
+      - name: Run nox (conda)
+        if: runner.os == 'Windows' || matrix.sim == 'verilator'
+        shell: bash -el {0}
+        run: |
+          pip install nox
+          nox -s "tests(cocotb='${{ matrix.cocotb }}')"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.sim }}-py${{ matrix.python }}-${{ matrix.cocotb }}
+          path: test-*.xml
+          if-no-files-found: ignore
