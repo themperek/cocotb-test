@@ -115,7 +115,20 @@ class Simulator:
         self.env = dict(extra_env) if extra_env is not None else {}
 
         if testcase is not None:
-            self.env["COCOTB_TEST_FILTER" if cocotb_2x_or_newer else "TESTCASE"] = testcase
+            if cocotb_2x_or_newer:
+                # COCOTB_TEST_FILTER is matched with an unanchored re.search
+                # against "<module>.<test>" fullnames. Anchor each name so
+                # that testcase= keeps the exact-match semantics of the
+                # cocotb 1.x TESTCASE variable; otherwise a name that is a
+                # prefix of another (e.g. "test_soak" vs
+                # "test_soak_extended") selects both. Like the 1.x
+                # variable, comma-separated names are supported.
+                names = [name.strip() for name in testcase.split(",")]
+                self.env["COCOTB_TEST_FILTER"] = r"(?:^|\.)(?:{})$".format(
+                    "|".join(re.escape(name) for name in names)
+                )
+            else:
+                self.env["TESTCASE"] = testcase
 
         if seed is not None:
             self.env["COCOTB_RANDOM_SEED" if cocotb_2x_or_newer else "RANDOM_SEED"] = str(seed)
